@@ -41,9 +41,9 @@ export default function RegisterForm() {
       await createUserWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: "Registro Exitoso",
-        description: "Su cuenta ha sido creada. Bienvenido a ZYCLE!",
+        description: "Su cuenta ha sido creada. Por favor complete el perfil de su empresa.",
       });
-      router.push("/dashboard"); // Firebase onAuthStateChanged will handle redirect if already logged in
+      router.push("/profile-setup"); 
     } catch (error: any) {
       console.error("Registration error:", error);
       let errorMessage = "Ocurrió un error durante el registro.";

@@ -3,9 +3,11 @@
 
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Skeleton } from "@/components/ui/skeleton"; // For loading state
+import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/lib/firebase"; 
+import { doc, getDoc } from "firebase/firestore"; 
 
 export default function AppLayout({
   children,
@@ -13,15 +15,52 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [profileChecked, setProfileChecked] = useState(false); 
+  const [isInitialLoading, setIsInitialLoading] = useState(true); 
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.replace("/login");
+      setIsInitialLoading(false); 
+      return;
     }
-  }, [user, loading, router]);
 
-  if (loading) {
+    if (!authLoading && user && !profileChecked) {
+      const checkProfile = async () => {
+        if (!db) { // Ensure db is initialized
+            console.warn("Firestore (db) is not initialized. Skipping profile check.");
+            setProfileChecked(true);
+            setIsInitialLoading(false);
+            return;
+        }
+        try {
+          const profileRef = doc(db, "companyProfiles", user.uid);
+          const profileSnap = await getDoc(profileRef);
+          if (!profileSnap.exists()) {
+            router.replace("/profile-setup");
+          }
+        } catch (error) {
+          console.error("Error checking company profile:", error);
+        } finally {
+          setProfileChecked(true);
+          setIsInitialLoading(false); 
+        }
+      };
+      checkProfile();
+    } else if (authLoading) {
+        setIsInitialLoading(true); 
+    } else if (profileChecked && !authLoading && user) {
+        // If auth is done, user exists, and profile is checked, then loading is done.
+        setIsInitialLoading(false);
+    } else if (!authLoading && !user) {
+        // If auth is done and no user, loading is also done (handled by first if).
+        setIsInitialLoading(false);
+    }
+
+  }, [user, authLoading, router, profileChecked]);
+
+  if (isInitialLoading) { 
     return (
       <div className="flex flex-col min-h-screen">
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -46,8 +85,6 @@ export default function AppLayout({
   }
 
   if (!user) {
-    // This should ideally not be reached if useEffect redirect works,
-    // but as a fallback or if redirect is pending.
     return null; 
   }
 

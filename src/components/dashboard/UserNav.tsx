@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
 export function UserNav() {
   const router = useRouter();
@@ -56,7 +57,6 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border-2 border-primary">
-            {/* <AvatarImage src="https://placehold.co/100x100.png" alt="Usuario" /> */}
             <AvatarFallback className="bg-primary text-primary-foreground">
               {user ? getInitials(user.email) : <UserCircle size={24} />}
             </AvatarFallback>
@@ -74,9 +74,11 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Configuración</span>
+          <DropdownMenuItem asChild>
+            <Link href="/settings">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Configuración</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -13,7 +14,7 @@ export default function DashboardPage() {
   const features = [
     { name: "Registrar Material", icon: <PlusCircle className="w-8 h-8 text-primary" />, description: "Añada nuevos tipos de materiales reciclables al sistema.", link: "#" },
     { name: "Gestionar Inventario", icon: <ListChecks className="w-8 h-8 text-primary" />, description: "Vea y actualice las cantidades de materiales en stock.", link: "#" },
-    { name: "Configuración de Cuenta", icon: <Settings className="w-8 h-8 text-primary" />, description: "Ajuste los detalles y preferencias de su cuenta.", link: "#" },
+    { name: "Configuración de Cuenta", icon: <Settings className="w-8 h-8 text-primary" />, description: "Ajuste los detalles y preferencias de su cuenta.", link: "/settings" },
   ];
 
   return (
