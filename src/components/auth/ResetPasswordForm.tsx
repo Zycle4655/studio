@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,28 +19,51 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const [isVerifyingToken, setIsVerifyingToken] = useState(true);
+  const [isValidToken, setIsValidToken] = useState(false);
+  const [oobCode, setOobCode] = useState<string | null>(null);
 
-  // In a real app, the token would come from the URL and be validated.
-  const token = searchParams.get("token"); 
-  
-  // Effect to check for token (mock)
   useEffect(() => {
-    if (!token) {
-        // toast({
-        //     variant: "destructive",
-        //     title: "Enlace Inválido",
-        //     description: "El enlace para restablecer la contraseña no es válido o ha expirado.",
-        // });
-        // For demo, let's assume a token is always present if on this page.
-        console.log("No token found, but proceeding for demo purposes.");
+    const code = searchParams.get("oobCode");
+    if (code) {
+      setOobCode(code);
+      verifyPasswordResetCode(auth, code)
+        .then((email) => {
+          console.log("Token valid for email:", email);
+          setIsValidToken(true);
+        })
+        .catch((error) => {
+          console.error("Invalid or expired oobCode:", error);
+          toast({
+            variant: "destructive",
+            title: "Enlace Inválido",
+            description: "El enlace para restablecer la contraseña no es válido o ha expirado. Por favor, solicite uno nuevo.",
+          });
+          setIsValidToken(false);
+          router.replace("/forgot-password");
+        })
+        .finally(() => {
+          setIsVerifyingToken(false);
+        });
+    } else {
+      toast({
+          variant: "destructive",
+          title: "Enlace Inválido",
+          description: "No se encontró el código de restablecimiento. Por favor, solicite un enlace nuevo.",
+      });
+      setIsVerifyingToken(false);
+      setIsValidToken(false);
+      router.replace("/forgot-password");
     }
-  }, [token, router, toast]);
+  }, [searchParams, router, toast]);
 
 
   const form = useForm<ResetPasswordFormData>({
@@ -51,17 +75,65 @@ export default function ResetPasswordForm() {
   });
 
   async function onSubmit(data: ResetPasswordFormData) {
-    // Mock password reset
-    console.log("Reset password data:", data, "Token:", token);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    toast({
-      title: "Contraseña Restablecida",
-      description: "Su contraseña ha sido actualizada. Ahora puede iniciar sesión.",
-    });
-    router.push("/login");
+    if (!oobCode || !isValidToken) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se puede restablecer la contraseña. El enlace no es válido.",
+      });
+      return;
+    }
+    form.clearErrors();
+    try {
+      await confirmPasswordReset(auth, oobCode, data.password);
+      toast({
+        title: "Contraseña Restablecida",
+        description: "Su contraseña ha sido actualizada. Ahora puede iniciar sesión.",
+      });
+      router.push("/login");
+    } catch (error: any) {
+        console.error("Reset password error:", error);
+        let errorMessage = "Ocurrió un error al restablecer la contraseña.";
+        if (error.code === 'auth/expired-action-code') {
+            errorMessage = "El enlace ha expirado. Por favor, solicite uno nuevo.";
+        } else if (error.code === 'auth/invalid-action-code') {
+            errorMessage = "El enlace no es válido. Por favor, solicite uno nuevo.";
+        } else if (error.code === 'auth/user-disabled') {
+            errorMessage = "Esta cuenta ha sido deshabilitada.";
+        } else if (error.code === 'auth/user-not-found') {
+            errorMessage = "No se encontró una cuenta para este enlace.";
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = "La nueva contraseña es demasiado débil.";
+            form.setError("password", { type: "manual", message: errorMessage });
+        }
+         toast({
+            variant: "destructive",
+            title: "Error al Restablecer",
+            description: errorMessage,
+        });
+    }
   }
+
+  if (isVerifyingToken) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+            <Card className="w-full max-w-md shadow-xl">
+                <CardHeader>
+                    <CardTitle className="text-3xl font-bold text-center text-primary font-headline">Verificando Enlace...</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-center text-muted-foreground">Por favor espere mientras verificamos la validez de su enlace de restablecimiento.</p>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
+  if (!isValidToken && !isVerifyingToken) {
+     // Toast has already been shown, router.replace will handle redirect
+     return null;
+  }
+
 
   return (
     <Card className="w-full max-w-md shadow-xl">
@@ -118,7 +190,7 @@ export default function ResetPasswordForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !isValidToken}>
               {form.formState.isSubmitting ? "Actualizando..." : "Actualizar Contraseña"}
               <RefreshCw className="ml-2 h-5 w-5" />
             </Button>

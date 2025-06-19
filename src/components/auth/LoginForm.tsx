@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,8 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -32,26 +35,31 @@ export default function LoginForm() {
   });
 
   async function onSubmit(data: LoginFormData) {
-    // Mock login
-    console.log("Login data:", data);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (data.email === "test@example.com" && data.password === "password") {
-      localStorage.setItem("isLoggedInZycle", "true"); // Mock session
+    form.clearErrors();
+    try {
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: "Inicio de Sesión Exitoso",
         description: "Bienvenido de nuevo!",
       });
       router.push("/dashboard");
-    } else {
+    } catch (error: any) {
+      console.error("Login error:", error);
+      let errorMessage = "Correo electrónico o contraseña incorrectos.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "Correo electrónico o contraseña incorrectos.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "El formato del correo electrónico no es válido.";
+      } else {
+        errorMessage = "Ocurrió un error al intentar iniciar sesión. Por favor, inténtelo de nuevo.";
+      }
       toast({
         variant: "destructive",
         title: "Error de Inicio de Sesión",
-        description: "Correo electrónico o contraseña incorrectos.",
+        description: errorMessage,
       });
-      form.setError("email", { type: "manual", message: " " }); // Clear previous specific errors but mark as error
-      form.setError("password", { type: "manual", message: "Correo electrónico o contraseña incorrectos." });
+      form.setError("email", { type: "manual", message: " " }); 
+      form.setError("password", { type: "manual", message: errorMessage });
     }
   }
 

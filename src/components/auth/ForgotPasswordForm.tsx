@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,8 @@ import { Mail, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function ForgotPasswordForm() {
   const { toast } = useToast();
@@ -31,18 +34,38 @@ export default function ForgotPasswordForm() {
   });
 
   async function onSubmit(data: ForgotPasswordFormData) {
-    // Mock forgot password
-    console.log("Forgot password data:", data);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    toast({
-      title: "Enlace Enviado",
-      description: "Si existe una cuenta con este correo, recibirá un enlace para restablecer su contraseña.",
-    });
-    // For demo, redirect to a mock reset page or login
-    // router.push("/reset-password?email=" + data.email); // Or simply back to login
-    router.push("/login");
+    form.clearErrors();
+    try {
+      await sendPasswordResetEmail(auth, data.email);
+      toast({
+        title: "Enlace Enviado",
+        description: "Si existe una cuenta con este correo, recibirá un enlace para restablecer su contraseña.",
+      });
+      // No redirigir inmediatamente, el usuario debe revisar su correo.
+      // router.push("/login"); 
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      let errorMessage = "Ocurrió un error al intentar enviar el correo de restablecimiento.";
+      if (error.code === 'auth/user-not-found') {
+        // No revelar si el usuario existe o no por seguridad
+        errorMessage = "Si existe una cuenta con este correo, recibirá un enlace para restablecer su contraseña.";
+         toast({
+          title: "Enlace Enviado",
+          description: errorMessage,
+        });
+        return;
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "El formato del correo electrónico no es válido.";
+        form.setError("email", { type: "manual", message: errorMessage });
+      } else {
+        form.setError("email", { type: "manual", message: errorMessage });
+      }
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });
+    }
   }
 
   return (

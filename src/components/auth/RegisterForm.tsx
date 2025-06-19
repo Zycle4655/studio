@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,8 @@ import { useRouter } from "next/navigation";
 import { Mail, Lock, UserPlus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -33,18 +36,36 @@ export default function RegisterForm() {
   });
 
   async function onSubmit(data: RegisterFormData) {
-    // Mock registration
-    console.log("Registration data:", data);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // For demo, auto-login after registration
-    localStorage.setItem("isLoggedInZycle", "true"); 
-    toast({
-      title: "Registro Exitoso",
-      description: "Su cuenta ha sido creada. Bienvenido a ZYCLE!",
-    });
-    router.push("/dashboard");
+    form.clearErrors();
+    try {
+      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      toast({
+        title: "Registro Exitoso",
+        description: "Su cuenta ha sido creada. Bienvenido a ZYCLE!",
+      });
+      router.push("/dashboard"); // Firebase onAuthStateChanged will handle redirect if already logged in
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      let errorMessage = "Ocurrió un error durante el registro.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "Este correo electrónico ya está en uso.";
+        form.setError("email", { type: "manual", message: errorMessage });
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "El formato del correo electrónico no es válido.";
+        form.setError("email", { type: "manual", message: errorMessage });
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "La contraseña es demasiado débil.";
+        form.setError("password", { type: "manual", message: errorMessage });
+      } else {
+         form.setError("email", { type: "manual", message: " " });
+         form.setError("password", { type: "manual", message: errorMessage });
+      }
+      toast({
+        variant: "destructive",
+        title: "Error de Registro",
+        description: errorMessage,
+      });
+    }
   }
 
   return (
