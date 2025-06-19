@@ -8,15 +8,15 @@
     --background: 210 100% 98%; /* Very light blue, almost white for component backgrounds */
     --foreground: 220 30% 20%;   /* Dark grayish blue for text */
 
-    --gradient-start-blue: 200 80% 75%; /* Light Sky Blue for gradient */
-    --gradient-end-green: 140 60% 70%;  /* Soft Mint Green for gradient */
+    --gradient-start-blue: 200 50% 35%; /* Petrol Blue for gradient */
+    --gradient-end-green: 140 45% 45%;  /* Green for gradient */
 
     --card: 0 0% 100%; /* White */
     --card-foreground: var(--foreground);
     --popover: 0 0% 100%;
     --popover-foreground: var(--foreground);
 
-    --primary: 210 70% 50%;  /* Medium Blue */
+    --primary: 190 70% 50%;  /* Teal/Cyan, to complement petrol/green gradient */
     --primary-foreground: 0 0% 100%; /* White */
 
     --secondary: 150 60% 85%; /* Light Green-Cyan for secondary elements */
@@ -25,19 +25,19 @@
     --muted: 210 50% 94%;   /* Very light muted blue */
     --muted-foreground: 210 25% 55%; /* Muted blue-gray text */
 
-    --accent: 130 60% 50%;   /* Vibrant Green */
-    --accent-foreground: 0 0% 100%; /* White for text on accent */
+    --accent: 45 80% 55%;   /* Vibrant Orange/Gold, to contrast with blue/green */
+    --accent-foreground: 220 30% 10%; /* Dark text for contrast on accent */
 
     --destructive: 0 70% 55%; /* Standard destructive red */
     --destructive-foreground: 0 0% 100%;
 
     --border: 200 40% 80%;   /* Light blue-gray border */
     --input: 200 40% 90%;    /* Lighter blue-gray for input borders */
-    --ring: 210 70% 50%;     /* Primary blue for rings */
+    --ring: 190 70% 50%;     /* Teal/Cyan for rings, matching primary */
 
-    --chart-1: 210 70% 55%;
+    --chart-1: 190 70% 55%;
     --chart-2: 140 60% 50%;
-    --chart-3: 190 65% 45%;
+    --chart-3: 45 75% 50%;
     --chart-4: 220 60% 65%;
     --chart-5: 120 55% 60%;
 
@@ -57,15 +57,15 @@
     --background: 220 30% 10%; /* Very Dark Blue for component backgrounds */
     --foreground: 200 20% 90%;   /* Light grayish cyan for text */
 
-    --gradient-start-blue: 210 50% 20%; /* Dark Blue for gradient */
-    --gradient-end-green: 150 40% 15%;  /* Dark Mint Green for gradient */
+    --gradient-start-blue: 200 40% 20%; /* Dark Petrol Blue for gradient */
+    --gradient-end-green: 140 35% 25%;  /* Dark Green for gradient */
 
     --card: 220 30% 15%; /* Darker Blue for cards */
     --card-foreground: var(--foreground);
     --popover: 220 30% 15%;
     --popover-foreground: var(--foreground);
 
-    --primary: 200 70% 60%;  /* Brighter Blue */
+    --primary: 190 65% 55%;  /* Brighter Teal/Cyan */
     --primary-foreground: 200 100% 5%; /* Very dark, almost black for text on primary */
 
     --secondary: 150 50% 30%; /* Darker Green-Cyan */
@@ -74,19 +74,19 @@
     --muted: 220 25% 20%;   /* Dark muted blue */
     --muted-foreground: 210 20% 65%; /* Muted grayish text */
 
-    --accent: 130 65% 60%;   /* Brighter Green */
-    --accent-foreground: 130 100% 5%; /* Very dark, almost black for text on accent */
+    --accent: 40 75% 60%;   /* Brighter Orange/Gold */
+    --accent-foreground: 30 100% 5%; /* Very dark, almost black for text on accent */
 
     --destructive: 0 60% 45%;
     --destructive-foreground: 0 0% 95%;
 
     --border: 210 20% 30%;   /* Dark blue-gray border */
     --input: 210 20% 25%;    /* Darker blue-gray for input borders */
-    --ring: 200 70% 60%;     /* Primary blue for rings in dark */
+    --ring: 190 65% 55%;     /* Primary Teal/Cyan for rings in dark */
 
-    --chart-1: 210 70% 65%;
+    --chart-1: 190 70% 65%;
     --chart-2: 140 60% 60%;
-    --chart-3: 190 65% 55%;
+    --chart-3: 40 70% 55%;
     --chart-4: 220 60% 75%;
     --chart-5: 120 55% 70%;
     
