@@ -10,7 +10,7 @@ import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardHeader, CardContent } from '@/components/ui/card'; // Import Card components for Skeleton
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 export default function ProfileSetupPage() {
   const { user, loading: authLoading } = useAuth();
@@ -28,15 +28,30 @@ export default function ProfileSetupPage() {
 
   useEffect(() => {
     async function fetchProfile() {
-      if (user && db) { // Ensure db is initialized
+      if (user && db) {
         setIsFetchingProfile(true);
-        const profileRef = doc(db, "companyProfiles", user.uid);
-        const profileSnap = await getDoc(profileRef);
-        if (profileSnap.exists()) {
-          setExistingProfile(profileSnap.data() as CompanyProfileFormData);
+        try {
+            const profileRef = doc(db, "companyProfiles", user.uid);
+            const profileSnap = await getDoc(profileRef);
+            if (profileSnap.exists()) {
+                setExistingProfile(profileSnap.data() as CompanyProfileFormData);
+            }
+        } catch (error: any) {
+            console.error("Error fetching company profile in ProfileSetupPage:", error);
+            if (error.message && error.message.toLowerCase().includes("offline")) {
+                console.warn("Firebase reported client is offline in ProfileSetupPage. Please check your internet connection and ensure Firestore is enabled and properly configured in your Firebase project console.");
+                toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo conectar a la base de datos. Verifique su conexión y que Firestore esté habilitado."});
+            } else {
+                 toast({ variant: "destructive", title: "Error al Cargar Perfil", description: "No se pudo cargar el perfil existente."});
+            }
+        } finally {
+            setIsFetchingProfile(false);
         }
-        setIsFetchingProfile(false);
       } else if (!user && !authLoading) {
+        setIsFetchingProfile(false);
+      } else if (!db && user && !authLoading) {
+        console.warn("Firestore (db) is not initialized in ProfileSetupPage. Skipping profile fetch.");
+        toast({ variant: "destructive", title: "Error de Configuración", description: "La base de datos no está disponible. Contacte al soporte."});
         setIsFetchingProfile(false);
       }
     }
@@ -45,7 +60,7 @@ export default function ProfileSetupPage() {
     } else if (!authLoading) {
         setIsFetchingProfile(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, toast]);
 
 
   const handleSubmit = async (data: CompanyProfileFormData) => {
@@ -59,16 +74,20 @@ export default function ProfileSetupPage() {
       
       let createdAtTimestamp = serverTimestamp();
       if (existingProfile) {
-        const currentProfileSnap = await getDoc(profileRef);
-        if (currentProfileSnap.exists() && currentProfileSnap.data().createdAt) {
-            createdAtTimestamp = currentProfileSnap.data().createdAt;
+        // Check if existingProfile truly has a createdAt field before trying to use it.
+        const currentProfileSnap = await getDoc(profileRef); // Re-fetch to be sure
+        if (currentProfileSnap.exists()) {
+            const currentData = currentProfileSnap.data() as CompanyProfileDocument;
+            if (currentData.createdAt) {
+                 createdAtTimestamp = currentData.createdAt;
+            }
         }
       }
 
       const profileData: CompanyProfileDocument = {
         ...data,
         userId: user.uid,
-        createdAt: createdAtTimestamp,
+        createdAt: createdAtTimestamp, // Uses fetched or new serverTimestamp
         updatedAt: serverTimestamp(),
       };
       await setDoc(profileRef, profileData, { merge: true }); 
@@ -78,9 +97,13 @@ export default function ProfileSetupPage() {
         description: `El perfil de ${data.companyName} ha sido ${existingProfile ? 'actualizado' : 'guardado'} con éxito.`,
       });
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving profile:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el perfil." });
+      if (error.message && error.message.toLowerCase().includes("offline")) {
+        toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo guardar el perfil. Verifique su conexión e inténtelo de nuevo." });
+      } else {
+        toast({ variant: "destructive", title: "Error al Guardar", description: "No se pudo guardar el perfil." });
+      }
     } finally {
       setIsLoading(false);
     }

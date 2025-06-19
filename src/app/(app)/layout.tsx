@@ -28,8 +28,8 @@ export default function AppLayout({
 
     if (!authLoading && user && !profileChecked) {
       const checkProfile = async () => {
-        if (!db) { // Ensure db is initialized
-            console.warn("Firestore (db) is not initialized. Skipping profile check.");
+        if (!db) { 
+            console.warn("Firestore (db) is not initialized in AppLayout. Skipping profile check.");
             setProfileChecked(true);
             setIsInitialLoading(false);
             return;
@@ -40,8 +40,11 @@ export default function AppLayout({
           if (!profileSnap.exists()) {
             router.replace("/profile-setup");
           }
-        } catch (error) {
-          console.error("Error checking company profile:", error);
+        } catch (error: any) {
+          console.error("Error checking company profile in AppLayout:", error);
+          if (error.message && error.message.toLowerCase().includes("offline")) {
+            console.warn("Firebase reported client is offline in AppLayout. Please check your internet connection and ensure Firestore is enabled and properly configured in your Firebase project console.");
+          }
         } finally {
           setProfileChecked(true);
           setIsInitialLoading(false); 
@@ -51,10 +54,8 @@ export default function AppLayout({
     } else if (authLoading) {
         setIsInitialLoading(true); 
     } else if (profileChecked && !authLoading && user) {
-        // If auth is done, user exists, and profile is checked, then loading is done.
         setIsInitialLoading(false);
     } else if (!authLoading && !user) {
-        // If auth is done and no user, loading is also done (handled by first if).
         setIsInitialLoading(false);
     }
 
