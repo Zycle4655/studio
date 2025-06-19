@@ -36,22 +36,22 @@ const requiredConfigValues = [
   firebaseConfig.apiKey,
   firebaseConfig.authDomain,
   firebaseConfig.projectId,
-  firebaseConfig.storageBucket,
-  firebaseConfig.messagingSenderId,
-  firebaseConfig.appId,
+  // storageBucket is not strictly required for Auth alone but good to check
+  // messagingSenderId is not strictly required for Auth alone
+  // appId is not strictly required for Auth alone
 ];
 
-const allConfigPresent = requiredConfigValues.every(value => !!value);
+const allCoreConfigPresent = firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId;
 
-if (!allConfigPresent) {
+if (!allCoreConfigPresent) {
   console.error(
-    "CRITICAL Firebase Error: One or more Firebase configuration values are missing from environment variables (.env.local). " +
+    "CRITICAL Firebase Error: One or more core Firebase configuration values (apiKey, authDomain, projectId) are missing from environment variables (.env.local). " +
     "Please ensure all NEXT_PUBLIC_FIREBASE_... variables are correctly set and you have restarted your development server."
   );
-  console.error("Firebase initialization will be skipped due to missing configuration.");
+  console.error("Firebase initialization will be skipped due to missing core configuration.");
 }
 
-if (allConfigPresent) {
+if (allCoreConfigPresent) {
   if (!getApps().length) {
     try {
       app = initializeApp(firebaseConfig);
