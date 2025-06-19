@@ -11,6 +11,11 @@ if (process.env.NODE_ENV === 'development') {
   );
   if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
     // console.log("Firebase Service: API Key starts with: ", process.env.NEXT_PUBLIC_FIREBASE_API_KEY.substring(0,5) + "..."); // Uncomment for more detailed debugging if needed
+  } else {
+    console.error(
+        "Firebase Error: NEXT_PUBLIC_FIREBASE_API_KEY is not defined. " +
+        "Please ensure this variable is set in your .env.local file and you have restarted the development server."
+    );
   }
 }
 
@@ -26,45 +31,65 @@ const firebaseConfig = {
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 
-if (!firebaseConfig.apiKey) {
+// Check if all required config values are present
+const requiredConfigValues = [
+  firebaseConfig.apiKey,
+  firebaseConfig.authDomain,
+  firebaseConfig.projectId,
+  firebaseConfig.storageBucket,
+  firebaseConfig.messagingSenderId,
+  firebaseConfig.appId,
+];
+
+const allConfigPresent = requiredConfigValues.every(value => !!value);
+
+if (!allConfigPresent) {
   console.error(
-    "CRITICAL Firebase Error: NEXT_PUBLIC_FIREBASE_API_KEY is missing or undefined. " +
-    "Please ensure this variable is correctly set in your .env.local file " +
-    "and that you have restarted your development server after any changes to .env.local."
+    "CRITICAL Firebase Error: One or more Firebase configuration values are missing from environment variables (.env.local). " +
+    "Please ensure all NEXT_PUBLIC_FIREBASE_... variables are correctly set and you have restarted your development server."
   );
-  console.error("Firebase initialization will be skipped due to missing API Key.");
+  console.error("Firebase initialization will be skipped due to missing configuration.");
 }
 
-if (!getApps().length) {
-  if (firebaseConfig.apiKey) { // Only attempt to initialize if the API key is somewhat present
+if (allConfigPresent) {
+  if (!getApps().length) {
     try {
       app = initializeApp(firebaseConfig);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Firebase app initialized successfully.");
+      }
     } catch (e: any) {
       console.error("Firebase app initialization failed:", e.message);
-      app = undefined; // Ensure app is undefined if initialization fails
+      app = undefined; 
     }
   } else {
-    // Warning already logged above
-    app = undefined;
+    app = getApp();
+    if (process.env.NODE_ENV === 'development' && app) {
+      console.log("Firebase app already initialized, getting existing app.");
+    }
   }
-} else {
-  app = getApp();
-}
 
-if (app) {
-  try {
-    auth = getAuth(app);
-  } catch (e: any) {
-    console.error("Firebase getAuth(app) failed:", e.message);
-    auth = undefined; // Ensure auth is undefined if getAuth fails
-  }
-} else {
-  if (firebaseConfig.apiKey) { // Only log this if an API key was present but app init still failed
+  if (app) {
+    try {
+      auth = getAuth(app);
+      if (process.env.NODE_ENV === 'development' && auth) {
+        console.log("Firebase Auth initialized successfully.");
+      }
+    } catch (e: any) {
+      console.error("Firebase getAuth(app) failed:", e.message);
+      auth = undefined; 
+    }
+  } else {
+    if (process.env.NODE_ENV === 'development') {
       console.warn("Firebase Auth initialization skipped because Firebase app initialization failed or app is undefined.");
+    }
+    auth = undefined;
   }
-  auth = undefined;
+} else {
+    // Ensure app and auth are undefined if config is missing
+    app = undefined;
+    auth = undefined;
 }
 
-// Export them, but they might be undefined if initialization failed.
-// Code using 'auth' or 'app' should be prepared for this, especially during startup.
+
 export { app, auth };
