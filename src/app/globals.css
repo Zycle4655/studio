@@ -5,71 +5,71 @@
 
 @layer base {
   :root {
-    --background: 125 47% 94%; /* Light Green #E8F5E9 */
-    --foreground: 135 25% 25%; /* Darker Green for text */
+    --background: 195 30% 94%; /* Very Light Petroleum Tint */
+    --foreground: 195 40% 15%; /* Dark Petroleum for text */
 
     --card: 0 0% 100%; /* White cards */
-    --card-foreground: 135 25% 25%;
+    --card-foreground: 195 40% 15%; /* Dark Petroleum for text */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 135 25% 25%;
+    --popover-foreground: 195 40% 15%; /* Dark Petroleum for text */
 
-    --primary: 135 53% 42%; /* Forest Green #34A04A */
-    --primary-foreground: 130 75% 95%; /* Very Light Green/Off-white for contrast on primary */
+    --primary: 195 53% 30%; /* Petroleum Blue */
+    --primary-foreground: 195 30% 95%; /* Very light, almost white, slightly tinted blue */
 
-    --secondary: 130 40% 88%; /* Muted Green */
-    --secondary-foreground: 135 30% 30%; /* Darker green for text on secondary */
+    --secondary: 195 30% 88%; /* Muted Light Petroleum */
+    --secondary-foreground: 195 40% 25%; /* Darker Petroleum for text on secondary */
 
-    --muted: 125 35% 90%; /* Lighter Muted Green */
-    --muted-foreground: 135 15% 50%; /* Grayish Green for muted text */
+    --muted: 195 25% 92%; /* Lighter Muted Petroleum */
+    --muted-foreground: 195 20% 50%; /* Grayish Petroleum for muted text */
 
-    --accent: 207 82% 77%; /* Light Blue #90CAF9 */
-    --accent-foreground: 207 50% 30%; /* Darker Blue for text on accent */
+    --accent: 207 82% 77%; /* Light Blue #90CAF9 (Kept as per original spec) */
+    --accent-foreground: 207 50% 30%; /* Darker Blue for text on accent (Kept) */
 
     --destructive: 0 72% 51%; /* A slightly less harsh red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 130 30% 85%; /* Light Greenish Border */
-    --input: 130 30% 85%; /* Light Greenish Input Background */
-    --ring: 135 53% 42%; /* Forest Green for focus rings */
+    --border: 195 25% 85%; /* Light Petroleum Border */
+    --input: 195 25% 85%; /* Light Petroleum Input Background */
+    --ring: 195 53% 30%; /* Petroleum Blue for focus rings */
 
-    --chart-1: 135 53% 42%;
-    --chart-2: 207 82% 77%;
+    --chart-1: 195 53% 30%; /* Petroleum Blue */
+    --chart-2: 207 82% 77%; /* Light Blue Accent */
     --chart-3: 35 90% 55%;
     --chart-4: 280 70% 60%;
     --chart-5: 50 80% 50%;
 
     --radius: 0.5rem;
 
-    /* Sidebar specific colors, can inherit or be customized */
-    --sidebar-background: 125 47% 92%; /* Slightly darker light green for sidebar */
-    --sidebar-foreground: 135 25% 20%; /* Darker Green for sidebar text */
-    --sidebar-primary: 135 53% 42%; /* Forest Green */
-    --sidebar-primary-foreground: 130 75% 95%; /* Off-white */
-    --sidebar-accent: 207 82% 77%; /* Light Blue */
+    /* Sidebar specific colors */
+    --sidebar-background: 195 30% 92%; /* Slightly darker light petroleum for sidebar */
+    --sidebar-foreground: 195 40% 12%; /* Darker Petroleum for sidebar text */
+    --sidebar-primary: 195 53% 30%; /* Petroleum Blue */
+    --sidebar-primary-foreground: 195 30% 95%; /* Light Petroleum Tint */
+    --sidebar-accent: 207 82% 77%; /* Light Blue Accent */
     --sidebar-accent-foreground: 207 50% 30%; /* Darker Blue */
-    --sidebar-border: 130 30% 80%;
-    --sidebar-ring: 135 53% 42%;
+    --sidebar-border: 195 25% 80%; /* Light Petroleum Border */
+    --sidebar-ring: 195 53% 30%; /* Petroleum Blue */
   }
 
   .dark {
-    --background: 135 25% 15%; /* Very Dark Green */
-    --foreground: 125 47% 94%; /* Light Green text */
+    --background: 195 30% 10%; /* Very Dark Petroleum */
+    --foreground: 195 25% 90%; /* Light Petroleum Tint for text */
 
-    --card: 135 25% 20%; /* Dark Green cards */
-    --card-foreground: 125 47% 94%;
+    --card: 195 30% 15%; /* Dark Petroleum cards */
+    --card-foreground: 195 25% 90%; /* Light Petroleum Tint for text */
 
-    --popover: 135 25% 20%;
-    --popover-foreground: 125 47% 94%;
+    --popover: 195 30% 15%;
+    --popover-foreground: 195 25% 90%;
 
-    --primary: 135 53% 52%; /* Forest Green (slightly lighter for dark mode) */
-    --primary-foreground: 135 25% 15%; /* Very Dark Green for contrast */
+    --primary: 195 50% 45%; /* Petroleum Blue (lighter for dark mode) */
+    --primary-foreground: 195 30% 95%; /* Light Petroleum Tint for contrast */
 
-    --secondary: 135 25% 30%; /* Darker Muted Green */
-    --secondary-foreground: 125 47% 94%;
+    --secondary: 195 25% 25%; /* Darker Muted Petroleum */
+    --secondary-foreground: 195 25% 90%; /* Light Petroleum Tint */
 
-    --muted: 135 25% 25%; /* Dark Muted Green */
-    --muted-foreground: 125 35% 70%; /* Lighter Grayish Green */
+    --muted: 195 25% 20%; /* Dark Muted Petroleum */
+    --muted-foreground: 195 20% 65%; /* Lighter Grayish Petroleum */
 
     --accent: 207 70% 60%; /* Light Blue (slightly desaturated/darker for dark mode) */
     --accent-foreground: 207 90% 95%; /* Very Light Blue/White text on accent */
@@ -77,24 +77,24 @@
     --destructive: 0 60% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 135 25% 25%; /* Dark Greenish Border */
-    --input: 135 25% 25%;
-    --ring: 135 60% 65%; /* Lighter Forest Green for focus rings in dark mode */
+    --border: 195 25% 20%; /* Dark Petroleum Border */
+    --input: 195 25% 20%; /* Dark Petroleum Input */
+    --ring: 195 50% 55%; /* Lighter Petroleum Blue for focus rings in dark mode */
 
-    --chart-1: 125 47% 94%;
-    --chart-2: 207 70% 60%;
+    --chart-1: 195 25% 90%; /* Light Petroleum Tint */
+    --chart-2: 207 70% 60%; /* Light Blue Accent */
     --chart-3: 40 85% 60%;
     --chart-4: 270 75% 65%;
     --chart-5: 60 75% 55%;
 
-    --sidebar-background: 135 25% 12%;
-    --sidebar-foreground: 125 47% 94%;
-    --sidebar-primary: 135 53% 52%;
-    --sidebar-primary-foreground: 135 25% 15%;
-    --sidebar-accent: 207 70% 60%;
-    --sidebar-accent-foreground: 207 90% 95%;
-    --sidebar-border: 135 25% 25%;
-    --sidebar-ring: 135 60% 65%;
+    --sidebar-background: 195 30% 8%; /* Very Dark Petroleum for sidebar */
+    --sidebar-foreground: 195 25% 90%; /* Light Petroleum Tint for sidebar text */
+    --sidebar-primary: 195 50% 45%; /* Petroleum Blue (lighter) */
+    --sidebar-primary-foreground: 195 30% 95%; /* Light Petroleum Tint */
+    --sidebar-accent: 207 70% 60%; /* Light Blue Accent */
+    --sidebar-accent-foreground: 207 90% 95%; /* Very Light Blue */
+    --sidebar-border: 195 25% 20%; /* Dark Petroleum Border */
+    --sidebar-ring: 195 50% 55%; /* Lighter Petroleum Blue */
   }
 }
 
