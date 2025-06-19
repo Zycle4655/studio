@@ -74,7 +74,7 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled> 
+          <DropdownMenuItem disabled>
             <Settings className="mr-2 h-4 w-4" />
             <span>super, sigamos,  aca que crees que podamos poner?</span>
           </DropdownMenuItem>
