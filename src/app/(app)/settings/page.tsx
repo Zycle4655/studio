@@ -10,7 +10,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import type { CompanyProfileFormData } from '@/schemas/company';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, Hash, Phone, MapPin, Edit } from 'lucide-react';
+import { Building, Hash, Phone, MapPin, Edit, Mail } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SettingsPage() {
@@ -57,7 +57,7 @@ export default function SettingsPage() {
                      <Skeleton className="h-5 w-3/4" />
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {[1,2,3,4].map(i => (
+                    {[1,2,3,4,5].map(i => (
                          <div key={i} className="flex items-start space-x-3">
                             <Skeleton className="h-6 w-6 rounded-full mt-1" />
                             <div className='flex-1 space-y-1'>
@@ -81,13 +81,13 @@ export default function SettingsPage() {
     <div className="container py-8 px-4 md:px-6">
       <h1 className="text-3xl font-bold tracking-tight text-primary mb-2 font-headline">Configuración de la Cuenta</h1>
       <p className="text-lg text-muted-foreground mb-8">
-        Aquí puede ver y editar la información de su empresa.
+        Aquí puede ver y editar la información de su empresa y cuenta.
       </p>
 
       <Card className="w-full max-w-2xl mx-auto shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline text-primary">Perfil de la Empresa</CardTitle>
-          <CardDescription>Información registrada de su empresa.</CardDescription>
+          <CardTitle className="text-2xl font-headline text-primary">Perfil de la Empresa y Cuenta</CardTitle>
+          <CardDescription>Información registrada de su empresa y datos de su cuenta.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {profile ? (
@@ -126,12 +126,21 @@ export default function SettingsPage() {
               No se ha completado el perfil de la empresa.
             </p>
           )}
+          {user.email && (
+            <div className="flex items-start space-x-3 pt-4 border-t border-border">
+                <Mail className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
+                <div>
+                    <span className="font-medium text-foreground/80 block">Correo Electrónico de la Cuenta:</span>
+                    <span className="text-foreground">{user.email}</span>
+                </div>
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <Button asChild variant="outline">
             <Link href="/profile-setup">
               <Edit className="mr-2 h-4 w-4" />
-              {profile ? "Editar Perfil" : "Completar Perfil"}
+              {profile ? "Editar Perfil de Empresa" : "Completar Perfil de Empresa"}
             </Link>
           </Button>
         </CardFooter>
