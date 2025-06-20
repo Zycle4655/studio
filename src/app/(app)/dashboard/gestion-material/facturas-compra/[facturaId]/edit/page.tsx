@@ -79,9 +79,10 @@ export default function EditFacturaCompraPage() {
   });
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    // Apunta a la colección global de materiales
+    if (!db) return null;
+    return collection(db, "globalMaterials");
+  }, [db]);
 
   const fetchAvailableMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -100,11 +101,11 @@ export default function EditFacturaCompraPage() {
       );
       setAvailableMaterials(materialsList);
     } catch (error) {
-      console.error("Error fetching available materials for edit page:", error);
+      console.error("Error fetching available global materials for edit page:", error);
       toast({
         variant: "destructive",
         title: "Error al Cargar Materiales Base",
-        description: "No se pudieron cargar los materiales para agregar.",
+        description: "No se pudieron cargar los materiales globales para agregar.",
       });
     } finally {
       setIsFetchingMaterials(false);
@@ -212,7 +213,7 @@ export default function EditFacturaCompraPage() {
         return;
     }
     if (availableMaterials.length === 0 && !isFetchingMaterials) {
-       toast({ variant: "destructive", title: "Sin Materiales Base", description: "No hay materiales base para agregar. Regístrelos primero en 'Gestión de Material > Materiales'." });
+       toast({ variant: "destructive", title: "Sin Materiales Base", description: "No hay materiales base para agregar. Regístrelos primero en 'Gestión de Material > Materiales Globales'." });
        return;
     }
     setIsItemFormOpen(true);
@@ -313,6 +314,7 @@ export default function EditFacturaCompraPage() {
         return;
       }
       printWindow.document.write('<html><head><title>Factura Compra N° '+ invoice.numeroFactura +'</title>');
+      
       const stylesHtml = `
         <style>
           body { 
@@ -355,7 +357,49 @@ export default function EditFacturaCompraPage() {
         </style>`;
       printWindow.document.write(stylesHtml);
       printWindow.document.write('</head><body>');
-      printWindow.document.write(previewElement.innerHTML);
+      
+      let printHtml = '<div class="invoice-header">';
+      if (companyProfile?.logoUrl) {
+        printHtml += `<img src="${companyProfile.logoUrl}" alt="Logo de ${companyProfile.companyName}" style="max-height: 40px; margin-bottom: 5px; object-fit: contain; display: block; margin-left: auto; margin-right: auto;" data-ai-hint="logo company" />`;
+      }
+      printHtml += `<h1>${companyProfile?.companyName || "Nombre Empresa"}</h1>`;
+      if (companyProfile?.nit) printHtml += `<p>NIT: ${companyProfile.nit}</p>`;
+      if (companyProfile?.address) printHtml += `<p>${companyProfile.address}</p>`;
+      if (companyProfile?.phone) printHtml += `<p>Tel: ${companyProfile.phone}</p>`;
+      if (userEmail) printHtml += `<p>Email: ${userEmail}</p>`;
+      printHtml += '</div>';
+
+      printHtml += '<div class="invoice-info">';
+      printHtml += `<p><span>Factura N°:</span> <span style="font-weight: bold;">${invoice.numeroFactura}</span></p>`;
+      printHtml += `<p><span>Fecha y Hora:</span> <span>${formatDateWithTimeForDisplay(form.watch("fecha"))}</span></p>`;
+      printHtml += '</div>';
+
+      const watchedProveedorNombre = form.watch("proveedorNombre");
+      if (watchedProveedorNombre) {
+        printHtml += '<div class="section-title">Usuario</div>';
+        printHtml += `<div class="user-details"><p>${watchedProveedorNombre}</p></div>`;
+      }
+
+      printHtml += '<div class="section-title">Detalle de la Compra</div>';
+      printHtml += '<table class="items-table"><thead><tr><th class="col-material">Material</th><th class="col-peso text-right">Peso</th><th class="col-vunit text-right">Vr. Unit.</th><th class="col-subtotal text-right">Subtotal</th></tr></thead><tbody>';
+      editableItems.forEach(item => {
+        printHtml += `<tr><td class="col-material">${item.materialName}${item.materialCode ? ` (${item.materialCode})` : ''}</td><td class="col-peso text-right">${item.peso.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td><td class="col-vunit text-right">${formatCurrency(item.precioUnitario)}</td><td class="col-subtotal text-right">${formatCurrency(item.subtotal)}</td></tr>`;
+      });
+      printHtml += '</tbody></table>';
+      
+      printHtml += `<div class="total-section"><p>TOTAL FACTURA: <span class="total-amount">${formatCurrency(currentTotalFactura)}</span></p></div>`;
+      
+      const watchedFormaDePago = form.watch("formaDePago");
+      if (watchedFormaDePago) {
+          printHtml += `<p class="payment-method"><strong>Forma de Pago:</strong> <span style="text-transform: capitalize;">${watchedFormaDePago}</span></p>`;
+      }
+
+      const watchedObservaciones = form.watch("observaciones");
+      if (watchedObservaciones) {
+        printHtml += `<div class="footer-notes"><p><strong>Observaciones:</strong> ${watchedObservaciones}</p></div>`;
+      }
+      
+      printWindow.document.write(printHtml);
       printWindow.document.write('</body></html>');
       printWindow.document.close();
       printWindow.focus();
@@ -546,7 +590,11 @@ export default function EditFacturaCompraPage() {
                             <Printer size={16} className="mr-2"/> Imprimir Factura
                         </Button>
                     </div>
-                     <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto">
+                     <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto no-print">
+                        {/* This div's content will be populated by printFacturaPreview and is hidden on screen */}
+                     </div>
+                     <div className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto">
+                        {/* Visible preview area */}
                         <div className="invoice-header">
                             {companyProfile?.logoUrl && (
                                 <Image
@@ -707,7 +755,7 @@ export default function EditFacturaCompraPage() {
                 <AlertDialogTitle>No hay materiales base</AlertDialogTitle>
                 <AlertDialogDescription>
                   No hay materiales base registrados en el sistema para agregar a la factura.
-                  Vaya a 'Gestión de Material {'>'} Materiales' para crearlos primero.
+                  Vaya a 'Gestión de Material {'>'} Materiales Globales' para crearlos primero.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

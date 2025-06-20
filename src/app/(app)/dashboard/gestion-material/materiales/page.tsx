@@ -122,13 +122,14 @@ export default function MaterialesPage() {
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!db) return null;
+    // Cambiado para apuntar a una colección global
+    return collection(db, "globalMaterials");
+  }, [db]);
 
   const initializeDefaultMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
-    if (!materialsCollectionRef || !db || !user ) return false;
+    if (!materialsCollectionRef || !db ) return false; // user ya no es necesario para la ruta
 
     try {
       const batch = writeBatch(db);
@@ -150,18 +151,18 @@ export default function MaterialesPage() {
       console.error("Error initializing default materials:", error);
       toast({
         variant: "destructive",
-        title: "Error al Inicializar Materiales",
-        description: "No se pudo crear la lista de materiales estándar.",
+        title: "Error al Inicializar Materiales Globales",
+        description: "No se pudo crear la lista de materiales estándar globales.",
       });
       return false; 
     }
-  }, [getMaterialsCollectionRef, toast, user, db]);
+  }, [getMaterialsCollectionRef, toast, db]);
 
 
   const fetchMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
-      if (user) { 
+      if (user) { // user sigue siendo relevante para saber si mostrar toast
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -172,7 +173,7 @@ export default function MaterialesPage() {
     try {
       const querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
 
-      if (querySnapshot.empty && !hasInitializedMaterials && user && !initializationAttemptedRef.current) {
+      if (querySnapshot.empty && !hasInitializedMaterials && !initializationAttemptedRef.current) {
         initializationAttemptedRef.current = true; 
         const success = await initializeDefaultMaterials();
         if (success) {
@@ -195,11 +196,11 @@ export default function MaterialesPage() {
         }
       }
     } catch (error) {
-      console.error("Error fetching materials:", error);
+      console.error("Error fetching global materials:", error);
       toast({
         variant: "destructive",
-        title: "Error al Cargar Materiales",
-        description: "No se pudieron cargar los materiales.",
+        title: "Error al Cargar Materiales Globales",
+        description: "No se pudieron cargar los materiales globales.",
       });
     } finally {
       setIsLoading(false);
@@ -208,7 +209,7 @@ export default function MaterialesPage() {
 
 
   React.useEffect(() => {
-    document.title = 'Gestión de Materiales | ZYCLE';
+    document.title = 'Gestión de Materiales Global | ZYCLE';
     if (user) { 
       fetchMaterials();
     } else {
@@ -250,23 +251,23 @@ export default function MaterialesPage() {
   const handleDeleteMaterial = async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialToDelete || !materialsCollectionRef) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el material." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el material global." });
       return;
     }
     setIsSubmitting(true);
     try {
       await deleteDoc(doc(materialsCollectionRef, materialToDelete.id));
       toast({
-        title: "Material Eliminado",
-        description: `El material "${materialToDelete.name}" ha sido eliminado.`,
+        title: "Material Global Eliminado",
+        description: `El material "${materialToDelete.name}" ha sido eliminado de la lista global.`,
       });
       fetchMaterials(); 
     } catch (error) {
-      console.error("Error deleting material:", error);
+      console.error("Error deleting global material:", error);
       toast({
         variant: "destructive",
         title: "Error al Eliminar",
-        description: "No se pudo eliminar el material.",
+        description: "No se pudo eliminar el material global.",
       });
     } finally {
       setIsSubmitting(false);
@@ -296,8 +297,8 @@ export default function MaterialesPage() {
           updatedAt: serverTimestamp(),
         });
         toast({
-          title: "Material Actualizado",
-          description: `El material "${data.name}" ha sido actualizado.`,
+          title: "Material Global Actualizado",
+          description: `El material "${data.name}" ha sido actualizado en la lista global.`,
         });
       } else {
         await addDoc(materialsCollectionRef, {
@@ -306,19 +307,19 @@ export default function MaterialesPage() {
           updatedAt: serverTimestamp(),
         });
         toast({
-          title: "Material Agregado",
-          description: `El material "${data.name}" ha sido agregado.`,
+          title: "Material Global Agregado",
+          description: `El material "${data.name}" ha sido agregado a la lista global.`,
         });
       }
       setIsFormOpen(false);
       setEditingMaterial(null);
       fetchMaterials(); 
     } catch (error) {
-      console.error("Error saving material:", error);
+      console.error("Error saving global material:", error);
       toast({
         variant: "destructive",
         title: "Error al Guardar",
-        description: "No se pudo guardar el material.",
+        description: "No se pudo guardar el material global.",
       });
     } finally {
       setIsSubmitting(false);
@@ -334,7 +335,7 @@ export default function MaterialesPage() {
         <div className="container py-8 px-4 md:px-6">
             <Card className="shadow-lg">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-headline text-primary">Gestión de Materiales</CardTitle>
+                    <CardTitle className="text-2xl font-headline text-primary">Gestión de Materiales Globales</CardTitle>
                     <CardDescription>Por favor, inicie sesión para administrar los materiales.</CardDescription>
                 </CardHeader>
                 <CardContent className="text-center py-12">
@@ -351,10 +352,10 @@ export default function MaterialesPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-2xl font-headline text-primary">
-              Gestión de Materiales
+              Gestión de Materiales Globales
             </CardTitle>
             <CardDescription>
-              Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
+              Añada, edite o elimine los tipos de materiales, sus precios y códigos para toda la aplicación.
             </CardDescription>
           </div>
         </CardHeader>
@@ -378,7 +379,7 @@ export default function MaterialesPage() {
           ) : materials.length === 0 && hasInitializedMaterials ? ( 
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <PackageOpen className="w-16 h-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales registrados</h3>
+                <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales globales registrados</h3>
                 <p className="text-muted-foreground mb-6">Añada un nuevo material utilizando el botón flotante.</p>
             </div>
           ) : (
@@ -438,7 +439,7 @@ export default function MaterialesPage() {
         className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
         size="icon"
         onClick={handleAddMaterial}
-        aria-label="Agregar nuevo material"
+        aria-label="Agregar nuevo material global"
         disabled={!user || isLoading} 
       >
         <Plus className="h-8 w-8" />
@@ -450,15 +451,15 @@ export default function MaterialesPage() {
         onSubmit={handleFormSubmit}
         defaultValues={editingMaterial || {}}
         isLoading={isSubmitting}
-        title={editingMaterial ? "Editar Material" : "Agregar Nuevo Material"}
+        title={editingMaterial ? "Editar Material Global" : "Agregar Nuevo Material Global"}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Está seguro de eliminar este material?</AlertDialogTitle>
+            <AlertDialogTitle>¿Está seguro de eliminar este material global?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El material "{materialToDelete?.name}" será eliminado permanentemente.
+              Esta acción no se puede deshacer. El material "{materialToDelete?.name}" será eliminado permanentemente de la lista global.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
