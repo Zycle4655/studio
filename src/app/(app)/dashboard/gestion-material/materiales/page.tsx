@@ -96,6 +96,8 @@ export default function MaterialesPage() {
 
   const [materialToDelete, setMaterialToDelete] = React.useState<MaterialDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  
+  const initializationRan = React.useRef(false);
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
@@ -152,15 +154,13 @@ export default function MaterialesPage() {
     try {
       let querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
 
-      if (querySnapshot.empty) {
-        // Only attempt to initialize if the collection is genuinely empty
+      if (querySnapshot.empty && !initializationRan.current) {
+        initializationRan.current = true; // Mark initialization as attempted for this session
         const success = await initializeDefaultMaterials();
         if (success) {
           // Re-fetch materials after successful initialization
           querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
         }
-        // If initialization failed, querySnapshot will still be empty, and an empty list will be shown.
-        // The error toast is handled within initializeDefaultMaterials.
       }
 
       const materialsList = querySnapshot.docs.map(
@@ -179,7 +179,7 @@ export default function MaterialesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, toast, initializeDefaultMaterials, user]); // user is for the toast when db connection is not ready
+  }, [getMaterialsCollectionRef, toast, initializeDefaultMaterials, user]);
 
 
   React.useEffect(() => {
@@ -189,6 +189,7 @@ export default function MaterialesPage() {
     } else {
       setIsLoading(false);
       setMaterials([]);
+      initializationRan.current = false; // Reset on logout
     }
   }, [user, fetchMaterials]);
 
