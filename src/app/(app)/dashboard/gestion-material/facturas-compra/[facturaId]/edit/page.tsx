@@ -51,11 +51,11 @@ export default function EditFacturaCompraPage() {
   const [invoice, setInvoice] = React.useState<FacturaCompraDocument | null>(null);
   const [editableItems, setEditableItems] = React.useState<CompraMaterialItem[]>([]);
   const [currentTotalFactura, setCurrentTotalFactura] = React.useState(0);
-  
+
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
-  const [isLoadingPage, setIsLoadingPage] = React.useState(true); 
-  const [isSavingInvoice, setIsSavingInvoice] = React.useState(false); 
+  const [isLoadingPage, setIsLoadingPage] = React.useState(true);
+  const [isSavingInvoice, setIsSavingInvoice] = React.useState(false);
   const [availableMaterials, setAvailableMaterials] = React.useState<MaterialDocument[]>([]);
 
   // For item modal
@@ -110,7 +110,7 @@ export default function EditFacturaCompraPage() {
       if (!user) router.replace("/login");
       return;
     }
-    
+
     setIsLoadingPage(true);
     const fetchInvoiceData = async () => {
       try {
@@ -120,7 +120,7 @@ export default function EditFacturaCompraPage() {
         if (invoiceSnap.exists()) {
           const data = invoiceSnap.data() as FacturaCompraDocument;
           setInvoice(data);
-          setEditableItems(JSON.parse(JSON.stringify(data.items))); 
+          setEditableItems(JSON.parse(JSON.stringify(data.items)));
           setCurrentTotalFactura(data.totalFactura);
           form.reset({
             fecha: data.fecha instanceof Timestamp ? data.fecha.toDate() : new Date(data.fecha),
@@ -151,7 +151,7 @@ export default function EditFacturaCompraPage() {
 
     fetchInvoiceData();
   }, [user, facturaId, router, toast, form, fetchAvailableMaterials]);
-  
+
   const calculateTotal = React.useCallback((items: CompraMaterialItem[]) => {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
   }, []);
@@ -166,7 +166,7 @@ export default function EditFacturaCompraPage() {
         toast({ variant: "destructive", title: "No hay materiales base", description: "Registre materiales en 'Gestión de Material > Materiales' primero." });
         return;
     }
-    setCurrentItemForForm(undefined); 
+    setCurrentItemForForm(undefined);
     setEditingItemIndex(null);
     setItemFormTitle("Agregar Ítem a la Factura");
     setIsItemFormOpen(true);
@@ -193,7 +193,7 @@ export default function EditFacturaCompraPage() {
     const precioUnitario = data.precioUnitario ?? selectedMaterial.price;
 
     const newItem: CompraMaterialItem = {
-      id: editingItemIndex !== null ? editableItems[editingItemIndex].id : Date.now().toString(), 
+      id: editingItemIndex !== null ? editableItems[editingItemIndex].id : Date.now().toString(),
       materialId: selectedMaterial.id,
       materialName: selectedMaterial.name,
       materialCode: selectedMaterial.code || null,
@@ -244,8 +244,8 @@ export default function EditFacturaCompraPage() {
         proveedorNombre: formData.proveedorNombre || null,
         formaDePago: formData.formaDePago,
         observaciones: formData.observaciones || null,
-        items: editableItems, 
-        totalFactura: finalTotalFactura, 
+        items: editableItems,
+        totalFactura: finalTotalFactura,
         updatedAt: serverTimestamp(),
       };
       await updateDoc(invoiceRef, updatedData);
@@ -262,7 +262,7 @@ export default function EditFacturaCompraPage() {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
-  
+
   const formatDateForDisplay = (timestamp: Timestamp | Date | undefined): string => {
     if (!timestamp) return "N/A";
     const date = timestamp instanceof Timestamp ? timestamp.toDate() : timestamp;
@@ -278,31 +278,29 @@ export default function EditFacturaCompraPage() {
         return;
       }
       printWindow.document.write('<html><head><title>Factura de Compra N° '+ invoice.numeroFactura +'</title>');
-      const stylesHtml = `
-        <style>
-          body { font-family: sans-serif; margin: 20px; color: #333; }
-          .invoice-header { text-align: center; margin-bottom: 20px; }
-          .invoice-header img { max-height: 60px; margin-bottom: 10px; object-fit: contain; }
-          .invoice-header h1 { margin: 0; font-size: 1.6em; color: #005A9C; }
-          .invoice-header p { margin: 2px 0; font-size: 0.9em; }
-          .section-title { font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #005A9C; font-size: 1em; text-transform: uppercase; }
-          .invoice-details, .provider-details { margin-bottom: 15px; font-size: 0.9em;}
-          .invoice-details p, .provider-details p { margin: 3px 0; }
-          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; }
-          .items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          .items-table th { background-color: #f0f0f0; font-weight: bold; }
-          .text-right { text-align: right !important; }
-          .total-section { margin-top: 20px; text-align: right; font-size: 1em; }
-          .total-section p { margin: 5px 0; font-weight: bold; }
-          .total-section .total-amount { color: #005A9C; font-size: 1.2em;}
-          .footer-notes { margin-top: 30px; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px; }
-          .signature-area { margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; display: flex; justify-content: space-between; }
-          .signature-block { width: 45%; text-align: center;}
-          .signature-line { display: inline-block; width: 200px; border-bottom: 1px solid #333; margin-top: 40px; }
-          .grid-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-          @media print { body { margin: 0; } .no-print { display: none !important; } .items-table th, .items-table td { font-size: 0.85em; padding: 6px;} .invoice-header h1 { font-size: 1.5em; } .section-title { font-size: 0.95em; } }
-        </style>
-      `;
+      const stylesHtml = '<style>' +
+        'body { font-family: sans-serif; margin: 20px; color: #333; }' +
+        '.invoice-header { text-align: center; margin-bottom: 20px; }' +
+        '.invoice-header img { max-height: 60px; margin-bottom: 10px; object-fit: contain; }' +
+        '.invoice-header h1 { margin: 0; font-size: 1.6em; color: #005A9C; }' +
+        '.invoice-header p { margin: 2px 0; font-size: 0.9em; }' +
+        '.section-title { font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #005A9C; font-size: 1em; text-transform: uppercase; }' +
+        '.invoice-details, .provider-details { margin-bottom: 15px; font-size: 0.9em;}' +
+        '.invoice-details p, .provider-details p { margin: 3px 0; }' +
+        '.items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; }' +
+        '.items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }' +
+        '.items-table th { background-color: #f0f0f0; font-weight: bold; }' +
+        '.text-right { text-align: right !important; }' +
+        '.total-section { margin-top: 20px; text-align: right; font-size: 1em; }' +
+        '.total-section p { margin: 5px 0; font-weight: bold; }' +
+        '.total-section .total-amount { color: #005A9C; font-size: 1.2em;}' +
+        '.footer-notes { margin-top: 30px; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px; }' +
+        '.signature-area { margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; display: flex; justify-content: space-between; }' +
+        '.signature-block { width: 45%; text-align: center;}' +
+        '.signature-line { display: inline-block; width: 200px; border-bottom: 1px solid #333; margin-top: 40px; }' +
+        '.grid-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }' +
+        '@media print { body { margin: 0; } .no-print { display: none !important; } .items-table th, .items-table td { font-size: 0.85em; padding: 6px;} .invoice-header h1 { font-size: 1.5em; } .section-title { font-size: 0.95em; } }' +
+        '</style>';
       printWindow.document.write(stylesHtml);
       printWindow.document.write('</head><body>');
       printWindow.document.write(previewElement.innerHTML);
@@ -334,7 +332,7 @@ export default function EditFacturaCompraPage() {
                   </div>
                 ))}
               </div>
-              <div className="space-y-4"> 
+              <div className="space-y-4">
                 <Skeleton className="h-6 w-1/2 mb-2" />
                 <Skeleton className="h-32 w-full" />
               </div>
@@ -344,7 +342,7 @@ export default function EditFacturaCompraPage() {
                 <Skeleton className="h-10 w-full rounded-md mb-2"/>
                 <Skeleton className="h-10 w-full rounded-md mb-2"/>
             </div>
-            <Skeleton className="h-10 w-full mt-4" /> 
+            <Skeleton className="h-10 w-full mt-4" />
           </CardContent>
         </Card>
       </div>
@@ -491,10 +489,10 @@ export default function EditFacturaCompraPage() {
                      <div id="factura-edit-preview-content" className="p-3 border rounded-md bg-card/50 text-sm max-h-[50vh] overflow-y-auto">
                         <div className="invoice-header">
                             {companyProfile?.logoUrl && (
-                                <Image 
-                                    src={companyProfile.logoUrl} 
-                                    alt={`Logo de ${companyProfile.companyName}`} 
-                                    width={80} height={60} 
+                                <Image
+                                    src={companyProfile.logoUrl}
+                                    alt={`Logo de ${companyProfile.companyName}`}
+                                    width={80} height={60}
                                     className="mx-auto mb-2 object-contain"
                                     data-ai-hint="logo company"
                                 />
@@ -611,7 +609,7 @@ export default function EditFacturaCompraPage() {
           materials={availableMaterials}
           defaultValues={currentItemForForm}
           title={itemFormTitle}
-          isEditingInvoiceItem={editingItemIndex !== null} 
+          isEditingInvoiceItem={editingItemIndex !== null}
         />
       )}
        {availableMaterials.length === 0 && isItemFormOpen && (
@@ -641,6 +639,7 @@ export default function EditFacturaCompraPage() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
+              type="button" /* Explicitly set type to button */
               onClick={handleConfirmDeleteItem}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
@@ -654,4 +653,4 @@ export default function EditFacturaCompraPage() {
   );
 }
 
-    
+
