@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Este "cerrojo" previene que la inicialización se ejecute más de una vez por sesión de navegador.
+// Este "cerrojo" a nivel de módulo previene que la inicialización se ejecute más de una vez por sesión de navegador.
 // Es la forma más robusta de evitar duplicados por el doble useEffect de React en modo desarrollo.
 let initializationLock = false;
 
@@ -75,7 +75,7 @@ const DEFAULT_MATERIALS = [
   { name: "TATUCO", price: 1300, code: "307" },
   { name: "CHATARRA", price: 720, code: "102" },
   { name: "ACERO", price: 3300, code: "106" },
-  { name: "TAPA", price: 900, code: "302" },
+  { name: "TAPA", price: 900, "code": "302" },
   { name: "ALUM GRUESO", price: 5500, code: "101" },
   { name: "POTE AEROSOL", price: 5400, code: "101" },
   { name: "ALUMI LAMINA", price: 6000, code: "101" },
@@ -450,3 +450,4 @@ export default function MaterialesPage() {
     </div>
   );
 }
+    
