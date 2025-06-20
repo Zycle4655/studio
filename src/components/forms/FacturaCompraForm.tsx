@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/popover";
 import { FacturaCompraFormSchema, type FacturaCompraFormData, type CompraMaterialItem } from "@/schemas/compra";
 import type { CompanyProfileDocument } from "@/schemas/company";
-import { Save, XCircle, CalendarIcon, Printer, FileText, User, Info, Milestone, UserSquare, Hash } from "lucide-react";
+import { Save, XCircle, CalendarIcon, Printer, FileText, UserSquare, Hash, Info } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ import Image from "next/image";
 interface FacturaCompraFormProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onSubmit: (data: FacturaCompraFormData) => Promise<void>;
+  onSubmit: (data: FacturaCompraFormData) => Promise<void>; // onSubmit es la función handleSaveFactura del padre
   isLoading?: boolean;
   compraItems: CompraMaterialItem[];
   totalCompra: number;
@@ -60,7 +60,7 @@ interface FacturaCompraFormProps {
 export default function FacturaCompraForm({
   isOpen,
   setIsOpen,
-  onSubmit,
+  onSubmit, // Esta es handleSaveFactura de compras/page.tsx
   isLoading = false,
   compraItems,
   totalCompra,
@@ -74,6 +74,7 @@ export default function FacturaCompraForm({
       fecha: new Date(),
       formaDePago: undefined,
       proveedorNombre: "",
+      // proveedorIdentificacion ya no existe aquí
       observaciones: "",
     },
   });
@@ -97,46 +98,44 @@ export default function FacturaCompraForm({
     const previewElement = document.getElementById("factura-preview-content");
     if (previewElement) {
       const printWindow = window.open('', '_blank');
-      printWindow?.document.write('<html><head><title>Factura de Compra</title>');
+      if (!printWindow) {
+        alert("No se pudo abrir la ventana de impresión. Verifique los bloqueadores de pop-ups.");
+        return;
+      }
+      printWindow.document.write('<html><head><title>Factura de Compra N° '+ (nextNumeroFactura || 'Pendiente') +'</title>');
       
-      const stylesHtml = `
-        <style>
-          body { font-family: sans-serif; margin: 20px; color: #333; }
-          .invoice-header { text-align: center; margin-bottom: 20px; }
-          .invoice-header img { max-height: 60px; margin-bottom: 10px; object-fit: contain; }
-          .invoice-header h1 { margin: 0; font-size: 1.6em; color: #005A9C; }
-          .invoice-header p { margin: 2px 0; font-size: 0.9em; }
-          .company-details, .invoice-details, .provider-details { margin-bottom: 15px; font-size: 0.9em;}
-          .company-details p, .invoice-details p, .provider-details p { margin: 3px 0; }
-          .section-title { font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #005A9C; font-size: 1em; text-transform: uppercase; }
-          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; }
-          .items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          .items-table th { background-color: #f0f0f0; font-weight: bold; }
-          .text-right { text-align: right !important; }
-          .total-section { margin-top: 20px; text-align: right; font-size: 1em; }
-          .total-section p { margin: 5px 0; font-weight: bold; }
-          .total-section .total-amount { color: #005A9C; font-size: 1.2em;}
-          .footer-notes { margin-top: 30px; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px; }
-          .signature-area { margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; display: flex; justify-content: space-between; }
-          .signature-block { width: 45%; text-align: center;}
-          .signature-line { display: inline-block; width: 200px; border-bottom: 1px solid #333; margin-top: 40px; }
-          .grid-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-          @media print {
-            body { margin: 0; }
-            .items-table th, .items-table td { font-size: 0.85em; padding: 6px;}
-            .invoice-header h1 { font-size: 1.5em; }
-            .section-title { font-size: 0.95em; }
-          }
-        </style>
-      `;
-      printWindow?.document.write(stylesHtml);
-      printWindow?.document.write('</head><body>');
-      printWindow?.document.write(previewElement.innerHTML);
-      printWindow?.document.write('</body></html>');
-      printWindow?.document.close();
-      printWindow?.focus();
+      const stylesHtml = '' +
+        '<style>' +
+        'body { font-family: sans-serif; margin: 20px; color: #333; }' +
+        '.invoice-header { text-align: center; margin-bottom: 20px; }' +
+        '.invoice-header img { max-height: 60px; margin-bottom: 10px; object-fit: contain; }' +
+        '.invoice-header h1 { margin: 0; font-size: 1.6em; color: #005A9C; }' +
+        '.invoice-header p { margin: 2px 0; font-size: 0.9em; }' +
+        '.company-details, .invoice-details, .provider-details { margin-bottom: 15px; font-size: 0.9em;}' +
+        '.company-details p, .invoice-details p, .provider-details p { margin: 3px 0; }' +
+        '.section-title { font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #005A9C; font-size: 1em; text-transform: uppercase; }' +
+        '.items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; }' +
+        '.items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }' +
+        '.items-table th { background-color: #f0f0f0; font-weight: bold; }' +
+        '.text-right { text-align: right !important; }' +
+        '.total-section { margin-top: 20px; text-align: right; font-size: 1em; }' +
+        '.total-section p { margin: 5px 0; font-weight: bold; }' +
+        '.total-section .total-amount { color: #005A9C; font-size: 1.2em;}' +
+        '.footer-notes { margin-top: 30px; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px; }' +
+        '.signature-area { margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; display: flex; justify-content: space-between; }' +
+        '.signature-block { width: 45%; text-align: center;}' +
+        '.signature-line { display: inline-block; width: 200px; border-bottom: 1px solid #333; margin-top: 40px; }' +
+        '.grid-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }' +
+        '@media print { body { margin: 0; } .items-table th, .items-table td { font-size: 0.85em; padding: 6px;} .invoice-header h1 { font-size: 1.5em; } .section-title { font-size: 0.95em; } }' +
+        '</style>';
+      printWindow.document.write(stylesHtml);
+      printWindow.document.write('</head><body>');
+      printWindow.document.write(previewElement.innerHTML);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
       setTimeout(() => {
-         printWindow?.print();
+         printWindow.print();
       }, 250);
     }
   };
@@ -147,7 +146,7 @@ export default function FacturaCompraForm({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {if(!isLoading) setIsOpen(open)}}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center">
@@ -163,6 +162,7 @@ export default function FacturaCompraForm({
           {/* Columna 1: Formulario */}
           <div className="pr-2 space-y-5">
             <Form {...form}>
+              {/* La función onSubmit (handleSaveFactura) se pasa aquí */}
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                     <FormLabel className="text-foreground/80">Número de Factura</FormLabel>
@@ -184,6 +184,7 @@ export default function FacturaCompraForm({
                                 "w-full pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground"
                               )}
+                              disabled={isLoading}
                             >
                               {field.value ? (
                                 format(field.value, "PPP", { locale: es })
@@ -200,7 +201,7 @@ export default function FacturaCompraForm({
                             selected={field.value}
                             onSelect={field.onChange}
                             disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
+                              date > new Date() || date < new Date("1900-01-01") || isLoading
                             }
                             initialFocus
                             locale={es}
@@ -221,13 +222,15 @@ export default function FacturaCompraForm({
                       <div className="relative">
                         <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <FormControl>
-                          <Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ""} className="pl-10" />
+                          <Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ""} className="pl-10" disabled={isLoading} />
                         </FormControl>
                       </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
+                {/* NIT/CC del proveedor ya no está aquí */}
 
                 <FormField
                   control={form.control}
@@ -235,7 +238,7 @@ export default function FacturaCompraForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-foreground/80">Forma de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccione forma de pago" />
@@ -263,6 +266,7 @@ export default function FacturaCompraForm({
                           className="resize-none"
                           {...field}
                           value={field.value ?? ""}
+                          disabled={isLoading}
                         />
                       </FormControl>
                       <FormMessage />
@@ -276,6 +280,7 @@ export default function FacturaCompraForm({
                         Cancelar
                         </Button>
                     </DialogClose>
+                    {/* Este botón es type="submit" para activar el form.handleSubmit(onSubmit) del formulario */}
                     <Button type="submit" disabled={isLoading || compraItems.length === 0}>
                         {isLoading ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Confirmar y Guardar Factura</>}
                     </Button>
@@ -290,7 +295,7 @@ export default function FacturaCompraForm({
                 <h3 className="text-lg font-semibold text-primary flex items-center">
                     <Info size={18} className="mr-2"/> Vista Previa de Factura
                 </h3>
-                <Button variant="outline" size="sm" onClick={printFacturaPreview} disabled={compraItems.length === 0}>
+                <Button variant="outline" size="sm" onClick={printFacturaPreview} disabled={isLoading || compraItems.length === 0}>
                     <Printer size={16} className="mr-2"/> Imprimir
                 </Button>
             </div>
@@ -328,7 +333,8 @@ export default function FacturaCompraForm({
                 <>
                   <div className="section-title">Información del Proveedor</div>
                   <div className="provider-details my-2">
-                    {form.watch("proveedorNombre") && <p><strong>Nombre:</strong> {form.watch("proveedorNombre")}</p>}
+                    <p><strong>Nombre:</strong> {form.watch("proveedorNombre")}</p>
+                    {/* Identificación del proveedor ya no está aquí */}
                   </div>
                 </>
               )}
