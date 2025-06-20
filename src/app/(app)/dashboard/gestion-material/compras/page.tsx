@@ -73,10 +73,9 @@ export default function CompraMaterialPage() {
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    // Apunta a la colección global de materiales
-    if (!db) return null;
-    return collection(db, "globalMaterials");
-  }, [db]);
+    if (!user || !db) return null;
+    return collection(db, "companyProfiles", user.uid, "materials");
+  }, [user, db]);
 
   const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
@@ -106,11 +105,11 @@ export default function CompraMaterialPage() {
       );
       setAvailableMaterials(materialsList);
     } catch (error) {
-      console.error("Error fetching available global materials:", error);
+      console.error("Error fetching available materials:", error);
       toast({
         variant: "destructive",
         title: "Error al Cargar Materiales Disponibles",
-        description: "No se pudieron cargar los materiales globales para la compra.",
+        description: "No se pudieron cargar los materiales para la compra.",
       });
     } finally {
       setIsLoading(false);
@@ -452,7 +451,7 @@ export default function CompraMaterialPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>No hay materiales disponibles</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Primero debe registrar materiales en la sección "Gestión de Material {'>'} Materiales Globales" antes de poder agregarlos a una compra.
+                  Primero debe registrar materiales en la sección "Gestión de Material {'>'} Materiales" antes de poder agregarlos a una compra.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -501,3 +500,4 @@ export default function CompraMaterialPage() {
   );
 }
 
+    

@@ -79,10 +79,9 @@ export default function EditFacturaCompraPage() {
   });
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    // Apunta a la colección global de materiales
-    if (!db) return null;
-    return collection(db, "globalMaterials");
-  }, [db]);
+    if (!user || !db) return null;
+    return collection(db, "companyProfiles", user.uid, "materials");
+  }, [user, db]);
 
   const fetchAvailableMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -101,11 +100,11 @@ export default function EditFacturaCompraPage() {
       );
       setAvailableMaterials(materialsList);
     } catch (error) {
-      console.error("Error fetching available global materials for edit page:", error);
+      console.error("Error fetching available materials for edit page:", error);
       toast({
         variant: "destructive",
-        title: "Error al Cargar Materiales Base",
-        description: "No se pudieron cargar los materiales globales para agregar.",
+        title: "Error al Cargar Materiales",
+        description: "No se pudieron cargar los materiales para agregar.",
       });
     } finally {
       setIsFetchingMaterials(false);
@@ -213,7 +212,7 @@ export default function EditFacturaCompraPage() {
         return;
     }
     if (availableMaterials.length === 0 && !isFetchingMaterials) {
-       toast({ variant: "destructive", title: "Sin Materiales Base", description: "No hay materiales base para agregar. Regístrelos primero en 'Gestión de Material > Materiales Globales'." });
+       toast({ variant: "destructive", title: "Sin Materiales", description: "No hay materiales registrados para agregar. Regístrelos primero en 'Gestión de Material > Materiales'." });
        return;
     }
     setIsItemFormOpen(true);
@@ -317,15 +316,7 @@ export default function EditFacturaCompraPage() {
       
       const stylesHtml = `
         <style>
-          body { 
-            font-family: 'Arial', sans-serif; 
-            margin: 5px; 
-            color: #000; 
-            background-color: #fff;
-            font-size: 10px;
-            max-width: 280px; 
-            padding: 0;
-          }
+          body { font-family: 'Arial', sans-serif; margin: 5px; color: #000; background-color: #fff; font-size: 10px; max-width: 280px; padding: 0; }
           .invoice-header { text-align: center; margin-bottom: 8px; }
           .invoice-header img { max-height: 40px; margin-bottom: 5px; object-fit: contain; }
           .invoice-header h1 { margin: 0; font-size: 1.1em; font-weight: bold; }
@@ -346,14 +337,7 @@ export default function EditFacturaCompraPage() {
           .total-section .total-amount { font-size: 1.1em; }
           .payment-method { font-size: 0.85em; margin-top: 5px; text-align: left; }
           .footer-notes { margin-top: 10px; font-size: 0.75em; border-top: 1px solid #eee; padding-top: 5px; text-align: center; }
-          .no-print { display: none !important; }
-          @media print { 
-            body { margin: 0; padding:0; max-width: 100%; } 
-            .no-print { display: none !important; } 
-            .items-table th, .items-table td { font-size: 0.8em; padding: 2px 1px;} 
-            .invoice-header h1 { font-size: 1em; } 
-            .section-title { font-size: 0.85em; }
-          }
+          @media print { body { margin: 0; padding:0; max-width: 100%; } .items-table th, .items-table td { font-size: 0.8em; padding: 2px 1px;} .invoice-header h1 { font-size: 1em; } .section-title { font-size: 0.85em; } }
         </style>`;
       printWindow.document.write(stylesHtml);
       printWindow.document.write('</head><body>');
@@ -590,7 +574,7 @@ export default function EditFacturaCompraPage() {
                             <Printer size={16} className="mr-2"/> Imprimir Factura
                         </Button>
                     </div>
-                     <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto no-print">
+                     <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto hidden">
                         {/* This div's content will be populated by printFacturaPreview and is hidden on screen */}
                      </div>
                      <div className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto">
@@ -628,7 +612,7 @@ export default function EditFacturaCompraPage() {
 
                          <div className="section-title mt-2">Detalle de la Compra</div>
                          <table className="items-table w-full my-1">
-                            <thead><tr><th className="col-material">Material</th><th className="col-peso text-right">Peso</th><th className="col-vunit text-right">Vr. Unit.</th><th className="col-subtotal text-right">Subtotal</th></tr></thead>
+                            <thead><tr><th className="col-material">Material</th><th className="col-peso text-right">Peso</th><th class="col-vunit text-right">Vr. Unit.</th><th className="col-subtotal text-right">Subtotal</th></tr></thead>
                             <tbody>
                             {editableItems.map((item, idx) => (
                                 <tr key={item.id || idx}>
@@ -752,10 +736,10 @@ export default function EditFacturaCompraPage() {
           <AlertDialog open={isItemFormOpen} onOpenChange={setIsItemFormOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>No hay materiales base</AlertDialogTitle>
+                <AlertDialogTitle>No hay materiales disponibles</AlertDialogTitle>
                 <AlertDialogDescription>
-                  No hay materiales base registrados en el sistema para agregar a la factura.
-                  Vaya a 'Gestión de Material {'>'} Materiales Globales' para crearlos primero.
+                  No hay materiales registrados en el sistema para agregar a la factura.
+                  Vaya a 'Gestión de Material {'>'} Materiales' para crearlos primero.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
