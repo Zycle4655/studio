@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import type { CompanyProfileFormData } from '@/schemas/company';
+import type { CompanyProfileDocument } from '@/schemas/company'; // Usar CompanyProfileDocument
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building, Hash, Phone, MapPin, Edit, Mail } from 'lucide-react';
@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function SettingsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [profile, setProfile] = useState<CompanyProfileFormData | null>(null);
+  const [profile, setProfile] = useState<CompanyProfileDocument | null>(null); // Tipo actualizado
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -27,14 +27,20 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function fetchProfile() {
-      if (user && db) { // Ensure db is initialized
+      if (user && db) { 
         setIsLoadingProfile(true);
-        const profileRef = doc(db, "companyProfiles", user.uid);
-        const profileSnap = await getDoc(profileRef);
-        if (profileSnap.exists()) {
-          setProfile(profileSnap.data() as CompanyProfileFormData);
+        try {
+          const profileRef = doc(db, "companyProfiles", user.uid);
+          const profileSnap = await getDoc(profileRef);
+          if (profileSnap.exists()) {
+            setProfile(profileSnap.data() as CompanyProfileDocument);
+          }
+        } catch (error) {
+            console.error("Error fetching profile in SettingsPage:", error);
+             // Podrías añadir un toast aquí si lo deseas
+        } finally {
+            setIsLoadingProfile(false);
         }
-        setIsLoadingProfile(false);
       } else if (!user && !authLoading) {
         setIsLoadingProfile(false);
       }
@@ -57,7 +63,7 @@ export default function SettingsPage() {
                      <Skeleton className="h-5 w-3/4" />
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {[1,2,3,4,5].map(i => (
+                    {[1,2,3,4,5].map(i => ( // 5 items para incluir el email
                          <div key={i} className="flex items-start space-x-3">
                             <Skeleton className="h-6 w-6 rounded-full mt-1" />
                             <div className='flex-1 space-y-1'>
@@ -126,8 +132,11 @@ export default function SettingsPage() {
               No se ha completado el perfil de la empresa.
             </p>
           )}
+          {/* Separador visual si hay perfil Y hay email */}
+          {profile && user.email && <div className="pt-4 border-t border-border"></div>}
+          
           {user.email && (
-            <div className="flex items-start space-x-3 pt-4 border-t border-border">
+            <div className={`flex items-start space-x-3 ${profile ? '' : 'pt-4 border-t border-border'}`}>
                 <Mail className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                 <div>
                     <span className="font-medium text-foreground/80 block">Correo Electrónico de la Cuenta:</span>
@@ -140,7 +149,7 @@ export default function SettingsPage() {
           <Button asChild variant="outline">
             <Link href="/profile-setup">
               <Edit className="mr-2 h-4 w-4" />
-              {profile ? "Editar Perfil de Empresa" : "Completar Perfil de Empresa"}
+              {profile ? "Editar Perfil y Cuenta" : "Completar Perfil de Empresa"}
             </Link>
           </Button>
         </CardFooter>

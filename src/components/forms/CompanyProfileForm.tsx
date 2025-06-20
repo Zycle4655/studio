@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyProfileSchema, type CompanyProfileFormData } from "@/schemas/company";
-import { Building, Hash, Phone, MapPin, Save } from "lucide-react";
+import { Building, Hash, Phone, MapPin, Save, Mail } from "lucide-react";
 
 interface CompanyProfileFormProps {
   onSubmit: (data: CompanyProfileFormData) => Promise<void>;
@@ -24,6 +24,7 @@ interface CompanyProfileFormProps {
   submitButtonText?: string;
   title?: string;
   description?: string;
+  isEditing?: boolean; // Para saber si el formulario es para editar o crear
 }
 
 export default function CompanyProfileForm({
@@ -32,7 +33,8 @@ export default function CompanyProfileForm({
   isLoading = false,
   submitButtonText = "Guardar Perfil",
   title = "Perfil de la Empresa",
-  description = "Complete la información de su empresa."
+  description = "Complete la información de su empresa.",
+  isEditing = false,
 }: CompanyProfileFormProps) {
   const form = useForm<CompanyProfileFormData>({
     resolver: zodResolver(CompanyProfileSchema),
@@ -41,8 +43,16 @@ export default function CompanyProfileForm({
       nit: "",
       phone: "",
       address: "",
+      email: "",
     },
   });
+
+  // Sincronizar defaultValues si cambian (ej. al cargar datos asíncronamente)
+  React.useEffect(() => {
+    if (defaultValues) {
+      form.reset(defaultValues);
+    }
+  }, [defaultValues, form]);
 
   const handleFormSubmit = async (data: CompanyProfileFormData) => {
     await onSubmit(data);
@@ -123,6 +133,24 @@ export default function CompanyProfileForm({
                 </FormItem>
               )}
             />
+            {isEditing && ( // Solo mostrar el campo de email si se está editando el perfil
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground/80">Correo Electrónico de la Cuenta</FormLabel>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <FormControl>
+                        <Input type="email" placeholder="su.correo@ejemplo.com" {...field} className="pl-10" />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Guardando..." : submitButtonText}
               <Save className="ml-2 h-5 w-5" />
