@@ -72,9 +72,8 @@ export default function FacturaCompraForm({
     resolver: zodResolver(FacturaCompraFormSchema),
     defaultValues: {
       fecha: new Date(),
-      formaDePago: undefined,
+      formaDePago: "efectivo", // Establecer "efectivo" como predeterminado
       proveedorNombre: "",
-      // proveedorIdentificacion ya no existe aquí
       observaciones: "",
     },
   });
@@ -83,7 +82,7 @@ export default function FacturaCompraForm({
     if (isOpen) {
       form.reset({
         fecha: new Date(),
-        formaDePago: undefined,
+        formaDePago: "efectivo", // Asegurar que se resetee a "efectivo"
         proveedorNombre: "",
         observaciones: "",
       });
@@ -230,8 +229,6 @@ export default function FacturaCompraForm({
                   )}
                 />
                 
-                {/* NIT/CC del proveedor ya no está aquí */}
-
                 <FormField
                   control={form.control}
                   name="formaDePago"
@@ -280,7 +277,6 @@ export default function FacturaCompraForm({
                         Cancelar
                         </Button>
                     </DialogClose>
-                    {/* Este botón es type="submit" para activar el form.handleSubmit(onSubmit) del formulario */}
                     <Button type="submit" disabled={isLoading || compraItems.length === 0}>
                         {isLoading ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Confirmar y Guardar Factura</>}
                     </Button>
@@ -334,7 +330,6 @@ export default function FacturaCompraForm({
                   <div className="section-title">Información del Proveedor</div>
                   <div className="provider-details my-2">
                     <p><strong>Nombre:</strong> {form.watch("proveedorNombre")}</p>
-                    {/* Identificación del proveedor ya no está aquí */}
                   </div>
                 </>
               )}
