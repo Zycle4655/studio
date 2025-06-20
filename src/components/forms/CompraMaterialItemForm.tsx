@@ -15,12 +15,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +37,8 @@ import {
 } from "@/components/ui/dialog";
 import { CompraMaterialItemFormSchema, type CompraMaterialItemFormData } from "@/schemas/compra";
 import type { MaterialDocument } from "@/schemas/material";
-import { DollarSign, Save, XCircle, Package, Weight, Info } from "lucide-react";
+import { Save, XCircle, Package, Weight, Info, ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CompraMaterialItemFormProps {
   isOpen: boolean;
@@ -61,6 +68,7 @@ export default function CompraMaterialItemForm({
   });
 
   const [selectedMaterialPrice, setSelectedMaterialPrice] = React.useState<number | null>(null);
+  const [isComboboxOpen, setIsComboboxOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -77,10 +85,11 @@ export default function CompraMaterialItemForm({
     }
   }, [defaultValues, isOpen, form, materials]);
 
-  const handleMaterialChange = (materialId: string) => {
+  const handleMaterialSelect = (materialId: string) => {
     form.setValue("materialId", materialId);
     const selectedMat = materials.find(m => m.id === materialId);
     setSelectedMaterialPrice(selectedMat?.price || null);
+    setIsComboboxOpen(false);
   };
   
   const formatCurrency = (value: number | null) => {
@@ -108,26 +117,58 @@ export default function CompraMaterialItemForm({
               control={form.control}
               name="materialId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel className="text-foreground/80">Material</FormLabel>
-                  <Select
-                    onValueChange={(value) => handleMaterialChange(value)}
-                    value={field.value}
-                    disabled={materials.length === 0}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={materials.length > 0 ? "Seleccione un material" : "No hay materiales"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {materials.map((material) => (
-                        <SelectItem key={material.id} value={material.id}>
-                          {material.name} {material.code ? `(${material.code})` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={isComboboxOpen}
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                          disabled={materials.length === 0}
+                        >
+                          {field.value
+                            ? materials.find(
+                                (material) => material.id === field.value
+                              )?.name
+                            : (materials.length > 0 ? "Seleccione un material" : "No hay materiales")}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar material..." />
+                        <CommandList>
+                          <CommandEmpty>No se encontró el material.</CommandEmpty>
+                          <CommandGroup>
+                            {materials.map((material) => (
+                              <CommandItem
+                                value={material.name}
+                                key={material.id}
+                                onSelect={() => handleMaterialSelect(material.id)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    material.id === field.value
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {material.name} {material.code ? `(${material.code})` : ''}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   {selectedMaterialPrice !== null && (
                      <p className="text-xs text-muted-foreground pt-1 flex items-center">
                         <Info size={14} className="mr-1 text-primary"/> Precio actual: {formatCurrency(selectedMaterialPrice)} /kg
@@ -186,7 +227,4 @@ export default function CompraMaterialItemForm({
     </Dialog>
   );
 }
-
-    
-
     
