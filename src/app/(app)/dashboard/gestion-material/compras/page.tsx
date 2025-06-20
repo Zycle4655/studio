@@ -54,7 +54,7 @@ export default function CompraMaterialPage() {
   const [currentPurchaseItems, setCurrentPurchaseItems] = React.useState<CompraMaterialItem[]>([]);
 
   const [isAddItemFormOpen, setIsAddItemFormOpen] = React.useState(false);
-  const [editingItem, setEditingItem] = React.useState<CompraMaterialItem | null>(null); // Para futura edición de ítems
+  const [editingItem, setEditingItem] = React.useState<CompraMaterialItem | null>(null); 
   const [itemIndexToEdit, setItemIndexToEdit] = React.useState<number | null>(null);
 
   const [itemToDelete, setItemToDelete] = React.useState<CompraMaterialItem | null>(null);
@@ -369,5 +369,7 @@ export default function CompraMaterialPage() {
     </div>
   );
 }
+
+    
 
     
