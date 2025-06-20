@@ -74,7 +74,6 @@ export default function FacturaCompraForm({
       fecha: new Date(),
       formaDePago: undefined,
       proveedorNombre: "",
-      proveedorIdentificacion: "",
       observaciones: "",
     },
   });
@@ -85,7 +84,6 @@ export default function FacturaCompraForm({
         fecha: new Date(),
         formaDePago: undefined,
         proveedorNombre: "",
-        proveedorIdentificacion: "",
         observaciones: "",
       });
     }
@@ -233,23 +231,6 @@ export default function FacturaCompraForm({
 
                 <FormField
                   control={form.control}
-                  name="proveedorIdentificacion"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground/80">NIT/C.C. del Proveedor (Opcional)</FormLabel>
-                       <div className="relative">
-                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <FormControl>
-                          <Input placeholder="Ej: 12345678-9" {...field} value={field.value ?? ""} className="pl-10" />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="formaDePago"
                   render={({ field }) => (
                     <FormItem>
@@ -343,12 +324,11 @@ export default function FacturaCompraForm({
                 </div>
               </div>
               
-              {(form.watch("proveedorNombre") || form.watch("proveedorIdentificacion")) && (
+              {form.watch("proveedorNombre") && (
                 <>
                   <div className="section-title">Información del Proveedor</div>
                   <div className="provider-details my-2">
                     {form.watch("proveedorNombre") && <p><strong>Nombre:</strong> {form.watch("proveedorNombre")}</p>}
-                    {form.watch("proveedorIdentificacion") && <p><strong>NIT/C.C.:</strong> {form.watch("proveedorIdentificacion")}</p>}
                   </div>
                 </>
               )}

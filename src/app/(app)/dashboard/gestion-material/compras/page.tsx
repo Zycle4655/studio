@@ -269,7 +269,6 @@ export default function CompraMaterialPage() {
         numeroFactura: nextNumeroFactura,
         formaDePago: formData.formaDePago,
         proveedorNombre: formData.proveedorNombre || null,
-        proveedorIdentificacion: formData.proveedorIdentificacion || null,
         observaciones: formData.observaciones || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
