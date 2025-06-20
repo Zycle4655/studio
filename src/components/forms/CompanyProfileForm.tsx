@@ -116,52 +116,6 @@ export default function CompanyProfileForm({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             
-            <FormItem>
-              <FormLabel className="text-foreground/80">Logo de la Empresa</FormLabel>
-              <div className="flex items-center gap-4">
-                {logoPreview ? (
-                  <div className="relative">
-                    <Image
-                      src={logoPreview}
-                      alt="Vista previa del logo"
-                      width={80}
-                      height={80}
-                      className="rounded-md border object-contain bg-muted"
-                      data-ai-hint="logo company"
-                    />
-                     <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/80"
-                        onClick={handleRemoveLogo}
-                        aria-label="Eliminar logo"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                  </div>
-                ) : (
-                  <div className="w-20 h-20 flex items-center justify-center rounded-md border border-dashed bg-muted text-muted-foreground">
-                    <ImageIcon className="w-8 h-8" />
-                  </div>
-                )}
-                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                  <UploadCloud className="mr-2 h-4 w-4" />
-                  {logoPreview ? "Cambiar Logo" : "Subir Logo"}
-                </Button>
-              </div>
-              <FormControl>
-                <Input
-                  type="file"
-                  accept="image/png, image/jpeg, image/gif, image/webp"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
-              </FormControl>
-              <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
-            </FormItem>
-
             <FormField
               control={form.control}
               name="companyName"
@@ -244,6 +198,53 @@ export default function CompanyProfileForm({
                 )}
               />
             )}
+
+            <FormItem>
+              <FormLabel className="text-foreground/80">Logo de la Empresa</FormLabel>
+              <div className="flex items-center gap-4">
+                {logoPreview ? (
+                  <div className="relative">
+                    <Image
+                      src={logoPreview}
+                      alt="Vista previa del logo"
+                      width={80}
+                      height={80}
+                      className="rounded-md border object-contain bg-muted"
+                      data-ai-hint="logo company"
+                    />
+                     <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/80"
+                        onClick={handleRemoveLogo}
+                        aria-label="Eliminar logo"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 flex items-center justify-center rounded-md border border-dashed bg-muted text-muted-foreground">
+                    <ImageIcon className="w-8 h-8" />
+                  </div>
+                )}
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  {logoPreview ? "Cambiar Logo" : "Subir Logo"}
+                </Button>
+              </div>
+              <FormControl>
+                <Input
+                  type="file"
+                  accept="image/png, image/jpeg, image/gif, image/webp"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+              </FormControl>
+              <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
+            </FormItem>
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Guardando..." : submitButtonText}
               <Save className="ml-2 h-5 w-5" />
