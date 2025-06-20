@@ -223,10 +223,8 @@ export default function MaterialesPage() {
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <PackageOpen className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales registrados</h3>
-                <p className="text-muted-foreground mb-6">Comience agregando un nuevo material para verlo aquí.</p>
-                <Button onClick={handleAddMaterial}>
-                    <Plus className="mr-2 h-4 w-4" /> Agregar Material
-                </Button>
+                <p className="text-muted-foreground mb-6">Añada un nuevo material utilizando el botón flotante.</p>
+                {/* El botón "Agregar Material" que estaba aquí fue eliminado */}
             </div>
           ) : (
             <Table>
