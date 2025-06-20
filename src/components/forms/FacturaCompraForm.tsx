@@ -43,8 +43,8 @@ import { Save, XCircle, CalendarIcon, FileText, UserSquare, Printer, Info } from
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import Image from "next/image"; // Re-added import
-import { useToast } from "@/hooks/use-toast"; // Added toast for print error
+import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
 
 interface FacturaCompraFormProps {
   isOpen: boolean;
@@ -69,7 +69,7 @@ export default function FacturaCompraForm({
   companyProfile,
   userEmail,
 }: FacturaCompraFormProps) {
-  const { toast } = useToast(); // Added for print error
+  const { toast } = useToast();
   const form = useForm<FacturaCompraFormData>({
     resolver: zodResolver(FacturaCompraFormSchema),
     defaultValues: {
@@ -95,9 +95,9 @@ export default function FacturaCompraForm({
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
 
-  const formatDateForDisplay = (timestamp: Date | undefined): string => {
-    if (!timestamp) return "N/A";
-    return format(timestamp, "PPP", { locale: es });
+  const formatDateWithTimeForDisplay = (dateValue: Date | undefined): string => {
+    if (!dateValue) return "N/A";
+    return format(dateValue, "PPPp", { locale: es }); // PPPp incluye fecha y hora
   };
 
   const printFacturaPreview = () => {
@@ -108,31 +108,49 @@ export default function FacturaCompraForm({
         toast({variant: "destructive", title:"Error de Impresión", description: "No se pudo abrir la ventana de impresión. Verifique los bloqueadores de pop-ups."})
         return;
       }
-      printWindow.document.write('<html><head><title>Factura de Compra N° '+ nextNumeroFactura +'</title>');
-      const stylesHtml = '' +
-        '<style>' +
-        'body { font-family: sans-serif; margin: 20px; color: #333; }' +
-        '.invoice-header { text-align: center; margin-bottom: 20px; }' +
-        '.invoice-header img { max-height: 60px; margin-bottom: 10px; object-fit: contain; }' +
-        '.invoice-header h1 { margin: 0; font-size: 1.6em; color: #005A9C; }' +
-        '.invoice-header p { margin: 2px 0; font-size: 0.9em; }' +
-        '.section-title { font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #005A9C; font-size: 1em; text-transform: uppercase; }' +
-        '.invoice-details, .provider-details { margin-bottom: 15px; font-size: 0.9em;}' +
-        '.invoice-details p, .provider-details p { margin: 3px 0; }' +
-        '.items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; }' +
-        '.items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }' +
-        '.items-table th { background-color: #f0f0f0; font-weight: bold; }' +
-        '.text-right { text-align: right !important; }' +
-        '.total-section { margin-top: 20px; text-align: right; font-size: 1em; }' +
-        '.total-section p { margin: 5px 0; font-weight: bold; }' +
-        '.total-section .total-amount { color: #005A9C; font-size: 1.2em;}' +
-        '.footer-notes { margin-top: 30px; font-size: 0.8em; border-top: 1px solid #eee; padding-top: 10px; }' +
-        '.signature-area { margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; display: flex; justify-content: space-between; }' +
-        '.signature-block { width: 45%; text-align: center;}' +
-        '.signature-line { display: inline-block; width: 200px; border-bottom: 1px solid #333; margin-top: 40px; }' +
-        '.grid-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }' +
-        '@media print { body { margin: 0; } .no-print { display: none !important; } .items-table th, .items-table td { font-size: 0.85em; padding: 6px;} .invoice-header h1 { font-size: 1.5em; } .section-title { font-size: 0.95em; } }' +
-        '</style>';
+      printWindow.document.write('<html><head><title>Factura Compra N° '+ nextNumeroFactura +'</title>');
+      const stylesHtml = `
+        <style>
+          body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 5px; 
+            color: #000; 
+            background-color: #fff;
+            font-size: 10px; /* Tamaño base más pequeño para térmica */
+            max-width: 280px; /* Ancho típico para 80mm, ajustar según necesidad ~75mm */
+            padding: 0;
+          }
+          .invoice-header { text-align: center; margin-bottom: 8px; }
+          .invoice-header img { max-height: 40px; margin-bottom: 5px; object-fit: contain; }
+          .invoice-header h1 { margin: 0; font-size: 1.1em; font-weight: bold; }
+          .invoice-header p { margin: 1px 0; font-size: 0.8em; }
+          .section-title { font-weight: bold; margin-top: 10px; margin-bottom: 3px; font-size: 0.9em; text-align: center; border-top: 1px dashed #555; border-bottom: 1px dashed #555; padding: 2px 0;}
+          .invoice-info { margin-bottom: 8px; font-size: 0.85em;}
+          .invoice-info p { margin: 2px 0; display: flex; justify-content: space-between; }
+          .invoice-info p span:first-child { font-weight: bold; margin-right: 5px;}
+          .provider-details p { margin: 2px 0; font-size: 0.85em; }
+          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 0.85em; }
+          .items-table th, .items-table td { border-bottom: 1px solid #eee; padding: 3px 1px; text-align: left; }
+          .items-table th { font-weight: bold; background-color: transparent; }
+          .items-table .text-right { text-align: right !important; }
+          .items-table .col-material { width: 45%; }
+          .items-table .col-peso, .items-table .col-vunit, .items-table .col-subtotal { width: 18.33%; }
+          .total-section { margin-top: 10px; text-align: right; font-size: 1em; }
+          .total-section p { margin: 3px 0; font-weight: bold; }
+          .total-section .total-amount { font-size: 1.1em; }
+          .payment-method { font-size: 0.85em; margin-top: 5px; text-align: left; }
+          .footer-notes { margin-top: 10px; font-size: 0.75em; border-top: 1px solid #eee; padding-top: 5px; text-align: center; }
+          .signature-line { margin-top: 20px; font-size: 0.85em; text-align: center; }
+          .signature-line p { margin-bottom: 15px; }
+          .no-print { display: none !important; }
+          @media print { 
+            body { margin: 0; padding:0; max-width: 100%; /* Permitir que la impresora maneje el ancho */ } 
+            .no-print { display: none !important; } 
+            .items-table th, .items-table td { font-size: 0.8em; padding: 2px 1px;} 
+            .invoice-header h1 { font-size: 1em; } 
+            .section-title { font-size: 0.85em; }
+          }
+        </style>`;
       printWindow.document.write(stylesHtml);
       printWindow.document.write('</head><body>');
       printWindow.document.write(previewElement.innerHTML);
@@ -152,7 +170,7 @@ export default function FacturaCompraForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {if(!isLoading) setIsOpen(open)}}>
-      <DialogContent className="max-w-4xl"> {/* Adjusted max-width for preview */}
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <FileText className="mr-2 h-6 w-6 text-primary" />
@@ -163,8 +181,7 @@ export default function FacturaCompraForm({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-2 gap-x-8 gap-y-6 max-h-[70vh] overflow-y-auto p-1"> {/* Grid for two columns */}
-          {/* Columna del Formulario */}
+        <div className="grid md:grid-cols-2 gap-x-8 gap-y-6 max-h-[70vh] overflow-y-auto p-1">
           <div className="space-y-5">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -178,7 +195,7 @@ export default function FacturaCompraForm({
                   name="fecha"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel className="text-foreground/80">Fecha de Factura</FormLabel>
+                      <FormLabel className="text-foreground/80">Fecha y Hora de Factura</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -191,7 +208,7 @@ export default function FacturaCompraForm({
                               disabled={isLoading}
                             >
                               {field.value ? (
-                                format(field.value, "PPP", { locale: es })
+                                formatDateWithTimeForDisplay(field.value)
                               ) : (
                                 <span>Seleccione una fecha</span>
                               )}
@@ -203,7 +220,15 @@ export default function FacturaCompraForm({
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                                if (date) {
+                                    const now = new Date();
+                                    date.setHours(now.getHours());
+                                    date.setMinutes(now.getMinutes());
+                                    date.setSeconds(now.getSeconds());
+                                }
+                                field.onChange(date);
+                            }}
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01") || isLoading
                             }
@@ -290,7 +315,6 @@ export default function FacturaCompraForm({
             </Form>
           </div>
 
-          {/* Columna de la Vista Previa */}
           <div className="border-l md:pl-8 pt-2 md:pt-0">
              <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-semibold text-primary flex items-center">
@@ -300,54 +324,64 @@ export default function FacturaCompraForm({
                     <Printer size={16} className="mr-2"/> Imprimir
                 </Button>
             </div>
-            <div id="factura-create-preview-content" className="p-3 border rounded-md bg-card/50 text-sm max-h-[calc(70vh-80px)] overflow-y-auto"> {/* Adjusted max-height */}
+            <div id="factura-create-preview-content" className="p-1 border rounded-md bg-background text-sm max-h-[calc(70vh-80px)] overflow-y-auto">
                 <div className="invoice-header">
                     {companyProfile?.logoUrl && (
                         <Image
                             src={companyProfile.logoUrl}
                             alt={`Logo de ${companyProfile.companyName}`}
-                            width={80} height={60}
-                            className="mx-auto mb-2 object-contain"
+                            width={60} height={40}
+                            className="mx-auto mb-1 object-contain"
                             data-ai-hint="logo company"
                         />
                     )}
-                    <h1 className="text-xl font-bold text-primary">{companyProfile?.companyName || "Nombre Empresa"}</h1>
-                    {companyProfile?.nit && <p>NIT: {companyProfile.nit}</p>}
-                    {companyProfile?.address && <p>{companyProfile.address}</p>}
-                    {companyProfile?.phone && <p>Tel: {companyProfile.phone}</p>}
-                    {userEmail && <p>Email: {userEmail}</p>}
+                    <h1 className="text-base font-bold">{companyProfile?.companyName || "Nombre Empresa"}</h1>
+                    {companyProfile?.nit && <p className="text-xs">NIT: {companyProfile.nit}</p>}
+                    {companyProfile?.address && <p className="text-xs">{companyProfile.address}</p>}
+                    {companyProfile?.phone && <p className="text-xs">Tel: {companyProfile.phone}</p>}
+                    {userEmail && <p className="text-xs">Email: {userEmail}</p>}
                 </div>
-                <div className="section-title mt-4">Información de la Factura</div>
-                <div className="invoice-details grid-2-cols my-2">
-                    <div><p><strong>N° Factura:</strong> <span className="text-primary font-semibold">{nextNumeroFactura ?? "---"}</span></p></div>
-                    <div className="text-right"><p><strong>Fecha:</strong> {formatDateForDisplay(form.watch("fecha"))}</p></div>
+                
+                <div className="invoice-info mt-2">
+                    <p><span>Factura N°:</span> <span className="font-semibold">{nextNumeroFactura ?? "---"}</span></p>
+                    <p><span>Fecha y Hora:</span> <span>{formatDateWithTimeForDisplay(form.watch("fecha"))}</span></p>
                 </div>
+                
                 {form.watch("proveedorNombre") && (
                     <>
-                    <div className="section-title">Información del Proveedor</div>
-                    <div className="provider-details my-2">
-                        <p><strong>Nombre:</strong> {form.watch("proveedorNombre")}</p>
+                    <div className="section-title mt-2">Proveedor</div>
+                    <div className="provider-details my-1">
+                        <p>{form.watch("proveedorNombre")}</p>
                     </div>
                     </>
                 )}
-                  <div className="section-title">Detalle de la Compra</div>
-                  <table className="items-table w-full text-xs my-2">
-                    <thead><tr><th>Material</th><th className="text-right">Peso</th><th className="text-right">Vr. Unit.</th><th className="text-right">Subtotal</th></tr></thead>
+                  <div className="section-title mt-2">Detalle de Compra</div>
+                  <table className="items-table w-full text-xs my-1">
+                    <thead>
+                        <tr>
+                            <th className="col-material">Material</th>
+                            <th className="col-peso text-right">Peso</th>
+                            <th className="col-vunit text-right">Vr. Unit.</th>
+                            <th className="col-subtotal text-right">Subtotal</th>
+                        </tr>
+                    </thead>
                     <tbody>
                     {compraItems.map((item, idx) => (
                         <tr key={item.id || idx}>
-                        <td>{item.materialName}</td>
-                        <td className="text-right">{item.peso.toLocaleString('es-CO')}</td>
-                        <td className="text-right">{formatCurrency(item.precioUnitario)}</td>
-                        <td className="text-right">{formatCurrency(item.subtotal)}</td>
+                        <td className="col-material">{item.materialName} {item.materialCode && `(${item.materialCode})`}</td>
+                        <td className="col-peso text-right">{item.peso.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td className="col-vunit text-right">{formatCurrency(item.precioUnitario)}</td>
+                        <td className="col-subtotal text-right">{formatCurrency(item.subtotal)}</td>
                         </tr>
                     ))}
                     </tbody>
                   </table>
-                <div className="total-section mt-4"><p>TOTAL FACTURA: <span className="total-amount">{formatCurrency(totalCompra)}</span></p></div>
-                {form.watch("formaDePago") && <p className="mt-2 text-xs"><strong>Forma de Pago:</strong> <span className="capitalize">{form.watch("formaDePago")}</span></p>}
-                {form.watch("observaciones") && <div className="footer-notes mt-3 pt-2 border-t"><p className="text-xs"><strong>Observaciones:</strong> {form.watch("observaciones")}</p></div>}
-                <div className="signature-area"><div className="signature-block"><p>Firma Proveedor:</p><div className="signature-line"></div></div><div className="signature-block"><p>Firma Recibido (Empresa):</p><div className="signature-line"></div></div></div>
+                <div className="total-section mt-2">
+                    <p>TOTAL FACTURA: <span className="total-amount">{formatCurrency(totalCompra)}</span></p>
+                </div>
+                {form.watch("formaDePago") && <p className="payment-method mt-1"><strong>Forma de Pago:</strong> <span className="capitalize">{form.watch("formaDePago")}</span></p>}
+                {form.watch("observaciones") && <div className="footer-notes mt-2 pt-1 border-t"><p><strong>Observaciones:</strong> {form.watch("observaciones")}</p></div>}
+                <div className="signature-line mt-3"><p>Recibido Por: ____________________</p></div>
             </div>
           </div>
         </div>
