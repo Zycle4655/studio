@@ -143,10 +143,7 @@ export default function MaterialesPage() {
         });
       });
       await batch.commit();
-      toast({
-        title: "Materiales Inicializados",
-        description: "Se ha creado tu lista de materiales estándar.",
-      });
+      // Se elimina la notificación toast de aquí
       setHasInitializedMaterials(true); 
       return true; 
     } catch (error) {
