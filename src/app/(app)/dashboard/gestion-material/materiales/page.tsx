@@ -104,7 +104,7 @@ export default function MaterialesPage() {
     // Apunta a la colección global de materiales
     if (!db) return null;
     return collection(db, "globalMaterials");
-  }, [db]);
+  }, []);
 
   const initializeDefaultMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -137,7 +137,7 @@ export default function MaterialesPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [getMaterialsCollectionRef, toast, db]);
+  }, [getMaterialsCollectionRef]);
 
 
   const fetchMaterials = React.useCallback(async () => {
@@ -179,7 +179,7 @@ export default function MaterialesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, toast, initializeDefaultMaterials, user]);
+  }, [getMaterialsCollectionRef, initializeDefaultMaterials, user]);
 
 
   React.useEffect(() => {
