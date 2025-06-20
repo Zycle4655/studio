@@ -43,65 +43,62 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Lista de materiales estándar por defecto actualizada con códigos
 const DEFAULT_MATERIALS = [
-  { name: "COBRE N1", price: 30000 },
-  { name: "COBRE N2", price: 30000 },
-  { name: "BRONCE", price: 20000 },
-  { name: "ACERO", price: 3300 },
+  { name: "COBRE N1", price: 30000, code: "103" },
+  { name: "COBRE N2", price: 30000, code: "103" },
+  { name: "BRONCE", price: 20000, code: "104" },
+  { name: "ACERO", price: 3300, code: "106" },
   { name: "ALUMINIO GRUESO", price: 5500, code: "101" },
-  { name: "ALUMINIO GUAYA", price: 8000 },
+  { name: "ALUMINIO GUAYA", price: 8000, code: "101" },
   { name: "ALUMINIO PERFIL", price: 7500, code: "101" },
   { name: "ALUMINIO OLLA", price: 6200, code: "101" },
   { name: "ALUMINIO LAMINA", price: 6000, code: "101" },
   { name: "CLAUSEN POTE", price: 6900, code: "101" },
   { name: "POTE AEROSOL", price: 5400, code: "101" },
-  { name: "VIRUTA DE ACERO", price: 2500 },
-  { name: "VIRUTA BRONCE", price: 10000 },
-  { name: "RINES DE AUTOMOVIL", price: 6000 },
-  { name: "RINES DE BICICLETA", price: 6000 },
-  { name: "RINES DE CAMION", price: 6000 },
-  { name: "ANTIMONIO", price: 5500 },
-  { name: "RADIADOR COBRE", price: 20100 },
-  { name: "RADIADOR ALUMINIO", price: 4500 },
-  { name: "RADIADOR MIXTO", price: 16000 },
-  { name: "DESARME O INDUCIDO", price: 1200 },
-  { name: "CABLE DE PELAR", price: 9000 },
-  { name: "CABLE DE QUEMAR", price: 4000 },
-  { name: "PLANCHA", price: 2300 },
-  { name: "TARRO SALCHICHA ALUMINIO", price: 4500 },
-  { name: "CARTON", price: 500 },
-  { name: "ARCHIVO", price: 600 },
-  { name: "PERIODICO", price: 450 },
-  { name: "REVISTA", price: 450 },
-  { name: "PLEGADIZA", price: 100 },
-  { name: "PET TRANSPARENTE", price: 1700 },
-  { name: "PET VERDE", price: 700 },
-  { name: "PET ACEITE", price: 300 },
-  { name: "PET AMBAR", price: 600 },
-  { name: "PET REVUELTO", price: 950 },
-  { name: "POLICOLOR", price: 300 },
-  { name: "PLASTICO TRANSPARENTE", price: 800 },
-  { name: "POLIESTILENO", price: 500 },
-  { name: "VASIJA BLANCA", price: 900 },
-  { name: "VASIJA NEGRA", price: 600 },
+  { name: "VIRUTA DE ACERO", price: 2500, code: "106" },
+  { name: "VIRUTA BRONCE", price: 10000, code: "104" },
+  { name: "RINES DE AUTOMOVIL", price: 6000, code: "101" },
+  { name: "RINES DE BICICLETA", price: 6000, code: "101" },
+  { name: "RINES DE CAMION", price: 6000, code: "101" },
+  { name: "ANTIMONIO", price: 5500, code: "105" },
+  { name: "RADIADOR COBRE", price: 20100, code: "103" },
+  { name: "RADIADOR ALUMINIO", price: 4500, code: "101" },
+  { name: "RADIADOR MIXTO", price: 16000, code: "199" },
+  { name: "DESARME O INDUCIDO", price: 1200, code: "199" },
+  { name: "CABLE DE PELAR", price: 9000, code: "103" },
+  { name: "CABLE DE QUEMAR", price: 4000, code: "103" },
+  { name: "PLANCHA", price: 2300, code: "102" },
+  { name: "TARRO SALCHICHA ALUMINIO", price: 4500, code: "101" },
+  { name: "CARTON", price: 500, code: "202" },
+  { name: "ARCHIVO", price: 600, code: "201" },
+  { name: "PERIODICO", price: 450, code: "204" },
+  { name: "REVISTA", price: 450, code: "299" },
+  { name: "PLEGADIZA", price: 100, code: "205" },
+  { name: "PET TRANSPARENTE", price: 1700, code: "303" },
+  { name: "PET VERDE", price: 700, code: "303" },
+  { name: "PET ACEITE", price: 300, code: "303" },
+  { name: "PET AMBAR", price: 600, code: "303" },
+  { name: "PET REVUELTO", price: 950, code: "303" },
+  { name: "POLICOLOR", price: 300, code: "399" },
+  { name: "PLASTICO TRANSPARENTE", price: 800, code: "306" },
+  { name: "POLIESTILENO", price: 500, code: "399" },
+  { name: "VASIJA BLANCA", price: 900, code: "305" },
+  { name: "VASIJA NEGRA", price: 600, code: "302" },
   { name: "CUÑETE", price: 1000, code: "302" },
-  { name: "CANASTA GRANDE", price: 2500 },
+  { name: "CANASTA GRANDE", price: 2500, code: "302" },
   { name: "CANASTA", price: 1300, code: "302" },
-  { name: "ACRILICO", price: 2000 },
-  { name: "TATUCO/SOPLADO", price: 1300 },
-  { name: "TAPAS", price: 900, code: "302" },
-  { name: "SELECCIÓN", price: 300 },
+  { name: "ACRILICO", price: 2000, code: "301" },
+  { name: "TATUCO/SOPLADO", price: 1300, code: "307" },
+  { name: "TAPAS", price: 900, code: "308" },
   { name: "PASTA", price: 900, code: "302" },
-  { name: "PVC TUBO", price: 500 },
-  { name: "PVC TECHO", price: 300 },
-  { name: "CUBETA HUEVO", price: 100 },
-  { name: "VIDRIO", price: 100 },
-  { name: "TETRA PAK", price: 200 },
-  { name: "GALONES", price: 1000 },
-  { name: "CHATARRA", price: 720 },
-  { name: "TAPA", price: 900, code: "302" },
-  { name: "BATERIA", price: 2300 },
+  { name: "PVC TUBO", price: 500, code: "304" },
+  { name: "PVC TECHO", price: 300, code: "304" },
+  { name: "CUBETA HUEVO", price: 100, code: "203" },
+  { name: "VIDRIO", price: 100, code: "499" },
+  { name: "TETRA PAK", price: 200, code: "206" },
+  { name: "GALONES", price: 1000, code: "307" },
+  { name: "CHATARRA", price: 720, code: "102" },
+  { name: "BATERIA", price: 2300, code: "199" },
 ];
 
 
@@ -120,6 +117,7 @@ export default function MaterialesPage() {
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
+    // Apunta a la colección global de materiales
     if (!db) return null;
     return collection(db, "globalMaterials");
   }, [db]);
@@ -372,7 +370,7 @@ export default function MaterialesPage() {
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <PackageOpen className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales globales registrados</h3>
-                <p className="text-muted-foreground mb-6">Si es la primera vez, la lista de materiales por defecto debería cargarse. Si no, añada un nuevo material utilizando el botón flotante.</p>
+                <p className="text-muted-foreground mb-6">Si es la primera vez, la lista de materiales por defecto debería cargarse. Si no, añada un nuevo material utilizando el botón flotante. <br/> Si borró la colección 'globalMaterials' de Firestore, recargue esta página para que se inicialice.</p>
             </div>
           ) : (
             <Table>
