@@ -107,7 +107,7 @@ const DEFAULT_MATERIALS = [
 
 export default function MaterialesPage() {
   const { toast } = useToast();
-  const { user } = useAuth(); // Obtener el usuario autenticado
+  const { user } = useAuth(); 
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -118,6 +118,8 @@ export default function MaterialesPage() {
   const [materialToDelete, setMaterialToDelete] = React.useState<MaterialDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [hasInitializedMaterials, setHasInitializedMaterials] = React.useState(false);
+  const initializationAttemptedRef = React.useRef(false);
+
 
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
@@ -128,11 +130,11 @@ export default function MaterialesPage() {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef || !db || !user ) return false;
 
-    setIsLoading(true); // Se mantiene mientras se inicializa
+    // No establecer isLoading aquí, ya que fetchMaterials lo maneja
     try {
       const batch = writeBatch(db);
       DEFAULT_MATERIALS.forEach(material => {
-        const newMaterialRef = doc(materialsCollectionRef); // Firestore genera el ID
+        const newMaterialRef = doc(materialsCollectionRef); 
         batch.set(newMaterialRef, {
           ...material,
           price: parseFloat(Number(material.price).toFixed(2)),
@@ -145,8 +147,8 @@ export default function MaterialesPage() {
         title: "Materiales Inicializados",
         description: "Se ha creado tu lista de materiales estándar.",
       });
-      setHasInitializedMaterials(true); // Marcar como inicializado
-      return true; // Indicar éxito
+      setHasInitializedMaterials(true); 
+      return true; 
     } catch (error) {
       console.error("Error initializing default materials:", error);
       toast({
@@ -154,17 +156,15 @@ export default function MaterialesPage() {
         title: "Error al Inicializar Materiales",
         description: "No se pudo crear la lista de materiales estándar.",
       });
-      return false; // Indicar fallo
-    } finally {
-       // No quitar setIsLoading(false) aquí, fetchMaterials lo hará después de esto
+      return false; 
     }
   }, [getMaterialsCollectionRef, toast, user, db]);
 
 
-  const fetchMaterials = React.useCallback(async (forceInitializeIfEmpty = false) => {
+  const fetchMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
-      if (user) { // Solo si hay usuario pero la ref es null (db no listo?)
+      if (user) { 
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -175,17 +175,18 @@ export default function MaterialesPage() {
     try {
       const querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
 
-      if (querySnapshot.empty && !hasInitializedMaterials && user) {
+      if (querySnapshot.empty && !hasInitializedMaterials && user && !initializationAttemptedRef.current) {
+        initializationAttemptedRef.current = true; // Marcar intento ANTES de la llamada asíncrona
         const success = await initializeDefaultMaterials();
         if (success) {
-          // Volver a cargar los materiales después de inicializarlos
           const newSnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
           const materialsList = newSnapshot.docs.map(
             (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
           );
           setMaterials(materialsList);
         } else {
-          setMaterials([]); // Dejar vacío si la inicialización falló
+          setMaterials([]); 
+          initializationAttemptedRef.current = false; // Permitir reintento si la inicialización falló
         }
       } else {
         const materialsList = querySnapshot.docs.map(
@@ -193,7 +194,7 @@ export default function MaterialesPage() {
         );
         setMaterials(materialsList);
         if (!querySnapshot.empty) {
-            setHasInitializedMaterials(true); // Si ya hay materiales, marcamos como inicializado
+            setHasInitializedMaterials(true); 
         }
       }
     } catch (error) {
@@ -211,12 +212,13 @@ export default function MaterialesPage() {
 
   React.useEffect(() => {
     document.title = 'Gestión de Materiales | ZYCLE';
-    if (user) { // Solo intentar cargar si hay un usuario
+    if (user) { 
       fetchMaterials();
     } else {
-      setIsLoading(false); // Si no hay usuario, no hay nada que cargar
-      setMaterials([]); // Limpiar materiales si el usuario cierra sesión
-      setHasInitializedMaterials(false); // Resetear estado de inicialización
+      setIsLoading(false); 
+      setMaterials([]); 
+      setHasInitializedMaterials(false); 
+      initializationAttemptedRef.current = false; // Resetear si el usuario cierra sesión
     }
   }, [user, fetchMaterials]);
 
@@ -261,7 +263,7 @@ export default function MaterialesPage() {
         title: "Material Eliminado",
         description: `El material "${materialToDelete.name}" ha sido eliminado.`,
       });
-      fetchMaterials(); // Refresh list
+      fetchMaterials(); 
     } catch (error) {
       console.error("Error deleting material:", error);
       toast({
