@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -16,7 +17,7 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] flex flex-col items-center p-4 w-full max-w-md space-y-2",
+      "fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col items-center p-4 w-full max-w-md space-y-2",
       className
     )}
     {...props}
