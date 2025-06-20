@@ -332,7 +332,7 @@ export default function EditFacturaCompraPage() {
           .invoice-info { margin-bottom: 8px; font-size: 0.85em;}
           .invoice-info p { margin: 2px 0; display: flex; justify-content: space-between; }
           .invoice-info p span:first-child { font-weight: bold; margin-right: 5px;}
-          .provider-details p { margin: 2px 0; font-size: 0.85em; }
+          .user-details p { margin: 2px 0; font-size: 0.85em; }
           .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 0.85em; }
           .items-table th, .items-table td { border-bottom: 1px solid #eee; padding: 3px 1px; text-align: left; }
           .items-table th { font-weight: bold; background-color: transparent; }
@@ -418,7 +418,7 @@ export default function EditFacturaCompraPage() {
             Editar Factura de Compra N° {invoice.numeroFactura}
           </CardTitle>
           <CardDescription>
-            Modifique los detalles y los ítems de la factura.
+            Modifique los detalles y los ítems de la factura. La adición de nuevos ítems a una factura existente estará disponible próximamente.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -485,7 +485,7 @@ export default function EditFacturaCompraPage() {
                     name="proveedorNombre"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground/80">Nombre del Proveedor (Opcional)</FormLabel>
+                        <FormLabel className="text-foreground/80">Nombre del Usuario (Opcional)</FormLabel>
                         <div className="relative">
                           <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                           <FormControl>
@@ -547,7 +547,6 @@ export default function EditFacturaCompraPage() {
                         </Button>
                     </div>
                      <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto">
-                        {/* Contenido de la factura para impresión */}
                         <div className="invoice-header">
                             {companyProfile?.logoUrl && (
                                 <Image
@@ -572,8 +571,8 @@ export default function EditFacturaCompraPage() {
                         
                         {form.watch("proveedorNombre") && (
                             <>
-                            <div className="section-title mt-2">Proveedor</div>
-                            <div className="provider-details my-1">
+                            <div className="section-title mt-2">Usuario</div>
+                            <div className="user-details my-1">
                                 <p>{form.watch("proveedorNombre")}</p>
                             </div>
                             </>
@@ -599,7 +598,6 @@ export default function EditFacturaCompraPage() {
                         {form.watch("formaDePago") && <p className="payment-method mt-1"><strong>Forma de Pago:</strong> <span className="capitalize">{form.watch("formaDePago")}</span></p>}
                         
                         {form.watch("observaciones") && <div className="footer-notes mt-2 pt-1 border-t"><p><strong>Observaciones:</strong> {form.watch("observaciones")}</p></div>}
-                        {/* Línea de firma eliminada */}
                     </div>
                 </div>
               </div>

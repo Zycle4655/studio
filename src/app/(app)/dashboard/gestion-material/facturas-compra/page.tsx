@@ -159,7 +159,7 @@ export default function FacturasCompraPage() {
           .invoice-info { margin-bottom: 8px; font-size: 0.85em;}
           .invoice-info p { margin: 2px 0; display: flex; justify-content: space-between; }
           .invoice-info p span:first-child { font-weight: bold; margin-right: 5px;}
-          .provider-details p { margin: 2px 0; font-size: 0.85em; }
+          .user-details p { margin: 2px 0; font-size: 0.85em; }
           .items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 0.85em; }
           .items-table th, .items-table td { border-bottom: 1px solid #eee; padding: 3px 1px; text-align: left; }
           .items-table th { font-weight: bold; background-color: transparent; }
@@ -259,7 +259,7 @@ export default function FacturasCompraPage() {
                   <TableRow>
                     <TableHead className="w-[120px]">N° Factura</TableHead>
                     <TableHead>Fecha y Hora</TableHead>
-                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Usuario</TableHead>
                     <TableHead className="text-right">Total (COP)</TableHead>
                     <TableHead className="text-center w-[150px]">Acciones</TableHead>
                   </TableRow>
@@ -313,7 +313,6 @@ export default function FacturasCompraPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <div id="factura-print-content-modal" className="p-1 border rounded-md bg-background text-xs max-h-[70vh] overflow-y-auto my-4">
-                    {/* Contenido de la factura para impresión */}
                     <div className="invoice-header">
                         {companyProfile?.logoUrl && (
                             <Image 
@@ -339,8 +338,8 @@ export default function FacturasCompraPage() {
                     
                     {invoiceToPrint.proveedorNombre && (
                         <>
-                        <div className="section-title mt-2">Proveedor</div>
-                        <div className="provider-details my-1">
+                        <div className="section-title mt-2">Usuario</div>
+                        <div className="user-details my-1">
                             <p>{invoiceToPrint.proveedorNombre}</p>
                         </div>
                         </>
@@ -382,7 +381,6 @@ export default function FacturasCompraPage() {
                         <p><strong>Observaciones:</strong> {invoiceToPrint.observaciones}</p>
                         </div>
                     )}
-                    {/* Línea de firma eliminada */}
                 </div>
                 <DialogFooter className="mt-4">
                     <DialogClose asChild>
