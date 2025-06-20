@@ -44,7 +44,7 @@ export function UserNav() {
   };
 
   const getInitials = (email: string | null | undefined) => {
-    if (!email) return <UserCircle size={24} />;
+    if (!email) return <UserCircle size={20} />; // Icono ligeramente más pequeño
     const parts = email.split('@')[0].split(/[._-]/);
     if (parts.length > 1) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -57,8 +57,9 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border-2 border-primary">
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {user ? getInitials(user.email) : <UserCircle size={24} />}
+            {/* Se añade text-xs para hacer las iniciales más pequeñas */}
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+              {user ? getInitials(user.email) : <UserCircle size={20} />}
             </AvatarFallback>
           </Avatar>
         </Button>
