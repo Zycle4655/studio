@@ -15,26 +15,37 @@ export type CompraMaterialItemFormData = z.infer<typeof CompraMaterialItemFormSc
 
 // Interface para un ítem dentro de la lista de compra (en el cliente, antes de guardar la factura)
 export interface CompraMaterialItem {
-  id: string; // ID local para manejo en UI (ej: para key en listas, o para editar/eliminar antes de facturar)
-  materialId: string; // ID del MaterialDocument de Firestore
+  id: string; // ID local para manejo en UI
+  materialId: string; 
   materialName: string;
   materialCode?: string | null;
   peso: number;
-  precioUnitario: number; // Precio del material al momento de agregarlo a la compra
-  subtotal: number; // peso * precioUnitario
+  precioUnitario: number; 
+  subtotal: number; 
 }
+
+// Esquema para el formulario de facturación
+export const FacturaCompraFormSchema = z.object({
+  fecha: z.date({ required_error: "La fecha es obligatoria." }),
+  formaDePago: z.enum(["efectivo", "nequi"], { required_error: "La forma de pago es obligatoria."}),
+  observaciones: z.string().max(500, "Las observaciones no pueden exceder los 500 caracteres.").optional().nullable(),
+});
+
+export type FacturaCompraFormData = z.infer<typeof FacturaCompraFormSchema>;
+
 
 // Interface para el documento de una Factura de Compra como se guarda/lee de Firestore
 export interface FacturaCompraDocument {
-  id: string; // ID del documento de Firestore
-  userId: string; // UID del usuario que creó la factura
-  fecha: Timestamp; // Fecha de creación de la factura
-  proveedorId?: string | null; // Opcional: ID del proveedor si se manejan
-  proveedorNombre?: string | null; // Opcional: Nombre del proveedor
-  items: CompraMaterialItem[]; // Array de ítems comprados
+  id?: string; // ID del documento de Firestore (opcional aquí, se asigna al crear)
+  userId: string; 
+  fecha: Timestamp; 
+  proveedorId?: string | null; 
+  proveedorNombre?: string | null; 
+  items: CompraMaterialItem[]; 
   totalFactura: number;
-  observaciones?: string | null;
-  numeroFactura?: string | null; // Número de factura asignado por el sistema o manual
+  numeroFactura: number; // Ahora es number y requerido
+  formaDePago: "efectivo" | "nequi"; // Requerido
+  observaciones?: string | null; // Se mantiene opcional
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -22,10 +22,18 @@ import {
   getDocs,
   query,
   orderBy,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  limit,
+  writeBatch,
 } from "firebase/firestore";
 import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
-import type { CompraMaterialItemFormData, CompraMaterialItem } from "@/schemas/compra";
+import FacturaCompraForm from "@/components/forms/FacturaCompraForm";
+import type { CompraMaterialItemFormData, CompraMaterialItem, FacturaCompraFormData, FacturaCompraDocument } from "@/schemas/compra";
 import type { MaterialDocument } from "@/schemas/material";
+import type { CompanyProfileDocument } from "@/schemas/company";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,11 +55,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function CompraMaterialPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isSubmitting, setIsSubmitting] = React.useState(false); // Para acciones de formulario/factura
+  const [isLoading, setIsLoading] = React.useState(true); // Para carga inicial de materiales
+  const [isSubmitting, setIsSubmitting] = React.useState(false); // Para guardado de factura
+  const [isFetchingCompanyProfile, setIsFetchingCompanyProfile] = React.useState(false);
+
 
   const [availableMaterials, setAvailableMaterials] = React.useState<MaterialDocument[]>([]);
   const [currentPurchaseItems, setCurrentPurchaseItems] = React.useState<CompraMaterialItem[]>([]);
+  const [companyProfileData, setCompanyProfileData] = React.useState<CompanyProfileDocument | null>(null);
+  const [nextNumeroFactura, setNextNumeroFactura] = React.useState<number | null>(null);
+
 
   const [isAddItemFormOpen, setIsAddItemFormOpen] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState<CompraMaterialItem | null>(null); 
@@ -61,11 +74,24 @@ export default function CompraMaterialPage() {
   const [itemIndexToDelete, setItemIndexToDelete] = React.useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
+  const [isFacturaFormOpen, setIsFacturaFormOpen] = React.useState(false);
+
 
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "materials");
   }, [user]);
+
+  const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
+    if (!user || !db) return null;
+    return collection(db, "companyProfiles", user.uid, "purchaseInvoices");
+  }, [user]);
+  
+  const getCompanyProfileRef = React.useCallback(() => {
+    if (!user || !db) return null;
+    return doc(db, "companyProfiles", user.uid);
+  }, [user]);
+
 
   const fetchAvailableMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -73,6 +99,7 @@ export default function CompraMaterialPage() {
       if (user) {
         toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista para cargar materiales." });
       }
+      setIsLoading(false);
       return;
     }
     setIsLoading(true);
@@ -102,6 +129,7 @@ export default function CompraMaterialPage() {
       setIsLoading(false);
       setAvailableMaterials([]);
       setCurrentPurchaseItems([]);
+      setCompanyProfileData(null);
     }
   }, [user, fetchAvailableMaterials]);
 
@@ -123,12 +151,12 @@ export default function CompraMaterialPage() {
     }
 
     const newItem: CompraMaterialItem = {
-      id: editingItem?.id || Date.now().toString(), // Mantiene ID si edita, o genera uno nuevo
+      id: editingItem?.id || Date.now().toString(), 
       materialId: selectedMaterial.id,
       materialName: selectedMaterial.name,
-      materialCode: selectedMaterial.code,
+      materialCode: selectedMaterial.code || null,
       peso: data.peso,
-      precioUnitario: selectedMaterial.price, // Precio al momento de agregar
+      precioUnitario: selectedMaterial.price, 
       subtotal: data.peso * selectedMaterial.price,
     };
 
@@ -174,13 +202,111 @@ export default function CompraMaterialPage() {
     return currentPurchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
   };
 
-  const handleFacturar = () => {
-    // Lógica para facturar (se implementará más adelante)
+  const handleOpenFacturaForm = async () => {
     if (currentPurchaseItems.length === 0) {
         toast({ variant: "destructive", title: "Compra Vacía", description: "Agregue al menos un material antes de facturar." });
         return;
     }
-    toast({ title: "Facturación (Pendiente)", description: "La funcionalidad de facturar se implementará pronto." });
+    if (!user) {
+        toast({ variant: "destructive", title: "Error", description: "Debe iniciar sesión para facturar." });
+        return;
+    }
+
+    setIsFetchingCompanyProfile(true);
+    try {
+      // Fetch company profile if not already fetched
+      if (!companyProfileData) {
+        const profileRef = getCompanyProfileRef();
+        if (profileRef) {
+          const profileSnap = await getDoc(profileRef);
+          if (profileSnap.exists()) {
+            setCompanyProfileData(profileSnap.data() as CompanyProfileDocument);
+          } else {
+            toast({ variant: "destructive", title: "Perfil no encontrado", description: "No se pudo cargar el perfil de la empresa." });
+            setIsFetchingCompanyProfile(false);
+            return;
+          }
+        } else {
+             toast({ variant: "destructive", title: "Error", description: "No se pudo obtener la referencia al perfil de la empresa." });
+             setIsFetchingCompanyProfile(false);
+             return;
+        }
+      }
+
+      // Fetch next numeroFactura
+      const invoicesRef = getPurchaseInvoicesCollectionRef();
+      if (invoicesRef) {
+        const q = query(invoicesRef, orderBy("numeroFactura", "desc"), limit(1));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+          setNextNumeroFactura(1);
+        } else {
+          const lastFactura = querySnapshot.docs[0].data() as FacturaCompraDocument;
+          setNextNumeroFactura((lastFactura.numeroFactura || 0) + 1);
+        }
+      } else {
+         toast({ variant: "destructive", title: "Error", description: "No se pudo obtener la referencia a las facturas." });
+         setIsFetchingCompanyProfile(false);
+         return;
+      }
+
+      setIsFacturaFormOpen(true);
+    } catch (error) {
+      console.error("Error preparing factura form:", error);
+      toast({ variant: "destructive", title: "Error", description: "No se pudo preparar el formulario de facturación." });
+    } finally {
+        setIsFetchingCompanyProfile(false);
+    }
+  };
+
+  const handleSaveFactura = async (formData: FacturaCompraFormData) => {
+    const invoicesRef = getPurchaseInvoicesCollectionRef();
+    if (!invoicesRef || !user || !nextNumeroFactura) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la factura. Faltan datos o conexión." });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const total = calculateTotal();
+      const facturaData: FacturaCompraDocument = {
+        userId: user.uid,
+        fecha: serverTimestamp(), // Se sobrescribirá con la fecha del formulario al usar .set, pero es bueno tener un fallback
+        items: currentPurchaseItems,
+        totalFactura: total,
+        numeroFactura: nextNumeroFactura,
+        formaDePago: formData.formaDePago,
+        observaciones: formData.observaciones || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      
+      // Usar un batch para asegurar la atomicidad si se actualiza el stock en el futuro
+      const batch = writeBatch(db);
+      const newFacturaRef = doc(invoicesRef); // Genera un ID automático
+
+      // Sobrescribir la fecha con la del formulario
+      const finalFacturaData = {
+        ...facturaData,
+        fecha: formData.fecha, // Usar la fecha del formulario
+      };
+
+      batch.set(newFacturaRef, finalFacturaData);
+      
+      // Aquí iría la lógica para actualizar el stock de los materiales si se implementa inventario
+
+      await batch.commit();
+
+      toast({ title: "Factura Guardada", description: `La factura N° ${nextNumeroFactura} ha sido guardada con éxito.` });
+      setCurrentPurchaseItems([]);
+      setIsFacturaFormOpen(false);
+      setNextNumeroFactura(null); // Reset para la próxima factura
+
+    } catch (error) {
+      console.error("Error saving factura:", error);
+      toast({ variant: "destructive", title: "Error al Guardar Factura", description: "No se pudo guardar la factura." });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -301,11 +427,11 @@ export default function CompraMaterialPage() {
         <Button
           className="h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform bg-green-600 hover:bg-green-700"
           size="icon"
-          onClick={handleFacturar}
+          onClick={handleOpenFacturaForm}
           aria-label="Facturar Compra"
-          disabled={!user || currentPurchaseItems.length === 0 || isSubmitting}
+          disabled={!user || currentPurchaseItems.length === 0 || isSubmitting || isFetchingCompanyProfile}
         >
-          <FileText className="h-8 w-8" />
+          {isFetchingCompanyProfile ? <span className="animate-spin h-8 w-8 border-2 border-background rounded-full border-t-transparent"></span> : <FileText className="h-8 w-8" />}
         </Button>
         <Button
           className="h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
@@ -325,7 +451,7 @@ export default function CompraMaterialPage() {
           onSubmit={handleAddItemToPurchase}
           materials={availableMaterials}
           defaultValues={editingItem ? { materialId: editingItem.materialId, peso: editingItem.peso } : undefined}
-          isLoading={isSubmitting}
+          isLoading={isSubmitting} // Podría ser un estado diferente si el submit del item es diferente al de la factura
           title={editingItem ? "Editar Ítem de Compra" : "Agregar Ítem a la Compra"}
         />
       )}
@@ -345,6 +471,20 @@ export default function CompraMaterialPage() {
           </AlertDialog>
       )}
 
+      {isFacturaFormOpen && companyProfileData && nextNumeroFactura !== null && (
+        <FacturaCompraForm
+            isOpen={isFacturaFormOpen}
+            setIsOpen={setIsFacturaFormOpen}
+            onSubmit={handleSaveFactura}
+            isLoading={isSubmitting}
+            compraItems={currentPurchaseItems}
+            totalCompra={calculateTotal()}
+            nextNumeroFactura={nextNumeroFactura}
+            companyProfile={companyProfileData}
+            userEmail={user?.email || null}
+        />
+      )}
+
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
@@ -358,7 +498,7 @@ export default function CompraMaterialPage() {
             <AlertDialogCancel onClick={() => { setItemToDelete(null); setItemIndexToDelete(null); }}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteItem}
-              disabled={isSubmitting}
+              disabled={isSubmitting} // Reutilizar isSubmitting si aplica a esta acción también
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isSubmitting ? "Eliminando..." : "Eliminar Ítem"}
@@ -369,7 +509,3 @@ export default function CompraMaterialPage() {
     </div>
   );
 }
-
-    
-
-    
