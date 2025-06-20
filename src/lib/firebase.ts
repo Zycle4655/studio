@@ -2,6 +2,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type Storage } from "firebase/storage"; // Importar Storage
 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
@@ -26,7 +27,9 @@ if (!projectId) {
     allCoreConfigPresent = false;
 }
 if (!storageBucket) {
-    firebaseConfigErrorMessage += " - Firebase Env Var Warning: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not defined. (Optional for Auth, but check if other services need it)\n";
+    firebaseConfigErrorMessage += " - Firebase Env Var Warning: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not defined. This is required for logo uploads.\n";
+    // Consider making this critical for logo upload functionality
+    // allCoreConfigPresent = false; 
 }
 if (!messagingSenderId) {
     firebaseConfigErrorMessage += " - Firebase Env Var Warning: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID is not defined. (Optional for Auth, but check if other services need it)\n";
@@ -48,6 +51,7 @@ const firebaseConfig = {
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
+let storage: Storage | undefined; // Declarar storage
 
 if (!allCoreConfigPresent) {
   console.error(firebaseConfigErrorMessage);
@@ -72,22 +76,25 @@ if (!allCoreConfigPresent) {
   if (app) {
     try {
       auth = getAuth(app);
-      db = getFirestore(app); // Initialize Firestore
-      if (process.env.NODE_ENV === 'development' && auth && db) {
-        console.log("Firebase Auth and Firestore initialized successfully.");
+      db = getFirestore(app); 
+      storage = getStorage(app); // Inicializar Storage
+      if (process.env.NODE_ENV === 'development' && auth && db && storage) {
+        console.log("Firebase Auth, Firestore, and Storage initialized successfully.");
       }
     } catch (e: any) {
-      console.error("Firebase getAuth(app) or getFirestore(app) failed:", e.message);
+      console.error("Firebase getAuth(app), getFirestore(app) or getStorage(app) failed:", e.message);
       auth = undefined;
       db = undefined;
+      storage = undefined;
     }
   } else {
     if (allCoreConfigPresent && process.env.NODE_ENV === 'development') {
-        console.warn("Firebase Auth/Firestore initialization skipped because Firebase app initialization failed or app is undefined, despite core config being present.");
+        console.warn("Firebase Auth/Firestore/Storage initialization skipped because Firebase app initialization failed or app is undefined, despite core config being present.");
     }
     auth = undefined;
     db = undefined;
+    storage = undefined;
   }
 }
 
-export { app, auth, db };
+export { app, auth, db, storage }; // Exportar storage

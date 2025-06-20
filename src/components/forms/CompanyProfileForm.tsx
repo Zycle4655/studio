@@ -16,12 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyProfileSchema, type CompanyProfileFormData } from "@/schemas/company";
-import { Building, Hash, Phone, MapPin, Save, Mail, Image as ImageIcon } from "lucide-react";
+import { Building, Hash, Phone, MapPin, Save, Mail, Image as ImageIcon, UploadCloud, X } from "lucide-react";
 import Image from 'next/image';
 
-
 interface CompanyProfileFormProps {
-  onSubmit: (data: CompanyProfileFormData) => Promise<void>;
+  onSubmit: (data: CompanyProfileFormData, logoFile?: File | null) => Promise<void>;
   defaultValues?: CompanyProfileFormData;
   isLoading?: boolean;
   submitButtonText?: string;
@@ -39,6 +38,9 @@ export default function CompanyProfileForm({
   description = "Complete la información de su empresa.",
   isEditing = false,
 }: CompanyProfileFormProps) {
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(propsDefaultValues?.logoUrl || null);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<CompanyProfileFormData>({
     resolver: zodResolver(CompanyProfileSchema),
@@ -48,38 +50,60 @@ export default function CompanyProfileForm({
       phone: propsDefaultValues?.phone || "",
       address: propsDefaultValues?.address || "",
       email: propsDefaultValues?.email || "",
-      logoUrl: propsDefaultValues?.logoUrl || null,
+      logoUrl: propsDefaultValues?.logoUrl || null, // Este se usará para el valor inicial
     },
   });
 
   React.useEffect(() => {
-    if (propsDefaultValues) {
-      form.reset({
-        companyName: propsDefaultValues.companyName || "",
-        nit: propsDefaultValues.nit || "",
-        phone: propsDefaultValues.phone || "",
-        address: propsDefaultValues.address || "",
-        email: propsDefaultValues.email || "",
-        logoUrl: propsDefaultValues.logoUrl || null,
-      });
-    } else {
-      form.reset({
-        companyName: "",
-        nit: "",
-        phone: "",
-        address: "",
-        email: "",
-        logoUrl: null,
-      });
-    }
+    // Sincronizar el preview si defaultValues.logoUrl cambia (ej. después de guardar y volver a editar)
+    setLogoPreview(propsDefaultValues?.logoUrl || null);
+    // Resetear el formulario con los valores actualizados, especialmente logoUrl
+    form.reset({
+        companyName: propsDefaultValues?.companyName || "",
+        nit: propsDefaultValues?.nit || "",
+        phone: propsDefaultValues?.phone || "",
+        address: propsDefaultValues?.address || "",
+        email: propsDefaultValues?.email || "",
+        logoUrl: propsDefaultValues?.logoUrl || null,
+    });
   }, [propsDefaultValues, form.reset]);
 
-  const handleFormSubmit = async (data: CompanyProfileFormData) => {
-    await onSubmit(data);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      form.setValue("logoUrl", "file_selected"); // Placeholder para que Zod no falle si es requerido, la URL real se establecerá al subir
+    } else {
+      // Si no se selecciona archivo, y antes había un propsDefaultValues.logoUrl, volvemos a ese.
+      // Si no, lo dejamos como null.
+      setSelectedFile(null);
+      setLogoPreview(propsDefaultValues?.logoUrl || null);
+      form.setValue("logoUrl", propsDefaultValues?.logoUrl || null);
+    }
   };
 
-  const currentLogoUrl = form.watch("logoUrl");
+  const handleRemoveLogo = () => {
+    setSelectedFile(null);
+    setLogoPreview(null);
+    form.setValue('logoUrl', null); // Indicar que se quiere eliminar el logo existente
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // Limpiar el input de archivo
+    }
+  };
 
+  const handleFormSubmit = async (data: CompanyProfileFormData) => {
+    // Si se seleccionó un nuevo archivo, logoFile no será null.
+    // Si se eliminó el logo, data.logoUrl será null.
+    // Si no se tocó el logo, data.logoUrl será la URL existente (si la había).
+    await onSubmit(data, selectedFile);
+  };
+  
   return (
     <Card className="w-full max-w-2xl shadow-xl">
       <CardHeader>
@@ -91,21 +115,52 @@ export default function CompanyProfileForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-            {isEditing && currentLogoUrl && (
-              <div className="mb-4 flex flex-col items-center">
-                <FormLabel className="text-foreground/80 mb-2">Logo Actual</FormLabel>
-                <Image
-                  src={currentLogoUrl}
-                  alt="Logo actual de la empresa"
-                  width={100}
-                  height={100}
-                  className="rounded-md border object-contain"
-                  data-ai-hint="logo company"
-                />
+            
+            <FormItem>
+              <FormLabel className="text-foreground/80">Logo de la Empresa</FormLabel>
+              <div className="flex items-center gap-4">
+                {logoPreview ? (
+                  <div className="relative">
+                    <Image
+                      src={logoPreview}
+                      alt="Vista previa del logo"
+                      width={80}
+                      height={80}
+                      className="rounded-md border object-contain bg-muted"
+                      data-ai-hint="logo company"
+                    />
+                     <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/80"
+                        onClick={handleRemoveLogo}
+                        aria-label="Eliminar logo"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 flex items-center justify-center rounded-md border border-dashed bg-muted text-muted-foreground">
+                    <ImageIcon className="w-8 h-8" />
+                  </div>
+                )}
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                  {logoPreview ? "Cambiar Logo" : "Subir Logo"}
+                </Button>
               </div>
-            )}
-            {/* El campo de subida de archivo se añadirá en un futuro PR */}
-            {/* Por ahora, logoUrl se maneja internamente si ya existe */}
+              <FormControl>
+                <Input
+                  type="file"
+                  accept="image/png, image/jpeg, image/gif, image/webp"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+              </FormControl>
+              <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
+            </FormItem>
 
             <FormField
               control={form.control}

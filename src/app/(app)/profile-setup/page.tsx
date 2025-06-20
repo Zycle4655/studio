@@ -6,12 +6,51 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import CompanyProfileForm from '@/components/forms/CompanyProfileForm';
 import type { CompanyProfileFormData, CompanyProfileDocument } from '@/schemas/company';
-import { auth, db } from '@/lib/firebase'; 
+import { auth, db, storage } from '@/lib/firebase'; 
 import { doc, setDoc, getDoc, serverTimestamp, type Timestamp } from 'firebase/firestore';
 import { updateEmail } from 'firebase/auth'; 
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+
+async function uploadLogo(userId: string, file: File): Promise<string> {
+  if (!storage) {
+    throw new Error("Firebase Storage is not initialized.");
+  }
+  // Normalizar el nombre del archivo para evitar problemas, ej. usar una extensión fija o la del archivo.
+  const fileExtension = file.name.split('.').pop() || 'png';
+  const fileName = `logo.${fileExtension}`;
+  const logoPath = `companyLogos/${userId}/${fileName}`;
+  const logoStorageRef = storageRef(storage, logoPath);
+
+  // Subir el archivo
+  await uploadBytes(logoStorageRef, file);
+
+  // Obtener la URL de descarga
+  const downloadURL = await getDownloadURL(logoStorageRef);
+  return downloadURL;
+}
+
+async function deleteLogo(userId: string, currentLogoUrl: string | null | undefined): Promise<void> {
+  if (!storage || !currentLogoUrl) {
+    console.log("Storage not initialized or no logo URL to delete.");
+    return;
+  }
+  try {
+    const logoStorageRef = storageRef(storage, currentLogoUrl);
+    await deleteObject(logoStorageRef);
+    console.log("Previous logo deleted from Storage.");
+  } catch (error: any) {
+    if (error.code === 'storage/object-not-found') {
+      console.warn("Previous logo not found in Storage, skipping deletion:", error.message);
+    } else {
+      console.error("Error deleting previous logo from Storage:", error);
+      // No relanzar el error para no bloquear el guardado del perfil, pero sí loguearlo.
+    }
+  }
+}
+
 
 export default function ProfileSetupPage() {
   const { user, loading: authLoading } = useAuth();
@@ -22,6 +61,7 @@ export default function ProfileSetupPage() {
   const [defaultFormValues, setDefaultFormValues] = useState<CompanyProfileFormData | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
   const [existingCreatedAt, setExistingCreatedAt] = useState<Timestamp | null>(null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -49,6 +89,7 @@ export default function ProfileSetupPage() {
                     logoUrl: existingData.logoUrl || null,
                 };
                 setExistingCreatedAt(existingData.createdAt || null);
+                setExistingLogoUrl(existingData.logoUrl || null);
                 setIsEditing(true);
             } else {
                 resolvedDefaultValues = { 
@@ -61,6 +102,7 @@ export default function ProfileSetupPage() {
                 };
                 setIsEditing(false);
                 setExistingCreatedAt(null);
+                setExistingLogoUrl(null);
             }
             setDefaultFormValues(resolvedDefaultValues);
         } catch (error: any) {
@@ -71,7 +113,7 @@ export default function ProfileSetupPage() {
             } else {
                  toast({ variant: "destructive", title: "Error al Cargar Perfil", description: "No se pudo cargar el perfil existente."});
             }
-            if (!defaultFormValues) { // Check if defaultFormValues is still undefined before setting fallback
+            if (!defaultFormValues) { 
                  resolvedDefaultValues = {
                     email: user.email || "", companyName: "", nit: "", phone: "", address: "", logoUrl: null,
                  };
@@ -96,10 +138,10 @@ export default function ProfileSetupPage() {
         setIsFetchingProfile(false);
         setDefaultFormValues({ email: "", companyName: "", nit: "", phone: "", address: "", logoUrl: null });
     }
-  }, [user, authLoading, toast]);
+  }, [user, authLoading, toast]); // Removido defaultFormValues de las dependencias para evitar bucles
 
 
-  const handleSubmit = async (data: CompanyProfileFormData) => {
+  const handleSubmit = async (data: CompanyProfileFormData, logoFile?: File | null) => {
     if (!user || !db || !auth) { 
       toast({ variant: "destructive", title: "Error", description: "Usuario no autenticado, base de datos o autenticación no disponible." });
       return;
@@ -140,6 +182,34 @@ export default function ProfileSetupPage() {
         }
       }
     }
+    
+    let finalLogoUrl = existingLogoUrl;
+
+    if (logoFile) { // Si se subió un nuevo archivo
+      try {
+        // Antes de subir el nuevo logo, si había uno antiguo y es diferente al que se va a subir, bórralo.
+        if (existingLogoUrl) {
+            // Se podría hacer más robusto verificando si existingLogoUrl es una URL de Firebase Storage
+            // pero por ahora, si existe, intentamos borrarlo.
+            await deleteLogo(user.uid, existingLogoUrl);
+        }
+        finalLogoUrl = await uploadLogo(user.uid, logoFile);
+        toast({ title: "Logo Subido", description: "El nuevo logo se ha subido con éxito." });
+      } catch (error) {
+        console.error("Error uploading logo:", error);
+        toast({ variant: "destructive", title: "Error al Subir Logo", description: "No se pudo subir el nuevo logo." });
+        // No continuar si la subida del logo falló, o decidir si guardar el resto de datos
+        setIsLoading(false);
+        return;
+      }
+    } else if (data.logoUrl === null && existingLogoUrl !== null) { 
+      // Si data.logoUrl es null, significa que el usuario quiere eliminar el logo existente
+      await deleteLogo(user.uid, existingLogoUrl);
+      finalLogoUrl = null;
+      toast({ title: "Logo Eliminado", description: "El logo ha sido eliminado." });
+    }
+    // Si no se seleccionó un nuevo archivo y data.logoUrl no es null, se mantiene el existingLogoUrl (que ya está en finalLogoUrl).
+
 
     try {
       const profileRef = doc(db, "companyProfiles", user.uid);
@@ -150,11 +220,12 @@ export default function ProfileSetupPage() {
         nit: data.nit,
         phone: data.phone,
         address: data.address,
-        logoUrl: data.logoUrl || null, // Guardar logoUrl
-        createdAt: existingCreatedAt || serverTimestamp(), // Usar existente o nuevo timestamp
+        logoUrl: finalLogoUrl,
+        createdAt: existingCreatedAt || serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
       await setDoc(profileRef, companyProfileData, { merge: true });
+      setExistingLogoUrl(finalLogoUrl); // Actualizar el estado local del logo existente
       
       if (!emailUpdateAttempted || emailUpdatedSuccessfully) {
          toast({
@@ -189,7 +260,11 @@ export default function ProfileSetupPage() {
                 <Skeleton className="h-5 w-1/2 mx-auto" />
             </CardHeader>
             <CardContent className="space-y-6">
-                {[1,2,3,4,5,6].map(i => ( 
+                <div className="flex items-center gap-4">
+                    <Skeleton className="w-20 h-20 rounded-md border" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
+                {[1,2,3,4,5].map(i => ( 
                     <div key={i} className="space-y-2">
                         <Skeleton className="h-4 w-1/4" />
                         <Skeleton className="h-10 w-full" />
