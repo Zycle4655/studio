@@ -100,9 +100,8 @@ const DEFAULT_MATERIALS = [
   { name: "TETRA PAK", price: 200 },
   { name: "GALONES", price: 1000 },
   { name: "CHATARRA", price: 720 },
-  { name: "TAPA", price: 900 }, // Hay dos "TAPAS" y "TAPA", asumo que son distintos o un error, mantengo ambos por ahora.
+  { name: "TAPA", price: 900 }, 
   { name: "BATERIA", price: 2300 },
-  // { name: "PET REVUELTO", price: 950 }, // Este ya estaba, lo comento para evitar duplicados si fue un error. Si es intencional, descomentar.
 ];
 
 
@@ -129,7 +128,7 @@ export default function MaterialesPage() {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef || !db || !user ) return false;
 
-    setIsLoading(true);
+    setIsLoading(true); // Se mantiene mientras se inicializa
     try {
       const batch = writeBatch(db);
       DEFAULT_MATERIALS.forEach(material => {
@@ -157,7 +156,7 @@ export default function MaterialesPage() {
       });
       return false; // Indicar fallo
     } finally {
-       // No quitar setIsLoading(false) aquí, fetchMaterials lo hará
+       // No quitar setIsLoading(false) aquí, fetchMaterials lo hará después de esto
     }
   }, [getMaterialsCollectionRef, toast, user, db]);
 
@@ -362,11 +361,11 @@ export default function MaterialesPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-4">
-              {[...Array(5)].map((_, i) => ( // Aumentado a 5 para dar mejor impresión de carga
+              {[...Array(5)].map((_, i) => ( 
                 <div key={i} className="flex items-center justify-between p-4 border rounded-md">
                   <div className="space-y-2">
-                    <Skeleton className="h-5 w-40" /> {/* Un poco más ancho */}
-                    <Skeleton className="h-4 w-24" /> {/* Un poco más ancho */}
+                    <Skeleton className="h-5 w-40" /> 
+                    <Skeleton className="h-4 w-24" /> 
                   </div>
                   <div className="flex space-x-2">
                     <Skeleton className="h-9 w-9 rounded-md" />
@@ -465,4 +464,3 @@ export default function MaterialesPage() {
     </div>
   );
 }
-
