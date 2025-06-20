@@ -107,7 +107,7 @@ const DEFAULT_MATERIALS = [
 
 export default function MaterialesPage() {
   const { toast } = useToast();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -117,44 +117,43 @@ export default function MaterialesPage() {
 
   const [materialToDelete, setMaterialToDelete] = React.useState<MaterialDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [hasInitializedMaterials, setHasInitializedMaterials] = React.useState(false);
-  const initializationAttemptedRef = React.useRef(false);
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!db) return null;
-    // Cambiado para apuntar a una colección global
     return collection(db, "globalMaterials");
   }, [db]);
 
   const initializeDefaultMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
-    if (!materialsCollectionRef || !db ) return false; // user ya no es necesario para la ruta
+    if (!materialsCollectionRef || !db) return false;
 
+    setIsSubmitting(true); // Indicate that an operation is in progress
     try {
       const batch = writeBatch(db);
       DEFAULT_MATERIALS.forEach(material => {
-        const newMaterialRef = doc(materialsCollectionRef); 
+        const newMaterialRef = doc(materialsCollectionRef);
         batch.set(newMaterialRef, {
           ...material,
           price: parseFloat(Number(material.price).toFixed(2)),
-          code: material.code || null, 
+          code: material.code || null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
       });
       await batch.commit();
-      setHasInitializedMaterials(true); 
-      // No notification for successful initialization
-      return true; 
+      // No toast for successful silent initialization
+      return true;
     } catch (error) {
-      console.error("Error initializing default materials:", error);
+      console.error("Error initializing default global materials:", error);
       toast({
         variant: "destructive",
         title: "Error al Inicializar Materiales Globales",
         description: "No se pudo crear la lista de materiales estándar globales.",
       });
-      return false; 
+      return false;
+    } finally {
+      setIsSubmitting(false);
     }
   }, [getMaterialsCollectionRef, toast, db]);
 
@@ -162,7 +161,7 @@ export default function MaterialesPage() {
   const fetchMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
-      if (user) { // user sigue siendo relevante para saber si mostrar toast
+      if (user) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -171,30 +170,24 @@ export default function MaterialesPage() {
 
     setIsLoading(true);
     try {
-      const querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
+      let querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
 
-      if (querySnapshot.empty && !hasInitializedMaterials && !initializationAttemptedRef.current) {
-        initializationAttemptedRef.current = true; 
+      if (querySnapshot.empty) {
+        // Only attempt to initialize if the collection is genuinely empty
         const success = await initializeDefaultMaterials();
         if (success) {
-          const newSnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
-          const materialsList = newSnapshot.docs.map(
-            (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
-          );
-          setMaterials(materialsList);
-        } else {
-          setMaterials([]); 
-          initializationAttemptedRef.current = false; // Allow re-attempt if initialization failed
+          // Re-fetch materials after successful initialization
+          querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
         }
-      } else {
-        const materialsList = querySnapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
-        );
-        setMaterials(materialsList);
-        if (!querySnapshot.empty) {
-            setHasInitializedMaterials(true); 
-        }
+        // If initialization failed, querySnapshot will still be empty, and an empty list will be shown.
+        // The error toast is handled within initializeDefaultMaterials.
       }
+
+      const materialsList = querySnapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
+      );
+      setMaterials(materialsList);
+
     } catch (error) {
       console.error("Error fetching global materials:", error);
       toast({
@@ -202,21 +195,20 @@ export default function MaterialesPage() {
         title: "Error al Cargar Materiales Globales",
         description: "No se pudieron cargar los materiales globales.",
       });
+      setMaterials([]); // Ensure materials is empty on error
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, toast, initializeDefaultMaterials, hasInitializedMaterials, user]);
+  }, [getMaterialsCollectionRef, toast, initializeDefaultMaterials, user]); // user is for the toast when db connection is not ready
 
 
   React.useEffect(() => {
     document.title = 'Gestión de Materiales Global | ZYCLE';
-    if (user) { 
+    if (user) {
       fetchMaterials();
     } else {
-      setIsLoading(false); 
-      setMaterials([]); 
-      setHasInitializedMaterials(false); 
-      initializationAttemptedRef.current = false; 
+      setIsLoading(false);
+      setMaterials([]);
     }
   }, [user, fetchMaterials]);
 
@@ -261,7 +253,7 @@ export default function MaterialesPage() {
         title: "Material Global Eliminado",
         description: `El material "${materialToDelete.name}" ha sido eliminado de la lista global.`,
       });
-      fetchMaterials(); 
+      fetchMaterials();
     } catch (error) {
       console.error("Error deleting global material:", error);
       toast({
@@ -279,14 +271,14 @@ export default function MaterialesPage() {
   const handleFormSubmit = async (data: MaterialFormData) => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
-      toast({ variant: "destructive", title: "Error", description: "La base de datos no está disponible o no ha iniciado sesión." });
+      toast({ variant: "destructive", title: "Error", description: "La base de datos no está disponible." });
       return;
     }
     setIsSubmitting(true);
     const materialData = {
       ...data,
       price: parseFloat(Number(data.price).toFixed(2)),
-      code: data.code || null, 
+      code: data.code || null,
     };
 
     try {
@@ -313,7 +305,7 @@ export default function MaterialesPage() {
       }
       setIsFormOpen(false);
       setEditingMaterial(null);
-      fetchMaterials(); 
+      fetchMaterials();
     } catch (error) {
       console.error("Error saving global material:", error);
       toast({
@@ -325,7 +317,7 @@ export default function MaterialesPage() {
       setIsSubmitting(false);
     }
   };
-  
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
   };
@@ -362,11 +354,11 @@ export default function MaterialesPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-4">
-              {[...Array(5)].map((_, i) => ( 
+              {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center justify-between p-4 border rounded-md">
                   <div className="space-y-2">
-                    <Skeleton className="h-5 w-40" /> 
-                    <Skeleton className="h-4 w-24" /> 
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-24" />
                      <Skeleton className="h-4 w-16" />
                   </div>
                   <div className="flex space-x-2">
@@ -376,11 +368,11 @@ export default function MaterialesPage() {
                 </div>
               ))}
             </div>
-          ) : materials.length === 0 && hasInitializedMaterials ? ( 
+          ) : materials.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <PackageOpen className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales globales registrados</h3>
-                <p className="text-muted-foreground mb-6">Añada un nuevo material utilizando el botón flotante.</p>
+                <p className="text-muted-foreground mb-6">Si es la primera vez, la lista de materiales por defecto debería cargarse. Si no, añada un nuevo material utilizando el botón flotante.</p>
             </div>
           ) : (
             <Table>
@@ -414,6 +406,7 @@ export default function MaterialesPage() {
                         className="hover:text-primary"
                         onClick={() => handleEditMaterial(material)}
                         aria-label="Editar material"
+                        disabled={isSubmitting}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -423,6 +416,7 @@ export default function MaterialesPage() {
                         className="hover:text-destructive"
                         onClick={() => openDeleteDialog(material)}
                         aria-label="Eliminar material"
+                        disabled={isSubmitting}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -440,7 +434,7 @@ export default function MaterialesPage() {
         size="icon"
         onClick={handleAddMaterial}
         aria-label="Agregar nuevo material global"
-        disabled={!user || isLoading} 
+        disabled={!user || isLoading || isSubmitting}
       >
         <Plus className="h-8 w-8" />
       </Button>
@@ -463,7 +457,7 @@ export default function MaterialesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setMaterialToDelete(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setMaterialToDelete(null)} disabled={isSubmitting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteMaterial}
               disabled={isSubmitting}
@@ -477,6 +471,5 @@ export default function MaterialesPage() {
     </div>
   );
 }
-
 
     
