@@ -6,9 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, getDocs, query, orderBy } from "firebase/firestore";
-import type { FacturaCompraDocument, CompraMaterialItem, CompraMaterialItemFormData, FacturaCompraFormData } from "@/schemas/compra";
+import type { FacturaCompraDocument, CompraMaterialItem, FacturaCompraFormData } from "@/schemas/compra";
 import type { CompanyProfileDocument } from "@/schemas/company";
-import type { MaterialDocument } from "@/schemas/material";
 import { FacturaCompraFormSchema } from "@/schemas/compra";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, FormProvider } from "react-hook-form";
@@ -24,12 +23,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { CalendarIcon, Save, XCircle, UserSquare, ListOrdered, FileEdit, DollarSign, Info, Printer, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { CalendarIcon, Save, XCircle, UserSquare, ListOrdered, FileEdit, DollarSign, Info, Printer, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,16 +54,10 @@ export default function EditFacturaCompraPage() {
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
   const [isLoadingPage, setIsLoadingPage] = React.useState(true);
   const [isSavingInvoice, setIsSavingInvoice] = React.useState(false);
-  const [availableMaterials, setAvailableMaterials] = React.useState<MaterialDocument[]>([]);
-
-  // For item modal
-  const [isItemFormOpen, setIsItemFormOpen] = React.useState(false);
-  const [currentItemForForm, setCurrentItemForForm] = React.useState<Partial<CompraMaterialItemFormData> | undefined>(undefined);
-  const [editingItemIndex, setEditingItemIndex] = React.useState<number | null>(null);
-  const [itemFormTitle, setItemFormTitle] = React.useState("Agregar Ítem");
 
   // For item deletion confirmation
   const [itemToDeleteIndex, setItemToDeleteIndex] = React.useState<number | null>(null);
+  const [itemToDeleteName, setItemToDeleteName] = React.useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
 
@@ -78,31 +70,6 @@ export default function EditFacturaCompraPage() {
       observaciones: "",
     },
   });
-
-  const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
-
-  const fetchAvailableMaterials = React.useCallback(async () => {
-    const materialsCollectionRef = getMaterialsCollectionRef();
-    if (!materialsCollectionRef) return;
-    try {
-      const querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
-      const materialsList = querySnapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
-      );
-      setAvailableMaterials(materialsList);
-    } catch (error) {
-      console.error("Error fetching available materials for edit page:", error);
-      toast({
-        variant: "destructive",
-        title: "Error al Cargar Materiales",
-        description: "No se pudieron cargar los materiales para agregar/editar ítems.",
-      });
-    }
-  }, [getMaterialsCollectionRef, toast]);
-
 
   React.useEffect(() => {
     if (!user || !facturaId) {
@@ -120,7 +87,8 @@ export default function EditFacturaCompraPage() {
         if (invoiceSnap.exists()) {
           const data = invoiceSnap.data() as FacturaCompraDocument;
           setInvoice(data);
-          setEditableItems(JSON.parse(JSON.stringify(data.items)));
+          // Deep copy items to allow local modifications without directly mutating Firestore data
+          setEditableItems(JSON.parse(JSON.stringify(data.items))); 
           setCurrentTotalFactura(data.totalFactura);
           form.reset({
             fecha: data.fecha instanceof Timestamp ? data.fecha.toDate() : new Date(data.fecha),
@@ -139,7 +107,6 @@ export default function EditFacturaCompraPage() {
           setCompanyProfile(profileSnap.data() as CompanyProfileDocument);
         }
         setUserEmail(user.email);
-        await fetchAvailableMaterials();
 
       } catch (error) {
         console.error("Error fetching invoice or profile for edit:", error);
@@ -150,7 +117,7 @@ export default function EditFacturaCompraPage() {
     };
 
     fetchInvoiceData();
-  }, [user, facturaId, router, toast, form, fetchAvailableMaterials]);
+  }, [user, facturaId, router, toast, form]);
 
   const calculateTotal = React.useCallback((items: CompraMaterialItem[]) => {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -161,63 +128,34 @@ export default function EditFacturaCompraPage() {
   }, [editableItems, calculateTotal]);
 
 
-  const handleOpenAddItemForm = () => {
-    if (availableMaterials.length === 0) {
-        toast({ variant: "destructive", title: "No hay materiales base", description: "Registre materiales en 'Gestión de Material > Materiales' primero." });
-        return;
+  const handleItemFieldChange = (index: number, field: keyof CompraMaterialItem, value: string | number) => {
+    const newItems = [...editableItems];
+    const itemToUpdate = { ...newItems[index] };
+
+    if (field === "peso" || field === "precioUnitario") {
+      const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+      if (isNaN(numericValue) || numericValue < 0) {
+        // Potentially show a toast or inline error for invalid input
+        // For now, we just don't update if it's not a valid positive number for these fields
+        // Or, allow 0 temporarily for peso, but subtotal will be 0
+        if (field === "peso" && numericValue < 0) return;
+        if (field === "precioUnitario" && numericValue < 0) return;
+        // itemToUpdate[field] = 0; // or keep old value
+      } else {
+         itemToUpdate[field] = numericValue;
+      }
     }
-    setCurrentItemForForm(undefined);
-    setEditingItemIndex(null);
-    setItemFormTitle("Agregar Ítem a la Factura");
-    setIsItemFormOpen(true);
+    
+    // Recalculate subtotal
+    itemToUpdate.subtotal = (itemToUpdate.peso || 0) * (itemToUpdate.precioUnitario || 0);
+    newItems[index] = itemToUpdate;
+    setEditableItems(newItems);
   };
 
-  const handleOpenEditItemForm = (item: CompraMaterialItem, index: number) => {
-    setCurrentItemForForm({
-      materialId: item.materialId,
-      peso: item.peso,
-      precioUnitario: item.precioUnitario,
-    });
-    setEditingItemIndex(index);
-    setItemFormTitle("Editar Ítem de la Factura");
-    setIsItemFormOpen(true);
-  };
-
-  const handleItemFormSubmit = (data: CompraMaterialItemFormData) => {
-    const selectedMaterial = availableMaterials.find(m => m.id === data.materialId);
-    if (!selectedMaterial) {
-      toast({ variant: "destructive", title: "Error", description: "Material no encontrado." });
-      return;
-    }
-
-    const precioUnitario = data.precioUnitario ?? selectedMaterial.price;
-
-    const newItem: CompraMaterialItem = {
-      id: editingItemIndex !== null ? editableItems[editingItemIndex].id : Date.now().toString(),
-      materialId: selectedMaterial.id,
-      materialName: selectedMaterial.name,
-      materialCode: selectedMaterial.code || null,
-      peso: data.peso,
-      precioUnitario: precioUnitario,
-      subtotal: data.peso * precioUnitario,
-    };
-
-    let updatedItems = [...editableItems];
-    if (editingItemIndex !== null) {
-      updatedItems[editingItemIndex] = newItem;
-      toast({ title: "Ítem Actualizado", description: `${newItem.materialName} actualizado.` });
-    } else {
-      updatedItems.push(newItem);
-      toast({ title: "Ítem Agregado", description: `${newItem.materialName} agregado.` });
-    }
-    setEditableItems(updatedItems);
-    setIsItemFormOpen(false);
-    setCurrentItemForForm(undefined);
-    setEditingItemIndex(null);
-  };
 
   const handleOpenDeleteItemDialog = (index: number) => {
     setItemToDeleteIndex(index);
+    setItemToDeleteName(editableItems[index]?.materialName || "este ítem");
     setIsDeleteDialogOpen(true);
   };
 
@@ -226,9 +164,10 @@ export default function EditFacturaCompraPage() {
     const itemNameToDelete = editableItems[itemToDeleteIndex]?.materialName;
     const updatedItems = editableItems.filter((_, i) => i !== itemToDeleteIndex);
     setEditableItems(updatedItems);
-    toast({ title: "Ítem Eliminado", description: `El ítem "${itemNameToDelete}" ha sido eliminado.` });
+    toast({ title: "Ítem Eliminado", description: `El ítem "${itemNameToDelete}" ha sido eliminado de la factura.` });
     setIsDeleteDialogOpen(false);
     setItemToDeleteIndex(null);
+    setItemToDeleteName(null);
   };
 
 
@@ -239,12 +178,26 @@ export default function EditFacturaCompraPage() {
       const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
       const finalTotalFactura = calculateTotal(editableItems);
 
+      // Validate items before saving
+      for (const item of editableItems) {
+        if (item.peso <= 0) {
+          toast({ variant: "destructive", title: "Error en Ítem", description: `El peso del material "${item.materialName}" debe ser mayor a cero.` });
+          setIsSavingInvoice(false);
+          return;
+        }
+        if (item.precioUnitario <= 0) {
+          toast({ variant: "destructive", title: "Error en Ítem", description: `El precio unitario del material "${item.materialName}" debe ser mayor a cero.` });
+          setIsSavingInvoice(false);
+          return;
+        }
+      }
+
       const updatedData: Partial<FacturaCompraDocument> = {
         fecha: Timestamp.fromDate(formData.fecha),
         proveedorNombre: formData.proveedorNombre || null,
         formaDePago: formData.formaDePago,
         observaciones: formData.observaciones || null,
-        items: editableItems,
+        items: editableItems, // Save the locally modified items
         totalFactura: finalTotalFactura,
         updatedAt: serverTimestamp(),
       };
@@ -258,10 +211,14 @@ export default function EditFacturaCompraPage() {
       setIsSavingInvoice(false);
     }
   };
-
+  
   const triggerSaveInvoice = async () => {
     const isValid = await form.trigger();
     if (isValid) {
+        if (editableItems.length === 0) {
+            toast({ variant: "destructive", title: "Factura Vacía", description: "La factura debe tener al menos un ítem." });
+            return;
+        }
         handleUpdateInvoice(form.getValues() as FacturaCompraFormData);
     }
   };
@@ -374,12 +331,11 @@ export default function EditFacturaCompraPage() {
             Editar Factura de Compra N° {invoice.numeroFactura}
           </CardTitle>
           <CardDescription>
-            Modifique los detalles y los ítems de la factura.
+            Modifique los detalles y los ítems de la factura. La adición de nuevos ítems a una factura existente estará disponible próximamente.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <FormProvider {...form}>
-            {/* Eliminamos onSubmit de la etiqueta <form> */}
             <form className="space-y-6">
               <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
                 <div className="space-y-5">
@@ -553,9 +509,7 @@ export default function EditFacturaCompraPage() {
                     <ListOrdered className="mr-2 h-5 w-5" />
                     Ítems de la Factura
                     </h3>
-                    <Button type="button" variant="outline" size="sm" onClick={handleOpenAddItemForm} disabled={isSavingInvoice || availableMaterials.length === 0}>
-                        <PlusCircle className="mr-2 h-4 w-4"/> Agregar Ítem
-                    </Button>
+                    {/* Botón para agregar ítem eliminado por ahora */}
                 </div>
                 {editableItems.length > 0 ? (
                   <div className="overflow-x-auto rounded-md border">
@@ -564,10 +518,10 @@ export default function EditFacturaCompraPage() {
                         <TableRow>
                           <TableHead>Material</TableHead>
                           <TableHead>Código</TableHead>
-                          <TableHead className="text-right">Peso (kg)</TableHead>
-                          <TableHead className="text-right">Precio Unit.</TableHead>
+                          <TableHead className="text-right w-32">Peso (kg)</TableHead>
+                          <TableHead className="text-right w-40">Precio Unit.</TableHead>
                           <TableHead className="text-right">Subtotal</TableHead>
-                          <TableHead className="text-right w-[100px]">Acciones</TableHead>
+                          <TableHead className="text-right w-[70px]">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -575,13 +529,30 @@ export default function EditFacturaCompraPage() {
                           <TableRow key={item.id || index}>
                             <TableCell>{item.materialName}</TableCell>
                             <TableCell>{item.materialCode || "N/A"}</TableCell>
-                            <TableCell className="text-right">{item.peso.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(item.precioUnitario)}</TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                value={item.peso}
+                                onChange={(e) => handleItemFieldChange(index, "peso", e.target.value)}
+                                className="h-8 text-right"
+                                step="0.01"
+                                min="0.01"
+                                disabled={isSavingInvoice}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                value={item.precioUnitario}
+                                onChange={(e) => handleItemFieldChange(index, "precioUnitario", e.target.value)}
+                                className="h-8 text-right"
+                                step="0.01"
+                                min="0.01"
+                                disabled={isSavingInvoice}
+                              />
+                            </TableCell>
                             <TableCell className="text-right">{formatCurrency(item.subtotal)}</TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenEditItemForm(item, index)} disabled={isSavingInvoice} aria-label="Editar ítem">
-                                <Edit className="h-4 w-4"/>
-                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteItemDialog(index)} disabled={isSavingInvoice} aria-label="Eliminar ítem" className="hover:text-destructive">
                                 <Trash2 className="h-4 w-4"/>
                               </Button>
@@ -592,7 +563,7 @@ export default function EditFacturaCompraPage() {
                     </Table>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground">Esta factura no tiene ítems registrados. Puede agregar uno usando el botón de arriba.</p>
+                  <p className="text-muted-foreground text-center py-4">Esta factura no tiene ítems. Debería tener al menos uno para ser válida.</p>
                 )}
               </div>
 
@@ -601,8 +572,7 @@ export default function EditFacturaCompraPage() {
                   <XCircle className="mr-2 h-4 w-4" />
                   Cancelar
                 </Button>
-                {/* Cambiamos type a "button" y usamos onClick */}
-                <Button type="button" onClick={triggerSaveInvoice} disabled={isSavingInvoice || isLoadingPage}>
+                <Button type="button" onClick={triggerSaveInvoice} disabled={isSavingInvoice || isLoadingPage || editableItems.length === 0}>
                   {isSavingInvoice ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</>}
                 </Button>
               </CardFooter>
@@ -611,39 +581,12 @@ export default function EditFacturaCompraPage() {
         </CardContent>
       </Card>
 
-      {availableMaterials.length > 0 && (
-        <CompraMaterialItemForm
-          isOpen={isItemFormOpen}
-          setIsOpen={setIsItemFormOpen}
-          onSubmit={handleItemFormSubmit}
-          materials={availableMaterials}
-          defaultValues={currentItemForForm}
-          title={itemFormTitle}
-          isEditingInvoiceItem={editingItemIndex !== null}
-        />
-      )}
-       {availableMaterials.length === 0 && isItemFormOpen && (
-          <AlertDialog open={isItemFormOpen} onOpenChange={setIsItemFormOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>No hay materiales base</AlertDialogTitle>
-                <AlertDialogDescription>
-                  No se pueden agregar ítems porque no hay materiales registrados en el sistema. Vaya a "Gestión de Material {'>'} Materiales" para agregarlos.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setIsItemFormOpen(false)}>Entendido</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-      )}
-
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar este ítem?</AlertDialogTitle>
             <AlertDialogDescription>
-              El ítem "{itemToDeleteIndex !== null && editableItems[itemToDeleteIndex]?.materialName}" será eliminado de la factura. Esta acción es irreversible una vez guardados los cambios en la factura.
+              El ítem "{itemToDeleteName}" será eliminado de la factura. Esta acción es irreversible una vez guardados los cambios en la factura.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -662,3 +605,5 @@ export default function EditFacturaCompraPage() {
     </div>
   );
 }
+
+    
