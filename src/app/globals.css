@@ -5,11 +5,11 @@
 
 @layer base {
   :root {
-    /* Light Mode - CyberX Inspired with Soft Neumorphism */
+    /* Light Mode - Previous CyberX Inspired with Petroleum Blue */
     --background: 220 30% 97%; /* Very light cool gray, almost white */
     --foreground: 230 25% 20%; /* Dark cool gray / soft black for text */
 
-    --card: 220 30% 98%; /* Slightly off-white for cards, for neumorphic effect */
+    --card: 220 30% 98%; /* Slightly off-white for cards */
     --card-foreground: 230 25% 20%; /* Dark text on cards */
 
     --popover: 220 30% 98%;
@@ -42,19 +42,24 @@
 
     --radius: 0.5rem; /* Maintained rounded corners */
 
-    /* Sidebar specific colors (Dark Theme for Sidebar) */
-    --sidebar-background: 240 15% 18%; /* Dark Desaturated Blue/Purple */
-    --sidebar-foreground: 220 20% 88%; /* Light Cool Gray for sidebar text */
-    --sidebar-primary: 200 55% 50%;    /* Brighter Petroleum Blue for active items */
-    --sidebar-primary-foreground: 200 10% 96%; /* Very Light text for sidebar primary */
-    --sidebar-accent: 170 70% 60%;     /* Brighter Teal/Green for hover/accent */
-    --sidebar-accent-foreground: 170 20% 15%; /* Darker text on sidebar accent */
-    --sidebar-border: 240 10% 25%;     /* Subtle border for dark sidebar */
-    --sidebar-ring: 200 55% 50%;       /* Brighter Petroleum Blue for focus rings */
+    /* Sidebar specific colors (Inspired by user's CSS: dark theme) */
+    /* rgb(50, 50, 50) -> hsl(0, 0%, 20%) */
+    --sidebar-background: 0 0% 20%; /* Dark Gray similar to rgb(50,50,50) */
+    /* white -> hsl(0, 0%, 98%) (slightly off-white for better blend) */
+    --sidebar-foreground: 0 0% 95%; /* Light Gray / Off-white for sidebar text */
+    /* #3a3a3a -> hsl(0, 0%, 23%) - For active/hover states if different from accent */
+    --sidebar-primary: 0 0% 23%;    
+    --sidebar-primary-foreground: 0 0% 95%; 
+    /* #3a3a3a -> hsl(0, 0%, 23%) - For hover/accent */
+    --sidebar-accent: 0 0% 25%;     /* Slightly lighter than primary for hover distinction */
+    --sidebar-accent-foreground: 0 0% 98%; /* White text on sidebar accent */
+    /* A border that fits the dark theme, e.g., slightly lighter or darker than background */
+    --sidebar-border: 0 0% 27%;     /* Darker Gray border for dark sidebar */
+    --sidebar-ring: 0 0% 25%;       /* Accent color for focus rings */
   }
 
   .dark {
-    /* Dark Mode - CyberX Inspired */
+    /* Dark Mode - Previous CyberX Inspired */
     --background: 240 15% 12%; /* Very Dark Desaturated Blue/Purple */
     --foreground: 220 20% 90%; /* Light Cool Gray for text */
 
@@ -89,15 +94,15 @@
     --chart-4: 340 75% 70%; /* Brighter Pink/Rose */
     --chart-5: 35 90% 65%;  /* Brighter Orange */
 
-    /* Sidebar colors in dark mode will be the same as the general dark theme for consistency */
-    --sidebar-background: 240 15% 12%;
-    --sidebar-foreground: 220 20% 90%;
-    --sidebar-primary: 200 55% 50%;
-    --sidebar-primary-foreground: 200 10% 96%;
-    --sidebar-accent: 170 70% 60%;
-    --sidebar-accent-foreground: 170 15% 95%;
-    --sidebar-border: 240 10% 25%;
-    --sidebar-ring: 200 55% 55%;
+    /* Sidebar colors in dark mode will ALSO follow the user's dark sidebar request for consistency */
+    --sidebar-background: 0 0% 20%; 
+    --sidebar-foreground: 0 0% 95%; 
+    --sidebar-primary: 0 0% 23%;    
+    --sidebar-primary-foreground: 0 0% 95%; 
+    --sidebar-accent: 0 0% 25%;     
+    --sidebar-accent-foreground: 0 0% 98%; 
+    --sidebar-border: 0 0% 27%;     
+    --sidebar-ring: 0 0% 25%;       
   }
 }
 
