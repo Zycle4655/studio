@@ -23,7 +23,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { MaterialFormSchema, type MaterialFormData } from "@/schemas/material";
-import { DollarSign, Save, XCircle, Package } from "lucide-react";
+import { DollarSign, Save, XCircle, Package, Code } from "lucide-react";
 
 interface MaterialFormProps {
   isOpen: boolean;
@@ -47,6 +47,7 @@ export default function MaterialForm({
     defaultValues: {
       name: defaultValues?.name || "",
       price: defaultValues?.price || undefined, 
+      code: defaultValues?.code || "",
     },
   });
 
@@ -55,6 +56,7 @@ export default function MaterialForm({
       form.reset({
         name: defaultValues?.name || "",
         price: defaultValues?.price || undefined,
+        code: defaultValues?.code || null, // Asegurarse de que sea null si no hay valor
       });
     }
   }, [defaultValues, isOpen, form.reset]);
@@ -63,6 +65,7 @@ export default function MaterialForm({
     const processedData = {
       ...data,
       price: parseFloat(Number(data.price).toFixed(2)),
+      code: data.code || null, // Guardar null si está vacío
     };
     await onSubmit(processedData);
   };
@@ -123,6 +126,27 @@ export default function MaterialForm({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground/80">Código de Material (Opcional)</FormLabel>
+                  <div className="relative">
+                    <Code className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <FormControl>
+                      <Input 
+                        placeholder="Ej: 101, 303PET" 
+                        {...field} 
+                        value={field.value || ""} // Para evitar que se muestre "null"
+                        className="pl-10" 
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button type="button" variant="outline">
@@ -140,4 +164,3 @@ export default function MaterialForm({
     </Dialog>
   );
 }
-

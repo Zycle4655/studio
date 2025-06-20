@@ -3,7 +3,7 @@
 
 import type { Metadata } from 'next';
 import * as React from "react";
-import { Plus, Edit, Trash2, PackageOpen } from "lucide-react";
+import { Plus, Edit, Trash2, PackageOpen, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -44,6 +44,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Lista de materiales estándar por defecto actualizada
+// Los códigos se añadirán cuando el usuario los proporcione
 const DEFAULT_MATERIALS = [
   { name: "COBRE N1", price: 30000 },
   { name: "COBRE N2", price: 30000 },
@@ -130,7 +131,6 @@ export default function MaterialesPage() {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef || !db || !user ) return false;
 
-    // No establecer isLoading aquí, ya que fetchMaterials lo maneja
     try {
       const batch = writeBatch(db);
       DEFAULT_MATERIALS.forEach(material => {
@@ -138,12 +138,12 @@ export default function MaterialesPage() {
         batch.set(newMaterialRef, {
           ...material,
           price: parseFloat(Number(material.price).toFixed(2)),
+          code: material.code || null, // Añadir code si existe, sino null
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
       });
       await batch.commit();
-      // Se elimina la notificación toast de aquí
       setHasInitializedMaterials(true); 
       return true; 
     } catch (error) {
@@ -173,7 +173,7 @@ export default function MaterialesPage() {
       const querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
 
       if (querySnapshot.empty && !hasInitializedMaterials && user && !initializationAttemptedRef.current) {
-        initializationAttemptedRef.current = true; // Marcar intento ANTES de la llamada asíncrona
+        initializationAttemptedRef.current = true; 
         const success = await initializeDefaultMaterials();
         if (success) {
           const newSnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
@@ -183,7 +183,7 @@ export default function MaterialesPage() {
           setMaterials(materialsList);
         } else {
           setMaterials([]); 
-          initializationAttemptedRef.current = false; // Permitir reintento si la inicialización falló
+          initializationAttemptedRef.current = false;
         }
       } else {
         const materialsList = querySnapshot.docs.map(
@@ -215,7 +215,7 @@ export default function MaterialesPage() {
       setIsLoading(false); 
       setMaterials([]); 
       setHasInitializedMaterials(false); 
-      initializationAttemptedRef.current = false; // Resetear si el usuario cierra sesión
+      initializationAttemptedRef.current = false; 
     }
   }, [user, fetchMaterials]);
 
@@ -285,6 +285,7 @@ export default function MaterialesPage() {
     const materialData = {
       ...data,
       price: parseFloat(Number(data.price).toFixed(2)),
+      code: data.code || null, // Guardar null si está vacío
     };
 
     try {
@@ -353,7 +354,7 @@ export default function MaterialesPage() {
               Gestión de Materiales
             </CardTitle>
             <CardDescription>
-              Añada, edite o elimine los tipos de materiales y sus precios para su empresa.
+              Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
             </CardDescription>
           </div>
         </CardHeader>
@@ -365,6 +366,7 @@ export default function MaterialesPage() {
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-40" /> 
                     <Skeleton className="h-4 w-24" /> 
+                     <Skeleton className="h-4 w-16" />
                   </div>
                   <div className="flex space-x-2">
                     <Skeleton className="h-9 w-9 rounded-md" />
@@ -384,6 +386,7 @@ export default function MaterialesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>
+                  <TableHead>Código</TableHead>
                   <TableHead className="text-right">Precio (COP)</TableHead>
                   <TableHead className="text-right w-[120px]">Acciones</TableHead>
                 </TableRow>
@@ -392,6 +395,16 @@ export default function MaterialesPage() {
                 {materials.map((material) => (
                   <TableRow key={material.id}>
                     <TableCell className="font-medium">{material.name}</TableCell>
+                    <TableCell>
+                        {material.code ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                                <Code className="mr-1.5 h-3.5 w-3.5" />
+                                {material.code}
+                            </span>
+                        ) : (
+                            <span className="text-muted-foreground italic text-xs">N/A</span>
+                        )}
+                    </TableCell>
                     <TableCell className="text-right">{formatPrice(material.price)}</TableCell>
                     <TableCell className="text-right">
                       <Button
