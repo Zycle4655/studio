@@ -1,7 +1,7 @@
 
 "use client";
 
-import * as React from "react"; // Added import for React
+import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -20,40 +20,56 @@ import { Building, Hash, Phone, MapPin, Save, Mail } from "lucide-react";
 
 interface CompanyProfileFormProps {
   onSubmit: (data: CompanyProfileFormData) => Promise<void>;
-  defaultValues?: Partial<CompanyProfileFormData>;
+  defaultValues?: CompanyProfileFormData; // Expecting full CompanyProfileFormData or undefined
   isLoading?: boolean;
   submitButtonText?: string;
   title?: string;
   description?: string;
-  isEditing?: boolean; // Para saber si el formulario es para editar o crear
+  isEditing?: boolean; 
 }
 
 export default function CompanyProfileForm({
   onSubmit,
-  defaultValues,
+  defaultValues: propsDefaultValues, // Renamed to avoid confusion with internal var
   isLoading = false,
   submitButtonText = "Guardar Perfil",
   title = "Perfil de la Empresa",
   description = "Complete la información de su empresa.",
   isEditing = false,
 }: CompanyProfileFormProps) {
+
   const form = useForm<CompanyProfileFormData>({
     resolver: zodResolver(CompanyProfileSchema),
-    defaultValues: defaultValues || {
-      companyName: "",
-      nit: "",
-      phone: "",
-      address: "",
-      email: "",
+    defaultValues: {
+      companyName: propsDefaultValues?.companyName || "",
+      nit: propsDefaultValues?.nit || "",
+      phone: propsDefaultValues?.phone || "",
+      address: propsDefaultValues?.address || "",
+      email: propsDefaultValues?.email || "",
     },
   });
 
-  // Sincronizar defaultValues si cambian (ej. al cargar datos asíncronamente)
   React.useEffect(() => {
-    if (defaultValues) {
-      form.reset(defaultValues);
+    if (propsDefaultValues) {
+      form.reset({
+        companyName: propsDefaultValues.companyName || "",
+        nit: propsDefaultValues.nit || "",
+        phone: propsDefaultValues.phone || "",
+        address: propsDefaultValues.address || "",
+        email: propsDefaultValues.email || "",
+      });
+    } else {
+      // If propsDefaultValues becomes undefined, reset to all empty strings
+      // This ensures inputs remain controlled.
+      form.reset({
+        companyName: "",
+        nit: "",
+        phone: "",
+        address: "",
+        email: "",
+      });
     }
-  }, [defaultValues, form]);
+  }, [propsDefaultValues, form.reset]); // form.reset is stable from RHF
 
   const handleFormSubmit = async (data: CompanyProfileFormData) => {
     await onSubmit(data);
@@ -134,8 +150,8 @@ export default function CompanyProfileForm({
                 </FormItem>
               )}
             />
-            {/* El campo de email solo se muestra si isEditing es true O si no hay defaultValues.email (es un perfil nuevo) */}
-            {(isEditing || !defaultValues?.email) && (
+            {/* Email field is only shown when editing an existing profile */}
+            {isEditing && (
               <FormField
                 control={form.control}
                 name="email"

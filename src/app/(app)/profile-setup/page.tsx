@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import CompanyProfileForm from '@/components/forms/CompanyProfileForm';
 import type { CompanyProfileFormData, CompanyProfileDocument } from '@/schemas/company';
-import { auth, db } from '@/lib/firebase'; // Import auth
+import { auth, db } from '@/lib/firebase'; 
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { updateEmail } from 'firebase/auth'; // Import updateEmail
+import { updateEmail } from 'firebase/auth'; 
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -19,7 +19,7 @@ export default function ProfileSetupPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingProfile, setIsFetchingProfile] = useState(true);
-  const [defaultFormValues, setDefaultFormValues] = useState<Partial<CompanyProfileFormData> | undefined>(undefined);
+  const [defaultFormValues, setDefaultFormValues] = useState<CompanyProfileFormData | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -32,24 +32,31 @@ export default function ProfileSetupPage() {
     async function fetchProfileAndSetDefaults() {
       if (user && db) {
         setIsFetchingProfile(true);
-        let profileData: Partial<CompanyProfileFormData> = { email: user.email || "" };
+        let resolvedDefaultValues: CompanyProfileFormData;
         try {
             const profileRef = doc(db, "companyProfiles", user.uid);
             const profileSnap = await getDoc(profileRef);
             if (profileSnap.exists()) {
                 const existingData = profileSnap.data() as CompanyProfileDocument;
-                profileData = {
-                    ...profileData, // email from user
-                    companyName: existingData.companyName,
-                    nit: existingData.nit,
-                    phone: existingData.phone,
-                    address: existingData.address,
+                resolvedDefaultValues = {
+                    email: user.email || "", // Ensure email is always a string
+                    companyName: existingData.companyName || "",
+                    nit: existingData.nit || "",
+                    phone: existingData.phone || "",
+                    address: existingData.address || "",
                 };
-                setIsEditing(true); // Se está editando un perfil existente
+                setIsEditing(true);
             } else {
-                setIsEditing(false); // Se está creando un nuevo perfil
+                resolvedDefaultValues = { // For new profile
+                    email: user.email || "",
+                    companyName: "",
+                    nit: "",
+                    phone: "",
+                    address: "",
+                };
+                setIsEditing(false);
             }
-            setDefaultFormValues(profileData);
+            setDefaultFormValues(resolvedDefaultValues);
         } catch (error: any) {
             console.error("Error fetching company profile in ProfileSetupPage:", error);
             if (error.message && error.message.toLowerCase().includes("offline")) {
@@ -58,14 +65,25 @@ export default function ProfileSetupPage() {
             } else {
                  toast({ variant: "destructive", title: "Error al Cargar Perfil", description: "No se pudo cargar el perfil existente."});
             }
+            // Ensure defaults are set even on error to prevent undefined state for form
+            if (!resolvedDefaultValues!) {
+                 resolvedDefaultValues = {
+                    email: user.email || "", companyName: "", nit: "", phone: "", address: "",
+                 };
+                 setDefaultFormValues(resolvedDefaultValues);
+            }
         } finally {
             setIsFetchingProfile(false);
         }
       } else if (!user && !authLoading) {
         setIsFetchingProfile(false);
+         // Set empty defaults if no user and not loading to avoid undefined form values
+         setDefaultFormValues({ email: "", companyName: "", nit: "", phone: "", address: "" });
       } else if (!db && user && !authLoading) {
         console.warn("Firestore (db) is not initialized in ProfileSetupPage. Skipping profile fetch.");
         toast({ variant: "destructive", title: "Error de Configuración", description: "La base de datos no está disponible. Contacte al soporte."});
+        // Set empty defaults to avoid undefined form values
+        setDefaultFormValues({ email: user.email || "", companyName: "", nit: "", phone: "", address: "" });
         setIsFetchingProfile(false);
       }
     }
@@ -73,12 +91,13 @@ export default function ProfileSetupPage() {
       fetchProfileAndSetDefaults();
     } else if (!authLoading) {
         setIsFetchingProfile(false);
+        setDefaultFormValues({ email: "", companyName: "", nit: "", phone: "", address: "" });
     }
   }, [user, authLoading, toast]);
 
 
   const handleSubmit = async (data: CompanyProfileFormData) => {
-    if (!user || !db || !auth) { // Ensure auth is available
+    if (!user || !db || !auth) { 
       toast({ variant: "destructive", title: "Error", description: "Usuario no autenticado, base de datos o autenticación no disponible." });
       return;
     }
@@ -87,18 +106,22 @@ export default function ProfileSetupPage() {
     let emailUpdatedSuccessfully = false;
     let emailUpdateAttempted = false;
 
-    // 1. Intentar actualizar el correo electrónico en Firebase Auth si ha cambiado
-    if (data.email && data.email !== user.email) {
+    if (data.email && data.email !== user.email && isEditing) { // Only attempt update if editing and email changed
       emailUpdateAttempted = true;
       try {
-        await updateEmail(user, data.email);
-        emailUpdatedSuccessfully = true;
-        toast({
-          title: "Correo Actualizado",
-          description: "Su dirección de correo electrónico ha sido actualizada.",
-        });
-        // Es importante que el objeto 'user' de useAuth se actualice.
-        // Firebase onAuthStateChanged debería encargarse de esto, pero puede tomar un momento.
+        if (!auth.currentUser) {
+            await auth.currentUser?.reload(); // Try to refresh current user
+        }
+        if (auth.currentUser) { // Check again after potential reload
+             await updateEmail(auth.currentUser, data.email);
+             emailUpdatedSuccessfully = true;
+             toast({
+               title: "Correo Actualizado",
+               description: "Su dirección de correo electrónico ha sido actualizada.",
+             });
+        } else {
+            throw new Error("Current user not available for email update.");
+        }
       } catch (error: any) {
         console.error("Error updating email:", error);
         if (error.code === 'auth/requires-recent-login') {
@@ -110,17 +133,16 @@ export default function ProfileSetupPage() {
         } else if (error.code === 'auth/email-already-in-use') {
            toast({ variant: "destructive", title: "Error al Actualizar Correo", description: "El nuevo correo electrónico ya está en uso por otra cuenta." });
         } else {
-          toast({ variant: "destructive", title: "Error al Actualizar Correo", description: "No se pudo actualizar el correo electrónico." });
+          toast({ variant: "destructive", title: "Error al Actualizar Correo", description: `No se pudo actualizar el correo electrónico. (${error.message})` });
         }
       }
     }
 
-    // 2. Guardar/Actualizar el perfil de la empresa en Firestore
     try {
       const profileRef = doc(db, "companyProfiles", user.uid);
       
-      let createdAtTimestamp = serverTimestamp(); // Por defecto para nuevos perfiles
-      if (isEditing) { // Si estamos editando, intentamos preservar el createdAt original
+      let createdAtTimestamp = serverTimestamp(); 
+      if (isEditing) { 
         const currentProfileSnap = await getDoc(profileRef);
         if (currentProfileSnap.exists()) {
             const currentData = currentProfileSnap.data() as CompanyProfileDocument;
@@ -147,7 +169,6 @@ export default function ProfileSetupPage() {
             description: `El perfil de ${data.companyName} ha sido ${isEditing ? 'actualizado' : 'guardado'} con éxito.`,
         });
       } else if (emailUpdateAttempted && !emailUpdatedSuccessfully) {
-        // El toast de error de email ya se mostró, pero confirmamos que el perfil se guardó.
          toast({
             title: "Perfil de Empresa Guardado",
             description: `Los datos de la empresa ${data.companyName} han sido actualizados. El correo no pudo ser cambiado esta vez.`,
@@ -166,7 +187,7 @@ export default function ProfileSetupPage() {
     }
   };
 
-  if (authLoading || isFetchingProfile) {
+  if (authLoading || isFetchingProfile || defaultFormValues === undefined) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
          <Card className="w-full max-w-2xl shadow-xl">
@@ -175,7 +196,7 @@ export default function ProfileSetupPage() {
                 <Skeleton className="h-5 w-1/2 mx-auto" />
             </CardHeader>
             <CardContent className="space-y-6">
-                {[1,2,3,4,5].map(i => ( // Añadido un esqueleto más para el campo de email
+                {[1,2,3,4,5].map(i => ( 
                     <div key={i} className="space-y-2">
                         <Skeleton className="h-4 w-1/4" />
                         <Skeleton className="h-10 w-full" />
@@ -194,13 +215,14 @@ export default function ProfileSetupPage() {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
       <CompanyProfileForm
         onSubmit={handleSubmit}
-        defaultValues={defaultFormValues}
+        defaultValues={defaultFormValues} // This will be CompanyProfileFormData or undefined initially
         isLoading={isLoading}
         title={isEditing ? "Editar Perfil" : "Completar Perfil de Empresa"}
         description={isEditing ? "Actualice la información de su empresa y cuenta." : "Por favor, complete los datos de su empresa para continuar."}
         submitButtonText={isEditing ? "Actualizar Perfil" : "Guardar y Continuar"}
-        isEditing={isEditing} // Pasar esta prop al formulario
+        isEditing={isEditing} 
       />
     </div>
   );
 }
+
