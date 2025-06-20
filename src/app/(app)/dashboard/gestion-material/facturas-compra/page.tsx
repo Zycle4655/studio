@@ -41,6 +41,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
+import { useRouter } from "next/navigation"; // Importar useRouter
 
 // Metadata (aunque no se usa directamente en client components, es buena práctica tenerla)
 // export const metadata: Metadata = {
@@ -51,6 +52,7 @@ import Image from "next/image";
 export default function FacturasCompraPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter(); // Inicializar useRouter
   const [invoices, setInvoices] = React.useState<FacturaCompraDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(null);
@@ -138,10 +140,8 @@ export default function FacturasCompraPage() {
   };
   
   const handleEditInvoice = (invoiceId: string | undefined) => {
-    // Placeholder: Redirigir a una página de edición o abrir un modal más complejo
     if(!invoiceId) return;
-    toast({ title: "Función no implementada", description: `La edición para la factura ${invoiceId} estará disponible pronto.`});
-    // router.push(`/dashboard/gestion-material/facturas-compra/${invoiceId}/edit`);
+    router.push(`/dashboard/gestion-material/facturas-compra/${invoiceId}/edit`);
   };
 
   const printFacturaPreview = () => {
