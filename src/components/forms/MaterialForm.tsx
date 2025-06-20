@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -70,6 +69,7 @@ const STANDARD_MATERIAL_CODES = [
   { value: "499", label: "499 - Otros Vidrios" },
 ];
 
+const NO_CODE_VALUE = "__NONE__"; // Special value for "no code" option
 
 export default function MaterialForm({
   isOpen,
@@ -96,13 +96,13 @@ export default function MaterialForm({
         code: defaultValues?.code || null,
       });
     }
-  }, [defaultValues, isOpen, form.reset]);
+  }, [defaultValues, isOpen, form]); // form.reset removed from deps, form should be stable
 
   const handleFormSubmit = async (data: MaterialFormData) => {
     const processedData = {
       ...data,
       price: parseFloat(Number(data.price).toFixed(2)),
-      code: data.code || null, 
+      code: data.code === NO_CODE_VALUE ? null : data.code, 
     };
     await onSubmit(processedData);
   };
@@ -152,7 +152,14 @@ export default function MaterialForm({
                         className="pl-10"
                         value={String(field.value ?? "")} 
                         onChange={(e) => {
-                          field.onChange(e.target.value);
+                           // Permitir campo vacío o número
+                          const val = e.target.value;
+                          if (val === "") {
+                            field.onChange(undefined); // o null, dependiendo de cómo manejes valores vacíos
+                          } else {
+                            const num = parseFloat(val);
+                            field.onChange(isNaN(num) ? undefined : num);
+                          }
                         }}
                       />
                     </FormControl>
@@ -170,8 +177,8 @@ export default function MaterialForm({
                   <div className="relative">
                      <Code className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                     <Select
-                      onValueChange={(value) => field.onChange(value === "" ? null : value)}
-                      value={field.value || ""}
+                      onValueChange={(value) => field.onChange(value === NO_CODE_VALUE ? null : value)}
+                      value={field.value === null || field.value === undefined ? NO_CODE_VALUE : field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="pl-10">
@@ -179,7 +186,7 @@ export default function MaterialForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Ninguno / Sin código</SelectItem>
+                        <SelectItem value={NO_CODE_VALUE}>Ninguno / Sin código</SelectItem>
                         {STANDARD_MATERIAL_CODES.map((codeOpt) => (
                           <SelectItem key={codeOpt.value} value={codeOpt.value}>
                             {codeOpt.label}
