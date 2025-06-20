@@ -25,21 +25,18 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link'; // Import Link for SidebarMenuButton if href is used
+import Link from 'next/link';
 
 export function AppSidebar() {
   const pathname = usePathname();
   const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(true);
-  const { open: sidebarOpen } = useSidebar(); // Get sidebar state for tooltips
+  const { open: sidebarOpen } = useSidebar();
 
   const isActive = (path: string) => pathname === path;
   const isGestionMaterialPath = (path: string) => pathname.startsWith(path);
 
-  // Tooltip configuration for buttons
   const dashboardTooltip = sidebarOpen ? undefined : "Dashboard";
   const gestionMaterialTooltip = sidebarOpen ? undefined : "Gestión de Material";
-  const settingsTooltip = sidebarOpen ? undefined : "Configuración";
-
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -144,18 +141,6 @@ export function AppSidebar() {
             )}
           </SidebarMenuItem>
           
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive('/settings')}
-              tooltip={settingsTooltip}
-            >
-              <Link href="/settings">
-                <Settings />
-                <span>Configuración</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
