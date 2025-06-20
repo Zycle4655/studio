@@ -23,12 +23,14 @@ export default function AppLayout({
   const [profileChecked, setProfileChecked] = useState(false); 
   const [isInitialLoading, setIsInitialLoading] = useState(true); 
   const [companyNameToDisplay, setCompanyNameToDisplay] = useState<string | null>(null);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace("/login");
       setIsInitialLoading(false); 
-      setCompanyNameToDisplay(null); // Clear company name on logout
+      setCompanyNameToDisplay(null);
+      setCompanyLogoUrl(null); 
       return;
     }
 
@@ -39,6 +41,7 @@ export default function AppLayout({
             setProfileChecked(true);
             setIsInitialLoading(false);
             setCompanyNameToDisplay(null);
+            setCompanyLogoUrl(null);
             return;
         }
         try {
@@ -47,13 +50,16 @@ export default function AppLayout({
           if (!profileSnap.exists()) {
             router.replace("/profile-setup");
             setCompanyNameToDisplay(null);
+            setCompanyLogoUrl(null);
           } else {
             const companyData = profileSnap.data() as CompanyProfileDocument;
             setCompanyNameToDisplay(companyData.companyName);
+            setCompanyLogoUrl(companyData.logoUrl || null);
           }
         } catch (error: any) {
           console.error("Error checking company profile in AppLayout:", error);
           setCompanyNameToDisplay(null);
+          setCompanyLogoUrl(null);
           if (error.message && error.message.toLowerCase().includes("offline")) {
             console.warn("Firebase reported client is offline in AppLayout. Please check your internet connection and ensure Firestore is enabled and properly configured in your Firebase project console.");
           }
@@ -67,11 +73,10 @@ export default function AppLayout({
         setIsInitialLoading(true); 
     } else if (profileChecked && !authLoading && user) {
         setIsInitialLoading(false);
-        // Potentially re-fetch company name if user changes but profileChecked is true (edge case)
-        // For simplicity, current logic assumes company name is set during initial profile check
     } else if (!authLoading && !user) {
         setIsInitialLoading(false);
         setCompanyNameToDisplay(null);
+        setCompanyLogoUrl(null);
     }
 
   }, [user, authLoading, router, profileChecked]);
@@ -81,7 +86,7 @@ export default function AppLayout({
       <div className="flex flex-col min-h-screen">
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center justify-between">
-            <Skeleton className="h-8 w-24" /> {/* Placeholder for company name/logo */}
+            <Skeleton className="h-8 w-24" /> 
             <Skeleton className="h-10 w-10 rounded-full" />
           </div>
         </header>
@@ -108,7 +113,7 @@ export default function AppLayout({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <DashboardHeader companyName={companyNameToDisplay} />
+        <DashboardHeader companyName={companyNameToDisplay} companyLogoUrl={companyLogoUrl} />
         <main className="flex-1">{children}</main>
       </SidebarInset>
     </SidebarProvider>

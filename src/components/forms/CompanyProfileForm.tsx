@@ -16,21 +16,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyProfileSchema, type CompanyProfileFormData } from "@/schemas/company";
-import { Building, Hash, Phone, MapPin, Save, Mail } from "lucide-react";
+import { Building, Hash, Phone, MapPin, Save, Mail, Image as ImageIcon } from "lucide-react";
+import Image from 'next/image';
+
 
 interface CompanyProfileFormProps {
   onSubmit: (data: CompanyProfileFormData) => Promise<void>;
-  defaultValues?: CompanyProfileFormData; // Expecting full CompanyProfileFormData or undefined
+  defaultValues?: CompanyProfileFormData;
   isLoading?: boolean;
   submitButtonText?: string;
   title?: string;
   description?: string;
-  isEditing?: boolean; 
+  isEditing?: boolean;
 }
 
 export default function CompanyProfileForm({
   onSubmit,
-  defaultValues: propsDefaultValues, // Renamed to avoid confusion with internal var
+  defaultValues: propsDefaultValues,
   isLoading = false,
   submitButtonText = "Guardar Perfil",
   title = "Perfil de la Empresa",
@@ -46,6 +48,7 @@ export default function CompanyProfileForm({
       phone: propsDefaultValues?.phone || "",
       address: propsDefaultValues?.address || "",
       email: propsDefaultValues?.email || "",
+      logoUrl: propsDefaultValues?.logoUrl || null,
     },
   });
 
@@ -57,23 +60,25 @@ export default function CompanyProfileForm({
         phone: propsDefaultValues.phone || "",
         address: propsDefaultValues.address || "",
         email: propsDefaultValues.email || "",
+        logoUrl: propsDefaultValues.logoUrl || null,
       });
     } else {
-      // If propsDefaultValues becomes undefined, reset to all empty strings
-      // This ensures inputs remain controlled.
       form.reset({
         companyName: "",
         nit: "",
         phone: "",
         address: "",
         email: "",
+        logoUrl: null,
       });
     }
-  }, [propsDefaultValues, form.reset]); // form.reset is stable from RHF
+  }, [propsDefaultValues, form.reset]);
 
   const handleFormSubmit = async (data: CompanyProfileFormData) => {
     await onSubmit(data);
   };
+
+  const currentLogoUrl = form.watch("logoUrl");
 
   return (
     <Card className="w-full max-w-2xl shadow-xl">
@@ -86,6 +91,22 @@ export default function CompanyProfileForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            {isEditing && currentLogoUrl && (
+              <div className="mb-4 flex flex-col items-center">
+                <FormLabel className="text-foreground/80 mb-2">Logo Actual</FormLabel>
+                <Image
+                  src={currentLogoUrl}
+                  alt="Logo actual de la empresa"
+                  width={100}
+                  height={100}
+                  className="rounded-md border object-contain"
+                  data-ai-hint="logo company"
+                />
+              </div>
+            )}
+            {/* El campo de subida de archivo se añadirá en un futuro PR */}
+            {/* Por ahora, logoUrl se maneja internamente si ya existe */}
+
             <FormField
               control={form.control}
               name="companyName"
@@ -150,7 +171,6 @@ export default function CompanyProfileForm({
                 </FormItem>
               )}
             />
-            {/* Email field is only shown when editing an existing profile */}
             {isEditing && (
               <FormField
                 control={form.control}

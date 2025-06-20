@@ -20,7 +20,12 @@ import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
-export function UserNav() {
+interface UserNavProps {
+  companyName?: string | null;
+  logoUrl?: string | null;
+}
+
+export function UserNav({ companyName, logoUrl }: UserNavProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -44,7 +49,7 @@ export function UserNav() {
   };
 
   const getInitials = (email: string | null | undefined) => {
-    if (!email) return <UserCircle size={20} />; // Icono ligeramente más pequeño
+    if (!email) return <UserCircle size={20} />;
     const parts = email.split('@')[0].split(/[._-]/);
     if (parts.length > 1) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -57,7 +62,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border-2 border-primary">
-            {/* Se añade text-xs para hacer las iniciales más pequeñas */}
+            {logoUrl && <AvatarImage src={logoUrl} alt={companyName ? `Logo de ${companyName}` : "Logo de la empresa"} />}
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
               {user ? getInitials(user.email) : <UserCircle size={20} />}
             </AvatarFallback>
@@ -67,7 +72,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.displayName || "Usuario ZYCLE"}</p>
+            <p className="text-sm font-medium leading-none">{companyName || user?.displayName || "Usuario ZYCLE"}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email || "cargando..."}
             </p>
