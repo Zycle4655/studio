@@ -2,6 +2,8 @@
 "use client"; 
 
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { AppSidebar } from "@/components/dashboard/AppSidebar"; // Nuevo componente
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"; // Componentes del Sidebar
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,9 +92,13 @@ export default function AppLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <DashboardHeader />
-      <main className="flex-1">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <DashboardHeader />
+        <main className="flex-1">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
+
