@@ -46,17 +46,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Metadata (aunque 'use client' no la usa directamente, es bueno tenerla para referencia)
-// export const metadata: Metadata = {
-//   title: 'Compra de Materiales | ZYCLE',
-//   description: 'Registre la compra de materiales aprovechables.',
-// };
 
 export default function CompraMaterialPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = React.useState(true); // Para carga inicial de materiales
-  const [isSubmitting, setIsSubmitting] = React.useState(false); // Para guardado de factura
+  const [isLoading, setIsLoading] = React.useState(true); 
+  const [isSubmitting, setIsSubmitting] = React.useState(false); 
   const [isFetchingCompanyProfile, setIsFetchingCompanyProfile] = React.useState(false);
 
 
@@ -214,7 +209,6 @@ export default function CompraMaterialPage() {
 
     setIsFetchingCompanyProfile(true);
     try {
-      // Fetch company profile if not already fetched
       if (!companyProfileData) {
         const profileRef = getCompanyProfileRef();
         if (profileRef) {
@@ -222,7 +216,7 @@ export default function CompraMaterialPage() {
           if (profileSnap.exists()) {
             setCompanyProfileData(profileSnap.data() as CompanyProfileDocument);
           } else {
-            toast({ variant: "destructive", title: "Perfil no encontrado", description: "No se pudo cargar el perfil de la empresa." });
+            toast({ variant: "destructive", title: "Perfil no encontrado", description: "No se pudo cargar el perfil de la empresa. Por favor, complete el perfil en 'Configuración'." });
             setIsFetchingCompanyProfile(false);
             return;
           }
@@ -233,7 +227,6 @@ export default function CompraMaterialPage() {
         }
       }
 
-      // Fetch next numeroFactura
       const invoicesRef = getPurchaseInvoicesCollectionRef();
       if (invoicesRef) {
         const q = query(invoicesRef, orderBy("numeroFactura", "desc"), limit(1));
@@ -261,7 +254,7 @@ export default function CompraMaterialPage() {
 
   const handleSaveFactura = async (formData: FacturaCompraFormData) => {
     const invoicesRef = getPurchaseInvoicesCollectionRef();
-    if (!invoicesRef || !user || !nextNumeroFactura) {
+    if (!invoicesRef || !user || nextNumeroFactura === null) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la factura. Faltan datos o conexión." });
       return;
     }
@@ -270,27 +263,21 @@ export default function CompraMaterialPage() {
       const total = calculateTotal();
       const facturaData: FacturaCompraDocument = {
         userId: user.uid,
-        fecha: serverTimestamp(), // Se sobrescribirá con la fecha del formulario al usar .set, pero es bueno tener un fallback
+        fecha: formData.fecha, 
         items: currentPurchaseItems,
         totalFactura: total,
         numeroFactura: nextNumeroFactura,
         formaDePago: formData.formaDePago,
+        proveedorNombre: formData.proveedorNombre || null,
+        proveedorIdentificacion: formData.proveedorIdentificacion || null,
         observaciones: formData.observaciones || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
       
-      // Usar un batch para asegurar la atomicidad si se actualiza el stock en el futuro
       const batch = writeBatch(db);
-      const newFacturaRef = doc(invoicesRef); // Genera un ID automático
-
-      // Sobrescribir la fecha con la del formulario
-      const finalFacturaData = {
-        ...facturaData,
-        fecha: formData.fecha, // Usar la fecha del formulario
-      };
-
-      batch.set(newFacturaRef, finalFacturaData);
+      const newFacturaRef = doc(invoicesRef); 
+      batch.set(newFacturaRef, facturaData);
       
       // Aquí iría la lógica para actualizar el stock de los materiales si se implementa inventario
 
@@ -299,7 +286,7 @@ export default function CompraMaterialPage() {
       toast({ title: "Factura Guardada", description: `La factura N° ${nextNumeroFactura} ha sido guardada con éxito.` });
       setCurrentPurchaseItems([]);
       setIsFacturaFormOpen(false);
-      setNextNumeroFactura(null); // Reset para la próxima factura
+      setNextNumeroFactura(null); 
 
     } catch (error) {
       console.error("Error saving factura:", error);
@@ -339,6 +326,10 @@ export default function CompraMaterialPage() {
                         {[...Array(3)].map((_, i) => (
                             <Skeleton key={i} className="h-12 w-full rounded-md"/>
                         ))}
+                    </div>
+                     <div className="fixed bottom-8 right-8 flex flex-col space-y-3">
+                        <Skeleton className="h-16 w-16 rounded-full" />
+                        <Skeleton className="h-16 w-16 rounded-full" />
                     </div>
                 </CardContent>
             </Card>
@@ -438,7 +429,7 @@ export default function CompraMaterialPage() {
           size="icon"
           onClick={() => handleOpenAddItemForm()}
           aria-label="Agregar nuevo material a la compra"
-          disabled={!user || isLoading}
+          disabled={!user || isLoading || availableMaterials.length === 0}
         >
           <Plus className="h-8 w-8" />
         </Button>
@@ -451,7 +442,7 @@ export default function CompraMaterialPage() {
           onSubmit={handleAddItemToPurchase}
           materials={availableMaterials}
           defaultValues={editingItem ? { materialId: editingItem.materialId, peso: editingItem.peso } : undefined}
-          isLoading={isSubmitting} // Podría ser un estado diferente si el submit del item es diferente al de la factura
+          isLoading={isSubmitting} 
           title={editingItem ? "Editar Ítem de Compra" : "Agregar Ítem a la Compra"}
         />
       )}
@@ -498,7 +489,7 @@ export default function CompraMaterialPage() {
             <AlertDialogCancel onClick={() => { setItemToDelete(null); setItemIndexToDelete(null); }}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteItem}
-              disabled={isSubmitting} // Reutilizar isSubmitting si aplica a esta acción también
+              disabled={isSubmitting} 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isSubmitting ? "Eliminando..." : "Eliminar Ítem"}

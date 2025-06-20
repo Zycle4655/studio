@@ -28,6 +28,8 @@ export interface CompraMaterialItem {
 export const FacturaCompraFormSchema = z.object({
   fecha: z.date({ required_error: "La fecha es obligatoria." }),
   formaDePago: z.enum(["efectivo", "nequi"], { required_error: "La forma de pago es obligatoria."}),
+  proveedorNombre: z.string().max(100, "El nombre del proveedor no puede exceder los 100 caracteres.").optional().nullable(),
+  proveedorIdentificacion: z.string().max(50, "La identificación del proveedor no puede exceder los 50 caracteres.").optional().nullable(),
   observaciones: z.string().max(500, "Las observaciones no pueden exceder los 500 caracteres.").optional().nullable(),
 });
 
@@ -39,13 +41,13 @@ export interface FacturaCompraDocument {
   id?: string; // ID del documento de Firestore (opcional aquí, se asigna al crear)
   userId: string; 
   fecha: Timestamp; 
-  proveedorId?: string | null; 
   proveedorNombre?: string | null; 
+  proveedorIdentificacion?: string | null;
   items: CompraMaterialItem[]; 
   totalFactura: number;
-  numeroFactura: number; // Ahora es number y requerido
-  formaDePago: "efectivo" | "nequi"; // Requerido
-  observaciones?: string | null; // Se mantiene opcional
+  numeroFactura: number; 
+  formaDePago: "efectivo" | "nequi"; 
+  observaciones?: string | null; 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
