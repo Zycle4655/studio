@@ -65,7 +65,7 @@ export default function EditFacturaCompraPage() {
   const [itemFormTitle, setItemFormTitle] = React.useState("Agregar Ítem");
 
   // For item deletion confirmation
-  const [itemToDeleteIndex, setItemToDeleteIndex] React.useState<number | null>(null);
+  const [itemToDeleteIndex, setItemToDeleteIndex] = React.useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
 
@@ -658,3 +658,6 @@ export default function EditFacturaCompraPage() {
     </div>
   );
 }
+
+
+    
