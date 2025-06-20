@@ -40,13 +40,34 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { open: sidebarOpen } = useSidebar();
 
-  const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(true);
-  const [reportesOpen, setReportesOpen] = React.useState(false);
-  const [suiOpen, setSuiOpen] = React.useState(false);
-  const [talentoHumanoOpen, setTalentoHumanoOpen] = React.useState(false);
+  const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(
+    isModulePathActive('/dashboard/gestion-material')
+  );
+  const [reportesOpen, setReportesOpen] = React.useState(
+    isModulePathActive('/dashboard/reportes')
+  );
+  const [suiOpen, setSuiOpen] = React.useState(
+    isModulePathActive('/dashboard/sui')
+  );
+  const [talentoHumanoOpen, setTalentoHumanoOpen] = React.useState(
+    isModulePathActive('/dashboard/talento-humano')
+  );
+
+  function isModulePathActive(basePath: string) {
+    return pathname.startsWith(basePath);
+  }
+
+  // Update open state if path changes
+  React.useEffect(() => {
+    setGestionMaterialOpen(isModulePathActive('/dashboard/gestion-material'));
+    setReportesOpen(isModulePathActive('/dashboard/reportes'));
+    setSuiOpen(isModulePathActive('/dashboard/sui'));
+    setTalentoHumanoOpen(isModulePathActive('/dashboard/talento-humano'));
+  }, [pathname]);
+
 
   const isActive = (path: string) => pathname === path;
-  const isModulePathActive = (basePath: string) => pathname.startsWith(basePath);
+  
 
   // Tooltip texts (only shown when sidebar is collapsed to icons)
   const dashboardTooltip = sidebarOpen ? undefined : "Dashboard";
@@ -294,3 +315,5 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
+    
