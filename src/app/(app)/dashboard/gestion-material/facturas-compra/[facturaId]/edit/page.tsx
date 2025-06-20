@@ -259,6 +259,13 @@ export default function EditFacturaCompraPage() {
     }
   };
 
+  const triggerSaveInvoice = async () => {
+    const isValid = await form.trigger();
+    if (isValid) {
+        handleUpdateInvoice(form.getValues() as FacturaCompraFormData);
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
@@ -278,7 +285,8 @@ export default function EditFacturaCompraPage() {
         return;
       }
       printWindow.document.write('<html><head><title>Factura de Compra N° '+ invoice.numeroFactura +'</title>');
-      const stylesHtml = '<style>' +
+      const stylesHtml = '' +
+        '<style>' +
         'body { font-family: sans-serif; margin: 20px; color: #333; }' +
         '.invoice-header { text-align: center; margin-bottom: 20px; }' +
         '.invoice-header img { max-height: 60px; margin-bottom: 10px; object-fit: contain; }' +
@@ -371,7 +379,8 @@ export default function EditFacturaCompraPage() {
         </CardHeader>
         <CardContent>
           <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(handleUpdateInvoice)} className="space-y-6">
+            {/* Eliminamos onSubmit de la etiqueta <form> */}
+            <form className="space-y-6">
               <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
                 <div className="space-y-5">
                   <div>
@@ -592,7 +601,8 @@ export default function EditFacturaCompraPage() {
                   <XCircle className="mr-2 h-4 w-4" />
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSavingInvoice || isLoadingPage}>
+                {/* Cambiamos type a "button" y usamos onClick */}
+                <Button type="button" onClick={triggerSaveInvoice} disabled={isSavingInvoice || isLoadingPage}>
                   {isSavingInvoice ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</>}
                 </Button>
               </CardFooter>
@@ -639,7 +649,7 @@ export default function EditFacturaCompraPage() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              type="button" /* Explicitly set type to button */
+              type="button"
               onClick={handleConfirmDeleteItem}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
@@ -652,5 +662,3 @@ export default function EditFacturaCompraPage() {
     </div>
   );
 }
-
-
