@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from "react"; // Added import for React
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -133,7 +134,8 @@ export default function CompanyProfileForm({
                 </FormItem>
               )}
             />
-            {isEditing && ( // Solo mostrar el campo de email si se está editando el perfil
+            {/* El campo de email solo se muestra si isEditing es true O si no hay defaultValues.email (es un perfil nuevo) */}
+            {(isEditing || !defaultValues?.email) && (
               <FormField
                 control={form.control}
                 name="email"
