@@ -117,7 +117,7 @@ export default function FacturasCompraPage() {
   const formatDateWithTime = (timestamp: Timestamp | Date): string => {
     if (!timestamp) return "N/A";
     const date = timestamp instanceof Timestamp ? timestamp.toDate() : timestamp;
-    return format(date, "PPPp", { locale: es }); // PPPp incluye fecha y hora
+    return format(date, "PPPp", { locale: es }); 
   };
 
   const handleOpenPrintModal = (invoice: FacturaCompraDocument) => {
@@ -132,7 +132,7 @@ export default function FacturasCompraPage() {
 
   const printFacturaPreview = () => {
     const previewElement = document.getElementById("factura-print-content-modal");
-    if (previewElement && invoiceToPrint) {
+    if (previewElement && invoiceToPrint && companyProfile) {
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
         toast({variant: "destructive", title:"Error de Impresión", description: "No se pudo abrir la ventana de impresión. Verifique los bloqueadores de pop-ups."})
@@ -171,8 +171,6 @@ export default function FacturasCompraPage() {
           .total-section .total-amount { font-size: 1.1em; }
           .payment-method { font-size: 0.85em; margin-top: 5px; text-align: left; }
           .footer-notes { margin-top: 10px; font-size: 0.75em; border-top: 1px solid #eee; padding-top: 5px; text-align: center; }
-          .signature-line { margin-top: 20px; font-size: 0.85em; text-align: center; }
-          .signature-line p { margin-bottom: 15px; }
           .no-print { display: none !important; }
           @media print {
             body { margin: 0; padding:0; max-width: 100%; }
@@ -304,7 +302,7 @@ export default function FacturasCompraPage() {
 
       {invoiceToPrint && (
          <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
-            <DialogContent className="max-w-lg"> {/* Ancho ajustado para vista térmica */}
+            <DialogContent className="max-w-lg"> 
                 <DialogHeader>
                     <DialogTitle className="flex items-center">
                         <Printer className="mr-2 h-6 w-6 text-primary"/>
@@ -315,6 +313,7 @@ export default function FacturasCompraPage() {
                     </DialogDescription>
                 </DialogHeader>
                 <div id="factura-print-content-modal" className="p-1 border rounded-md bg-background text-xs max-h-[70vh] overflow-y-auto my-4">
+                    {/* Contenido de la factura para impresión */}
                     <div className="invoice-header">
                         {companyProfile?.logoUrl && (
                             <Image 
@@ -383,7 +382,7 @@ export default function FacturasCompraPage() {
                         <p><strong>Observaciones:</strong> {invoiceToPrint.observaciones}</p>
                         </div>
                     )}
-                    <div className="signature-line mt-3"><p>Recibido Por: ____________________</p></div>
+                    {/* Línea de firma eliminada */}
                 </div>
                 <DialogFooter className="mt-4">
                     <DialogClose asChild>

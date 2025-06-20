@@ -116,8 +116,8 @@ export default function FacturaCompraForm({
             margin: 5px; 
             color: #000; 
             background-color: #fff;
-            font-size: 10px; /* Tamaño base más pequeño para térmica */
-            max-width: 280px; /* Ancho típico para 80mm, ajustar según necesidad ~75mm */
+            font-size: 10px;
+            max-width: 280px; 
             padding: 0;
           }
           .invoice-header { text-align: center; margin-bottom: 8px; }
@@ -140,11 +140,9 @@ export default function FacturaCompraForm({
           .total-section .total-amount { font-size: 1.1em; }
           .payment-method { font-size: 0.85em; margin-top: 5px; text-align: left; }
           .footer-notes { margin-top: 10px; font-size: 0.75em; border-top: 1px solid #eee; padding-top: 5px; text-align: center; }
-          .signature-line { margin-top: 20px; font-size: 0.85em; text-align: center; }
-          .signature-line p { margin-bottom: 15px; }
           .no-print { display: none !important; }
           @media print { 
-            body { margin: 0; padding:0; max-width: 100%; /* Permitir que la impresora maneje el ancho */ } 
+            body { margin: 0; padding:0; max-width: 100%; } 
             .no-print { display: none !important; } 
             .items-table th, .items-table td { font-size: 0.8em; padding: 2px 1px;} 
             .invoice-header h1 { font-size: 1em; } 
@@ -325,6 +323,7 @@ export default function FacturaCompraForm({
                 </Button>
             </div>
             <div id="factura-create-preview-content" className="p-1 border rounded-md bg-background text-sm max-h-[calc(70vh-80px)] overflow-y-auto">
+                {/* Contenido de la factura para impresión */}
                 <div className="invoice-header">
                     {companyProfile?.logoUrl && (
                         <Image
@@ -355,33 +354,37 @@ export default function FacturaCompraForm({
                     </div>
                     </>
                 )}
-                  <div className="section-title mt-2">Detalle de Compra</div>
-                  <table className="items-table w-full text-xs my-1">
-                    <thead>
-                        <tr>
-                            <th className="col-material">Material</th>
-                            <th className="col-peso text-right">Peso</th>
-                            <th className="col-vunit text-right">Vr. Unit.</th>
-                            <th className="col-subtotal text-right">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {compraItems.map((item, idx) => (
-                        <tr key={item.id || idx}>
-                        <td className="col-material">{item.materialName} {item.materialCode && `(${item.materialCode})`}</td>
-                        <td className="col-peso text-right">{item.peso.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td className="col-vunit text-right">{formatCurrency(item.precioUnitario)}</td>
-                        <td className="col-subtotal text-right">{formatCurrency(item.subtotal)}</td>
-                        </tr>
-                    ))}
-                    </tbody>
-                  </table>
+
+                <div className="section-title mt-2">Detalle de Compra</div>
+                <table className="items-table w-full text-xs my-1">
+                <thead>
+                    <tr>
+                        <th className="col-material">Material</th>
+                        <th className="col-peso text-right">Peso</th>
+                        <th className="col-vunit text-right">Vr. Unit.</th>
+                        <th className="col-subtotal text-right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {compraItems.map((item, idx) => (
+                    <tr key={item.id || idx}>
+                    <td className="col-material">{item.materialName} {item.materialCode && `(${item.materialCode})`}</td>
+                    <td className="col-peso text-right">{item.peso.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td className="col-vunit text-right">{formatCurrency(item.precioUnitario)}</td>
+                    <td className="col-subtotal text-right">{formatCurrency(item.subtotal)}</td>
+                    </tr>
+                ))}
+                </tbody>
+                </table>
+                
                 <div className="total-section mt-2">
                     <p>TOTAL FACTURA: <span className="total-amount">{formatCurrency(totalCompra)}</span></p>
                 </div>
+
                 {form.watch("formaDePago") && <p className="payment-method mt-1"><strong>Forma de Pago:</strong> <span className="capitalize">{form.watch("formaDePago")}</span></p>}
+                
                 {form.watch("observaciones") && <div className="footer-notes mt-2 pt-1 border-t"><p><strong>Observaciones:</strong> {form.watch("observaciones")}</p></div>}
-                <div className="signature-line mt-3"><p>Recibido Por: ____________________</p></div>
+                {/* Línea de firma eliminada */}
             </div>
           </div>
         </div>

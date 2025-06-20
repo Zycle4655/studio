@@ -301,7 +301,7 @@ export default function EditFacturaCompraPage() {
   const formatDateWithTimeForDisplay = (dateValue: Timestamp | Date | undefined): string => {
     if (!dateValue) return "N/A";
     const date = dateValue instanceof Timestamp ? dateValue.toDate() : dateValue;
-    return format(date, "PPPp", { locale: es }); // PPPp incluye fecha y hora
+    return format(date, "PPPp", { locale: es }); 
   };
 
   const printFacturaPreview = () => {
@@ -344,8 +344,6 @@ export default function EditFacturaCompraPage() {
           .total-section .total-amount { font-size: 1.1em; }
           .payment-method { font-size: 0.85em; margin-top: 5px; text-align: left; }
           .footer-notes { margin-top: 10px; font-size: 0.75em; border-top: 1px solid #eee; padding-top: 5px; text-align: center; }
-          .signature-line { margin-top: 20px; font-size: 0.85em; text-align: center; }
-          .signature-line p { margin-bottom: 15px; }
           .no-print { display: none !important; }
           @media print { 
             body { margin: 0; padding:0; max-width: 100%; } 
@@ -549,6 +547,7 @@ export default function EditFacturaCompraPage() {
                         </Button>
                     </div>
                      <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto">
+                        {/* Contenido de la factura para impresión */}
                         <div className="invoice-header">
                             {companyProfile?.logoUrl && (
                                 <Image
@@ -565,10 +564,12 @@ export default function EditFacturaCompraPage() {
                             {companyProfile?.phone && <p>Tel: {companyProfile.phone}</p>}
                             {userEmail && <p>Email: {userEmail}</p>}
                         </div>
+                        
                         <div className="invoice-info mt-2">
                             <p><span>Factura N°:</span> <span className="font-semibold">{invoice.numeroFactura}</span></p>
                             <p><span>Fecha y Hora:</span> <span>{formatDateWithTimeForDisplay(form.watch("fecha"))}</span></p>
                         </div>
+                        
                         {form.watch("proveedorNombre") && (
                             <>
                             <div className="section-title mt-2">Proveedor</div>
@@ -577,6 +578,7 @@ export default function EditFacturaCompraPage() {
                             </div>
                             </>
                         )}
+
                          <div className="section-title mt-2">Detalle de la Compra</div>
                          <table className="items-table w-full my-1">
                             <thead><tr><th className="col-material">Material</th><th className="col-peso text-right">Peso</th><th className="col-vunit text-right">Vr. Unit.</th><th className="col-subtotal text-right">Subtotal</th></tr></thead>
@@ -591,10 +593,13 @@ export default function EditFacturaCompraPage() {
                             ))}
                             </tbody>
                          </table>
+
                         <div className="total-section mt-2"><p>TOTAL FACTURA: <span className="total-amount">{formatCurrency(currentTotalFactura)}</span></p></div>
+                        
                         {form.watch("formaDePago") && <p className="payment-method mt-1"><strong>Forma de Pago:</strong> <span className="capitalize">{form.watch("formaDePago")}</span></p>}
+                        
                         {form.watch("observaciones") && <div className="footer-notes mt-2 pt-1 border-t"><p><strong>Observaciones:</strong> {form.watch("observaciones")}</p></div>}
-                        <div className="signature-line mt-3"><p>Recibido Por: ____________________</p></div>
+                        {/* Línea de firma eliminada */}
                     </div>
                 </div>
               </div>
