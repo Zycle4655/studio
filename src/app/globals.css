@@ -5,96 +5,99 @@
 
 @layer base {
   :root {
-    --background: 195 30% 94%; /* Very Light Petroleum Tint */
-    --foreground: 195 40% 15%; /* Dark Petroleum for text */
+    /* Light Mode - CyberX Inspired with Soft Neumorphism */
+    --background: 220 30% 97%; /* Very light cool gray, almost white */
+    --foreground: 230 25% 20%; /* Dark cool gray / soft black for text */
 
-    --card: 0 0% 100%; /* White cards */
-    --card-foreground: 195 40% 15%; /* Dark Petroleum for text */
+    --card: 220 30% 98%; /* Slightly off-white for cards, for neumorphic effect */
+    --card-foreground: 230 25% 20%; /* Dark text on cards */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 195 40% 15%; /* Dark Petroleum for text */
+    --popover: 220 30% 98%;
+    --popover-foreground: 230 25% 20%;
 
-    --primary: 195 53% 30%; /* Petroleum Blue */
-    --primary-foreground: 195 30% 95%; /* Very light, almost white, slightly tinted blue */
+    --primary: 260 65% 60%; /* Vibrant Purple */
+    --primary-foreground: 260 20% 96%; /* Light lavender/white for text on primary */
 
-    --secondary: 195 30% 88%; /* Muted Light Petroleum */
-    --secondary-foreground: 195 40% 25%; /* Darker Petroleum for text on secondary */
+    --secondary: 220 60% 75%; /* Soft Blue */
+    --secondary-foreground: 220 25% 25%; /* Darker blue for text on secondary */
 
-    --muted: 195 25% 92%; /* Lighter Muted Petroleum */
-    --muted-foreground: 195 20% 50%; /* Grayish Petroleum for muted text */
+    --muted: 220 25% 94%; /* Lighter muted cool gray */
+    --muted-foreground: 220 20% 55%; /* Medium cool gray for muted text */
 
-    --accent: 207 82% 77%; /* Light Blue #90CAF9 (Kept as per original spec) */
-    --accent-foreground: 207 50% 30%; /* Darker Blue for text on accent (Kept) */
+    --accent: 170 60% 45%; /* Teal/Green Accent */
+    --accent-foreground: 170 25% 95%; /* Very light green/white for text on accent */
 
-    --destructive: 0 72% 51%; /* A slightly less harsh red */
+    --destructive: 0 70% 60%; /* A balanced red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 195 25% 85%; /* Light Petroleum Border */
-    --input: 195 25% 85%; /* Light Petroleum Input Background */
-    --ring: 195 53% 30%; /* Petroleum Blue for focus rings */
+    --border: 220 20% 90%; /* Subtle light cool gray border */
+    --input: 220 20% 95%; /* Slightly darker input background than card */
+    --ring: 260 65% 60%; /* Primary Purple for focus rings */
 
-    --chart-1: 195 53% 30%; /* Petroleum Blue */
-    --chart-2: 207 82% 77%; /* Light Blue Accent */
-    --chart-3: 35 90% 55%;
-    --chart-4: 280 70% 60%;
-    --chart-5: 50 80% 50%;
+    --chart-1: 260 65% 60%; /* Primary Purple */
+    --chart-2: 170 60% 45%; /* Teal/Green Accent */
+    --chart-3: 220 60% 75%; /* Soft Blue */
+    --chart-4: 340 70% 65%; /* Pink/Rose Accent (new) */
+    --chart-5: 35 85% 60%;  /* Orange Accent (new) */
 
-    --radius: 0.5rem;
+    --radius: 0.5rem; /* Maintained rounded corners */
 
-    /* Sidebar specific colors */
-    --sidebar-background: 195 30% 92%; /* Slightly darker light petroleum for sidebar */
-    --sidebar-foreground: 195 40% 12%; /* Darker Petroleum for sidebar text */
-    --sidebar-primary: 195 53% 30%; /* Petroleum Blue */
-    --sidebar-primary-foreground: 195 30% 95%; /* Light Petroleum Tint */
-    --sidebar-accent: 207 82% 77%; /* Light Blue Accent */
-    --sidebar-accent-foreground: 207 50% 30%; /* Darker Blue */
-    --sidebar-border: 195 25% 80%; /* Light Petroleum Border */
-    --sidebar-ring: 195 53% 30%; /* Petroleum Blue */
+    /* Sidebar specific colors (Dark Theme for Sidebar) */
+    --sidebar-background: 240 15% 18%; /* Dark Desaturated Blue/Purple */
+    --sidebar-foreground: 220 20% 88%; /* Light Cool Gray for sidebar text */
+    --sidebar-primary: 260 70% 70%;    /* Brighter Purple for active items */
+    --sidebar-primary-foreground: 260 20% 97%; /* Very Light Lavender for text on primary */
+    --sidebar-accent: 170 70% 60%;     /* Brighter Teal/Green for hover/accent */
+    --sidebar-accent-foreground: 170 20% 15%; /* Darker text on sidebar accent */
+    --sidebar-border: 240 10% 25%;     /* Subtle border for dark sidebar */
+    --sidebar-ring: 260 70% 70%;       /* Brighter Purple for focus rings */
   }
 
   .dark {
-    --background: 195 30% 10%; /* Very Dark Petroleum */
-    --foreground: 195 25% 90%; /* Light Petroleum Tint for text */
+    /* Dark Mode - CyberX Inspired */
+    --background: 240 15% 12%; /* Very Dark Desaturated Blue/Purple */
+    --foreground: 220 20% 90%; /* Light Cool Gray for text */
 
-    --card: 195 30% 15%; /* Dark Petroleum cards */
-    --card-foreground: 195 25% 90%; /* Light Petroleum Tint for text */
+    --card: 240 15% 18%; /* Slightly Lighter Dark Blue/Purple for cards */
+    --card-foreground: 220 20% 90%; /* Light Cool Gray for text on cards */
 
-    --popover: 195 30% 15%;
-    --popover-foreground: 195 25% 90%;
+    --popover: 240 15% 15%;
+    --popover-foreground: 220 20% 90%;
 
-    --primary: 195 50% 45%; /* Petroleum Blue (lighter for dark mode) */
-    --primary-foreground: 195 30% 95%; /* Light Petroleum Tint for contrast */
+    --primary: 260 70% 70%; /* Brighter Purple */
+    --primary-foreground: 260 20% 97%; /* Very Light Lavender */
 
-    --secondary: 195 25% 25%; /* Darker Muted Petroleum */
-    --secondary-foreground: 195 25% 90%; /* Light Petroleum Tint */
+    --secondary: 220 50% 55%; /* Muted Dark Blue */
+    --secondary-foreground: 220 20% 90%; /* Light Cool Gray */
 
-    --muted: 195 25% 20%; /* Dark Muted Petroleum */
-    --muted-foreground: 195 20% 65%; /* Lighter Grayish Petroleum */
+    --muted: 240 15% 22%; /* Darker Muted Blue/Purple */
+    --muted-foreground: 220 20% 70%; /* Medium-Light Cool Gray */
 
-    --accent: 207 70% 60%; /* Light Blue (slightly desaturated/darker for dark mode) */
-    --accent-foreground: 207 90% 95%; /* Very Light Blue/White text on accent */
+    --accent: 170 70% 60%; /* Brighter Teal/Green Accent */
+    --accent-foreground: 170 15% 95%; /* Very Light Green/White */
 
-    --destructive: 0 60% 50%;
+    --destructive: 0 65% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 195 25% 20%; /* Dark Petroleum Border */
-    --input: 195 25% 20%; /* Dark Petroleum Input */
-    --ring: 195 50% 55%; /* Lighter Petroleum Blue for focus rings in dark mode */
+    --border: 240 10% 25%; /* Darker Border */
+    --input: 240 10% 22%;  /* Dark Input Background */
+    --ring: 260 70% 75%;   /* Lighter Purple for focus rings */
 
-    --chart-1: 195 25% 90%; /* Light Petroleum Tint */
-    --chart-2: 207 70% 60%; /* Light Blue Accent */
-    --chart-3: 40 85% 60%;
-    --chart-4: 270 75% 65%;
-    --chart-5: 60 75% 55%;
+    --chart-1: 260 70% 70%; /* Brighter Purple */
+    --chart-2: 170 70% 60%; /* Brighter Teal/Green */
+    --chart-3: 220 50% 55%; /* Muted Dark Blue */
+    --chart-4: 340 75% 70%; /* Brighter Pink/Rose */
+    --chart-5: 35 90% 65%;  /* Brighter Orange */
 
-    --sidebar-background: 195 30% 8%; /* Very Dark Petroleum for sidebar */
-    --sidebar-foreground: 195 25% 90%; /* Light Petroleum Tint for sidebar text */
-    --sidebar-primary: 195 50% 45%; /* Petroleum Blue (lighter) */
-    --sidebar-primary-foreground: 195 30% 95%; /* Light Petroleum Tint */
-    --sidebar-accent: 207 70% 60%; /* Light Blue Accent */
-    --sidebar-accent-foreground: 207 90% 95%; /* Very Light Blue */
-    --sidebar-border: 195 25% 20%; /* Dark Petroleum Border */
-    --sidebar-ring: 195 50% 55%; /* Lighter Petroleum Blue */
+    /* Sidebar colors in dark mode will be the same as the general dark theme for consistency */
+    --sidebar-background: 240 15% 12%;
+    --sidebar-foreground: 220 20% 90%;
+    --sidebar-primary: 260 70% 70%;
+    --sidebar-primary-foreground: 260 20% 97%;
+    --sidebar-accent: 170 70% 60%;
+    --sidebar-accent-foreground: 170 15% 95%;
+    --sidebar-border: 240 10% 25%;
+    --sidebar-ring: 260 70% 75%;
   }
 }
 
