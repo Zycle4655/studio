@@ -43,20 +43,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Lista de materiales estándar por defecto actualizada
-// Los códigos se añadirán cuando el usuario los proporcione
+// Lista de materiales estándar por defecto actualizada con códigos
 const DEFAULT_MATERIALS = [
   { name: "COBRE N1", price: 30000 },
   { name: "COBRE N2", price: 30000 },
   { name: "BRONCE", price: 20000 },
   { name: "ACERO", price: 3300 },
-  { name: "ALUMINIO GRUESO", price: 5500 },
+  { name: "ALUMINIO GRUESO", price: 5500, code: "101" },
   { name: "ALUMINIO GUAYA", price: 8000 },
-  { name: "ALUMINIO PERFIL", price: 7500 },
-  { name: "ALUMINIO OLLA", price: 6200 },
-  { name: "ALUMINIO LAMINA", price: 6000 },
-  { name: "CLAUSEN POTE", price: 6900 },
-  { name: "POTE AEROSOL", price: 5400 },
+  { name: "ALUMINIO PERFIL", price: 7500, code: "101" },
+  { name: "ALUMINIO OLLA", price: 6200, code: "101" },
+  { name: "ALUMINIO LAMINA", price: 6000, code: "101" },
+  { name: "CLAUSEN POTE", price: 6900, code: "101" },
+  { name: "POTE AEROSOL", price: 5400, code: "101" },
   { name: "VIRUTA DE ACERO", price: 2500 },
   { name: "VIRUTA BRONCE", price: 10000 },
   { name: "RINES DE AUTOMOVIL", price: 6000 },
@@ -86,14 +85,14 @@ const DEFAULT_MATERIALS = [
   { name: "POLIESTILENO", price: 500 },
   { name: "VASIJA BLANCA", price: 900 },
   { name: "VASIJA NEGRA", price: 600 },
-  { name: "CUÑETE", price: 1000 },
+  { name: "CUÑETE", price: 1000, code: "302" },
   { name: "CANASTA GRANDE", price: 2500 },
-  { name: "CANASTA", price: 1300 },
+  { name: "CANASTA", price: 1300, code: "302" },
   { name: "ACRILICO", price: 2000 },
   { name: "TATUCO/SOPLADO", price: 1300 },
-  { name: "TAPAS", price: 900 },
+  { name: "TAPAS", price: 900, code: "302" },
   { name: "SELECCIÓN", price: 300 },
-  { name: "PASTA", price: 900 },
+  { name: "PASTA", price: 900, code: "302" },
   { name: "PVC TUBO", price: 500 },
   { name: "PVC TECHO", price: 300 },
   { name: "CUBETA HUEVO", price: 100 },
@@ -101,7 +100,7 @@ const DEFAULT_MATERIALS = [
   { name: "TETRA PAK", price: 200 },
   { name: "GALONES", price: 1000 },
   { name: "CHATARRA", price: 720 },
-  { name: "TAPA", price: 900 }, 
+  { name: "TAPA", price: 900, code: "302" },
   { name: "BATERIA", price: 2300 },
 ];
 
@@ -138,13 +137,14 @@ export default function MaterialesPage() {
         batch.set(newMaterialRef, {
           ...material,
           price: parseFloat(Number(material.price).toFixed(2)),
-          code: material.code || null, // Añadir code si existe, sino null
+          code: material.code || null, 
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
       });
       await batch.commit();
       setHasInitializedMaterials(true); 
+      // No notification for successful initialization
       return true; 
     } catch (error) {
       console.error("Error initializing default materials:", error);
@@ -183,7 +183,7 @@ export default function MaterialesPage() {
           setMaterials(materialsList);
         } else {
           setMaterials([]); 
-          initializationAttemptedRef.current = false;
+          initializationAttemptedRef.current = false; // Allow re-attempt if initialization failed
         }
       } else {
         const materialsList = querySnapshot.docs.map(
@@ -285,7 +285,7 @@ export default function MaterialesPage() {
     const materialData = {
       ...data,
       price: parseFloat(Number(data.price).toFixed(2)),
-      code: data.code || null, // Guardar null si está vacío
+      code: data.code || null, 
     };
 
     try {
@@ -476,3 +476,6 @@ export default function MaterialesPage() {
     </div>
   );
 }
+
+
+    
