@@ -1,8 +1,8 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { PlusCircle, Settings } from "lucide-react"; // Removido ListChecks
+import { PlusCircle, Settings } from "lucide-react"; 
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -13,7 +13,6 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   const features = [
     { name: "Registrar Material", icon: <PlusCircle className="w-8 h-8 text-primary" />, description: "Añada nuevos tipos de materiales reciclables al sistema.", link: "/dashboard/gestion-material/materiales" },
-    // { name: "Gestionar Inventario", icon: <ListChecks className="w-8 h-8 text-primary" />, description: "Vea y actualice las cantidades de materiales en stock.", link: "/dashboard/gestion-material/inventario" }, // Removido
     { name: "Configuración de Cuenta", icon: <Settings className="w-8 h-8 text-primary" />, description: "Ajuste los detalles y preferencias de su cuenta.", link: "/settings" },
   ];
 
