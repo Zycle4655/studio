@@ -5,7 +5,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { AppSidebar } from "@/components/dashboard/AppSidebar"; 
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"; 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // Added useCallback
 import type { User } from "firebase/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,61 +25,89 @@ export default function AppLayout({
   const [companyNameToDisplay, setCompanyNameToDisplay] = useState<string | null>(null);
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace("/login");
-      setIsInitialLoading(false); 
+  const fetchCompanyData = useCallback(async (currentUser: User) => {
+    if (!db) {
+      console.warn("Firestore (db) is not initialized in AppLayout. Skipping company data fetch.");
       setCompanyNameToDisplay(null);
-      setCompanyLogoUrl(null); 
+      setCompanyLogoUrl(null);
+      return;
+    }
+    try {
+      const profileRef = doc(db, "companyProfiles", currentUser.uid);
+      const profileSnap = await getDoc(profileRef);
+      if (profileSnap.exists()) {
+        const companyData = profileSnap.data() as CompanyProfileDocument;
+        setCompanyNameToDisplay(companyData.companyName);
+        setCompanyLogoUrl(companyData.logoUrl || null);
+      } else {
+        // If profile doesn't exist, it might be a new user, or data is missing.
+        // The other useEffect will handle redirection to profile-setup if needed.
+        setCompanyNameToDisplay(null);
+        setCompanyLogoUrl(null);
+      }
+    } catch (error: any) {
+      console.error("Error fetching company data in AppLayout:", error);
+      setCompanyNameToDisplay(null);
+      setCompanyLogoUrl(null);
+      if (error.message && error.message.toLowerCase().includes("offline")) {
+        console.warn("Firebase reported client is offline in AppLayout. Please check your internet connection and ensure Firestore is enabled and properly configured in your Firebase project console.");
+      }
+    }
+  }, []); // Empty dependency array as db should be stable
+
+  // Effect for fetching company-specific data (name, logo)
+  useEffect(() => {
+    if (user && !authLoading) {
+      fetchCompanyData(user);
+    } else if (!user && !authLoading) {
+      setCompanyNameToDisplay(null);
+      setCompanyLogoUrl(null);
+    }
+  }, [user, authLoading, fetchCompanyData]); // Re-fetch if user or authLoading state changes
+
+  // Effect for initial auth check, profile existence, and redirection logic
+  useEffect(() => {
+    if (authLoading) {
+      setIsInitialLoading(true);
       return;
     }
 
-    if (!authLoading && user && !profileChecked) {
-      const checkProfile = async () => {
-        if (!db) { 
-            console.warn("Firestore (db) is not initialized in AppLayout. Skipping profile check.");
-            setProfileChecked(true);
-            setIsInitialLoading(false);
-            setCompanyNameToDisplay(null);
-            setCompanyLogoUrl(null);
-            return;
+    if (!user) {
+      router.replace("/login");
+      setIsInitialLoading(false);
+      setProfileChecked(false); // Reset profileChecked when user logs out
+      return;
+    }
+
+    // User is authenticated, now check profile if not already checked
+    if (!profileChecked) {
+      const checkProfileExistence = async () => {
+        if (!db) {
+          console.warn("Firestore (db) is not initialized in AppLayout during profile existence check.");
+          setProfileChecked(true); // Mark as checked to avoid loop, but data might be missing
+          setIsInitialLoading(false);
+          return;
         }
         try {
           const profileRef = doc(db, "companyProfiles", user.uid);
           const profileSnap = await getDoc(profileRef);
           if (!profileSnap.exists()) {
             router.replace("/profile-setup");
-            setCompanyNameToDisplay(null);
-            setCompanyLogoUrl(null);
-          } else {
-            const companyData = profileSnap.data() as CompanyProfileDocument;
-            setCompanyNameToDisplay(companyData.companyName);
-            setCompanyLogoUrl(companyData.logoUrl || null);
           }
+          // Company data (name, logo) is already being fetched by the other useEffect
         } catch (error: any) {
-          console.error("Error checking company profile in AppLayout:", error);
-          setCompanyNameToDisplay(null);
-          setCompanyLogoUrl(null);
-          if (error.message && error.message.toLowerCase().includes("offline")) {
-            console.warn("Firebase reported client is offline in AppLayout. Please check your internet connection and ensure Firestore is enabled and properly configured in your Firebase project console.");
-          }
+          console.error("Error checking company profile existence in AppLayout:", error);
         } finally {
           setProfileChecked(true);
-          setIsInitialLoading(false); 
+          setIsInitialLoading(false);
         }
       };
-      checkProfile();
-    } else if (authLoading) {
-        setIsInitialLoading(true); 
-    } else if (profileChecked && !authLoading && user) {
-        setIsInitialLoading(false);
-    } else if (!authLoading && !user) {
-        setIsInitialLoading(false);
-        setCompanyNameToDisplay(null);
-        setCompanyLogoUrl(null);
+      checkProfileExistence();
+    } else {
+      // Profile has been checked before, and user exists and auth is not loading
+      setIsInitialLoading(false);
     }
-
-  }, [user, authLoading, router, profileChecked]);
+  }, [user, authLoading, router, profileChecked, db]); // Added db to dependencies
 
   if (isInitialLoading) { 
     return (
