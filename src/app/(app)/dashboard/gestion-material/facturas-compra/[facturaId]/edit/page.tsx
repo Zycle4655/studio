@@ -54,8 +54,8 @@ export default function EditFacturaCompraPage() {
   
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isLoadingPage, setIsLoadingPage] = React.useState(true); 
+  const [isSavingInvoice, setIsSavingInvoice] = React.useState(false); 
   const [availableMaterials, setAvailableMaterials] = React.useState<MaterialDocument[]>([]);
 
   // For item modal
@@ -106,12 +106,12 @@ export default function EditFacturaCompraPage() {
 
   React.useEffect(() => {
     if (!user || !facturaId) {
-      setIsLoading(false);
+      setIsLoadingPage(false);
       if (!user) router.replace("/login");
       return;
     }
     
-    setIsLoading(true);
+    setIsLoadingPage(true);
     const fetchInvoiceData = async () => {
       try {
         const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
@@ -120,7 +120,7 @@ export default function EditFacturaCompraPage() {
         if (invoiceSnap.exists()) {
           const data = invoiceSnap.data() as FacturaCompraDocument;
           setInvoice(data);
-          setEditableItems(JSON.parse(JSON.stringify(data.items))); // Deep copy
+          setEditableItems(JSON.parse(JSON.stringify(data.items))); 
           setCurrentTotalFactura(data.totalFactura);
           form.reset({
             fecha: data.fecha instanceof Timestamp ? data.fecha.toDate() : new Date(data.fecha),
@@ -145,7 +145,7 @@ export default function EditFacturaCompraPage() {
         console.error("Error fetching invoice or profile for edit:", error);
         toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos para editar." });
       } finally {
-        setIsLoading(false);
+        setIsLoadingPage(false);
       }
     };
 
@@ -162,7 +162,11 @@ export default function EditFacturaCompraPage() {
 
 
   const handleOpenAddItemForm = () => {
-    setCurrentItemForForm(undefined); // Clear default values for adding new
+    if (availableMaterials.length === 0) {
+        toast({ variant: "destructive", title: "No hay materiales base", description: "Registre materiales en 'Gestión de Material > Materiales' primero." });
+        return;
+    }
+    setCurrentItemForForm(undefined); 
     setEditingItemIndex(null);
     setItemFormTitle("Agregar Ítem a la Factura");
     setIsItemFormOpen(true);
@@ -186,12 +190,10 @@ export default function EditFacturaCompraPage() {
       return;
     }
 
-    // Use precioUnitario from form if provided (it's optional in schema, but we make it required here if editing/adding)
-    // If adding new and not provided, use material master price. If editing, it should be there.
     const precioUnitario = data.precioUnitario ?? selectedMaterial.price;
 
     const newItem: CompraMaterialItem = {
-      id: editingItemIndex !== null ? editableItems[editingItemIndex].id : Date.now().toString(), // Keep original ID if editing
+      id: editingItemIndex !== null ? editableItems[editingItemIndex].id : Date.now().toString(), 
       materialId: selectedMaterial.id,
       materialName: selectedMaterial.name,
       materialCode: selectedMaterial.code || null,
@@ -210,6 +212,8 @@ export default function EditFacturaCompraPage() {
     }
     setEditableItems(updatedItems);
     setIsItemFormOpen(false);
+    setCurrentItemForForm(undefined);
+    setEditingItemIndex(null);
   };
 
   const handleOpenDeleteItemDialog = (index: number) => {
@@ -230,7 +234,7 @@ export default function EditFacturaCompraPage() {
 
   const handleUpdateInvoice = async (formData: FacturaCompraFormData) => {
     if (!user || !invoice || !facturaId) return;
-    setIsSubmitting(true);
+    setIsSavingInvoice(true);
     try {
       const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
       const finalTotalFactura = calculateTotal(editableItems);
@@ -240,8 +244,8 @@ export default function EditFacturaCompraPage() {
         proveedorNombre: formData.proveedorNombre || null,
         formaDePago: formData.formaDePago,
         observaciones: formData.observaciones || null,
-        items: editableItems, // Save the potentially modified items
-        totalFactura: finalTotalFactura, // Save the recalculated total
+        items: editableItems, 
+        totalFactura: finalTotalFactura, 
         updatedAt: serverTimestamp(),
       };
       await updateDoc(invoiceRef, updatedData);
@@ -251,7 +255,7 @@ export default function EditFacturaCompraPage() {
       console.error("Error updating invoice:", error);
       toast({ variant: "destructive", title: "Error", description: "No se pudo actualizar la factura." });
     } finally {
-      setIsSubmitting(false);
+      setIsSavingInvoice(false);
     }
   };
 
@@ -312,7 +316,7 @@ export default function EditFacturaCompraPage() {
   };
 
 
-  if (isLoading) {
+  if (isLoadingPage) {
     return (
       <div className="container py-8 px-4 md:px-6">
         <Card className="shadow-lg">
@@ -321,7 +325,6 @@ export default function EditFacturaCompraPage() {
             <Skeleton className="h-5 w-4/5" />
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Skeletons for form fields */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 {[...Array(4)].map((_, i) => (
@@ -331,18 +334,17 @@ export default function EditFacturaCompraPage() {
                   </div>
                 ))}
               </div>
-              <div className="space-y-4"> {/* For preview or other info */}
+              <div className="space-y-4"> 
                 <Skeleton className="h-6 w-1/2 mb-2" />
                 <Skeleton className="h-32 w-full" />
               </div>
             </div>
-            {/* Skeletons for item table */}
             <div className="mt-8 pt-6 border-t">
                 <Skeleton className="h-6 w-1/4 mb-3"/>
                 <Skeleton className="h-10 w-full rounded-md mb-2"/>
                 <Skeleton className="h-10 w-full rounded-md mb-2"/>
             </div>
-            <Skeleton className="h-10 w-full mt-4" /> {/* For footer buttons */}
+            <Skeleton className="h-10 w-full mt-4" /> 
           </CardContent>
         </Card>
       </div>
@@ -373,7 +375,6 @@ export default function EditFacturaCompraPage() {
           <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(handleUpdateInvoice)} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
-                {/* Columna 1: Formulario de Encabezado */}
                 <div className="space-y-5">
                   <div>
                       <FormLabel className="text-foreground/80">Número de Factura</FormLabel>
@@ -478,7 +479,6 @@ export default function EditFacturaCompraPage() {
                   />
                 </div>
 
-                {/* Columna 2: Vista Previa / Información adicional */}
                 <div className="border-l md:pl-8 pt-2 md:pt-0">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="text-lg font-semibold text-primary flex items-center">
@@ -540,14 +540,13 @@ export default function EditFacturaCompraPage() {
                 </div>
               </div>
 
-              {/* Sección de Ítems Editables */}
               <div className="mt-8 pt-6 border-t">
                 <div className="flex justify-between items-center mb-3">
                     <h3 className="text-lg font-semibold text-primary flex items-center">
                     <ListOrdered className="mr-2 h-5 w-5" />
                     Ítems de la Factura
                     </h3>
-                    <Button type="button" variant="outline" size="sm" onClick={handleOpenAddItemForm} disabled={isSubmitting || availableMaterials.length === 0}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleOpenAddItemForm} disabled={isSavingInvoice || availableMaterials.length === 0}>
                         <PlusCircle className="mr-2 h-4 w-4"/> Agregar Ítem
                     </Button>
                 </div>
@@ -573,10 +572,10 @@ export default function EditFacturaCompraPage() {
                             <TableCell className="text-right">{formatCurrency(item.precioUnitario)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(item.subtotal)}</TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenEditItemForm(item, index)} disabled={isSubmitting} aria-label="Editar ítem">
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenEditItemForm(item, index)} disabled={isSavingInvoice} aria-label="Editar ítem">
                                 <Edit className="h-4 w-4"/>
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteItemDialog(index)} disabled={isSubmitting} aria-label="Eliminar ítem" className="hover:text-destructive">
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteItemDialog(index)} disabled={isSavingInvoice} aria-label="Eliminar ítem" className="hover:text-destructive">
                                 <Trash2 className="h-4 w-4"/>
                               </Button>
                             </TableCell>
@@ -591,12 +590,12 @@ export default function EditFacturaCompraPage() {
               </div>
 
               <CardFooter className="pt-8 flex justify-end space-x-3">
-                <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+                <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSavingInvoice}>
                   <XCircle className="mr-2 h-4 w-4" />
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting || isLoading}>
-                  {isSubmitting ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</>}
+                <Button type="submit" disabled={isSavingInvoice || isLoadingPage}>
+                  {isSavingInvoice ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</>}
                 </Button>
               </CardFooter>
             </form>
@@ -604,7 +603,6 @@ export default function EditFacturaCompraPage() {
         </CardContent>
       </Card>
 
-      {/* Modal para agregar/editar ítems */}
       {availableMaterials.length > 0 && (
         <CompraMaterialItemForm
           isOpen={isItemFormOpen}
@@ -612,9 +610,8 @@ export default function EditFacturaCompraPage() {
           onSubmit={handleItemFormSubmit}
           materials={availableMaterials}
           defaultValues={currentItemForForm}
-          isLoading={isSubmitting} // O un estado específico para el form de item
           title={itemFormTitle}
-          isEditingInvoiceItem={editingItemIndex !== null} // Indica si estamos editando un item existente vs añadiendo uno nuevo
+          isEditingInvoiceItem={editingItemIndex !== null} 
         />
       )}
        {availableMaterials.length === 0 && isItemFormOpen && (
@@ -633,8 +630,6 @@ export default function EditFacturaCompraPage() {
           </AlertDialog>
       )}
 
-
-      {/* Modal de confirmación para eliminar ítem */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -658,6 +653,5 @@ export default function EditFacturaCompraPage() {
     </div>
   );
 }
-
 
     

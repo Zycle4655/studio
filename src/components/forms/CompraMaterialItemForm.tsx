@@ -45,10 +45,10 @@ interface CompraMaterialItemFormProps {
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: CompraMaterialItemFormData) => void;
   materials: MaterialDocument[];
-  defaultValues?: Partial<CompraMaterialItemFormData>; // Incluye materialId, peso, precioUnitario
-  isLoading?: boolean;
+  defaultValues?: Partial<CompraMaterialItemFormData>; 
+  isLoading?: boolean; // Kept for flexibility, though not used from edit/page.tsx directly now
   title?: string;
-  isEditingInvoiceItem?: boolean; // Para saber si estamos editando un item de una factura existente
+  isEditingInvoiceItem?: boolean; 
 }
 
 export default function CompraMaterialItemForm({
@@ -57,9 +57,9 @@ export default function CompraMaterialItemForm({
   onSubmit,
   materials,
   defaultValues,
-  isLoading = false,
+  isLoading = false, // Defaulting to false
   title = "Agregar Ítem",
-  isEditingInvoiceItem = false, // Por defecto, asumimos que no estamos editando un precio de factura
+  isEditingInvoiceItem = false, 
 }: CompraMaterialItemFormProps) {
   const form = useForm<CompraMaterialItemFormData>({
     resolver: zodResolver(CompraMaterialItemFormSchema),
@@ -72,6 +72,8 @@ export default function CompraMaterialItemForm({
 
   const [selectedMaterialBasePrice, setSelectedMaterialBasePrice] = React.useState<number | null>(null);
   const [isComboboxOpen, setIsComboboxOpen] = React.useState(false);
+  const [isSubmittingItem, setIsSubmittingItem] = React.useState(false);
+
 
   React.useEffect(() => {
     if (isOpen) {
@@ -84,9 +86,6 @@ export default function CompraMaterialItemForm({
       if (defaultValues?.materialId) {
         const mat = materials.find(m => m.id === defaultValues.materialId);
         setSelectedMaterialBasePrice(mat?.price || null);
-        // Si no se provee un precioUnitario en defaultValues (ej. al añadir nuevo item),
-        // y sí hay un material seleccionado, se usa el precio base del material.
-        // Si se provee un precioUnitario (editando item de factura), ese tiene precedencia.
         if (mat && defaultValues.precioUnitario === undefined) {
           form.setValue("precioUnitario", mat.price);
         }
@@ -100,8 +99,6 @@ export default function CompraMaterialItemForm({
     form.setValue("materialId", materialId);
     const selectedMat = materials.find(m => m.id === materialId);
     setSelectedMaterialBasePrice(selectedMat?.price || null);
-    // Al seleccionar un nuevo material Y si no estamos editando un precio que ya viene de la factura
-    // O si el precio unitario actual del formulario es undefined, actualizamos el precio unitario.
     if (selectedMat && (!isEditingInvoiceItem || form.getValues("precioUnitario") === undefined)) {
         form.setValue("precioUnitario", selectedMat.price);
     }
@@ -115,12 +112,26 @@ export default function CompraMaterialItemForm({
 
   const currentPrecioUnitario = form.watch("precioUnitario");
 
+  // Wrapper for onSubmit to handle internal loading state if needed in the future
+  const handleFormSubmit = async (data: CompraMaterialItemFormData) => {
+    setIsSubmittingItem(true);
+    try {
+      await onSubmit(data); // The onSubmit prop is now expected to be potentially async
+    } catch (error) {
+      // Handle error from onSubmit if necessary
+      console.error("Error submitting item form:", error)
+    } finally {
+      setIsSubmittingItem(false);
+    }
+  };
+
+
   if (!isOpen) {
     return null;
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {if (!isSubmittingItem) setIsOpen(open)}}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
@@ -129,7 +140,7 @@ export default function CompraMaterialItemForm({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
             <FormField
               control={form.control}
               name="materialId"
@@ -147,7 +158,7 @@ export default function CompraMaterialItemForm({
                             "w-full justify-between",
                             !field.value && "text-muted-foreground"
                           )}
-                          disabled={materials.length === 0 || (isEditingInvoiceItem && !!defaultValues?.materialId)} // No cambiar material al editar item de factura
+                          disabled={isSubmittingItem || materials.length === 0 || (isEditingInvoiceItem && !!defaultValues?.materialId)} 
                         >
                           {field.value
                             ? materials.find(
@@ -213,6 +224,7 @@ export default function CompraMaterialItemForm({
                         {...field}
                         className="pl-10"
                         value={String(field.value ?? "")}
+                        disabled={isSubmittingItem}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === "") {
@@ -230,7 +242,6 @@ export default function CompraMaterialItemForm({
               )}
             />
             
-            {/* Campo de Precio Unitario Editable */}
              <FormField
                 control={form.control}
                 name="precioUnitario"
@@ -247,6 +258,7 @@ export default function CompraMaterialItemForm({
                             {...field}
                             className="pl-10"
                             value={String(field.value ?? "")}
+                            disabled={isSubmittingItem}
                             onChange={(e) => {
                                 const val = e.target.value;
                                 if (val === "") {
@@ -272,13 +284,17 @@ export default function CompraMaterialItemForm({
 
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="outline">
+                <Button type="button" variant="outline" disabled={isSubmittingItem}>
                   <XCircle className="mr-2 h-4 w-4" />
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={isLoading || materials.length === 0}>
-                {isLoading ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> {defaultValues?.materialId ? "Actualizar Ítem" : "Agregar Ítem"}</>}
+              <Button 
+                type="button" // Changed from "submit"
+                onClick={form.handleSubmit(handleFormSubmit)} // Explicitly call handleSubmit
+                disabled={isSubmittingItem || isLoading || materials.length === 0}
+              >
+                {isSubmittingItem ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> {defaultValues?.materialId ? "Actualizar Ítem" : "Agregar Ítem"}</>}
               </Button>
             </DialogFooter>
           </form>
@@ -287,4 +303,3 @@ export default function CompraMaterialItemForm({
     </Dialog>
   );
 }
-    
