@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { db, auth } from "@/lib/firebase"; // Import auth
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   collection,
   addDoc,
@@ -42,6 +42,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Este "cerrojo" previene que la inicialización se ejecute más de una vez por sesión de navegador.
+// Es la forma más robusta de evitar duplicados por el doble useEffect de React en modo desarrollo.
+let initializationLock = false;
 
 const DEFAULT_MATERIALS = [
   { name: "ARCHIVO", price: 600, code: "201" },
@@ -97,11 +101,7 @@ export default function MaterialesPage() {
   const [materialToDelete, setMaterialToDelete] = React.useState<MaterialDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   
-  const initializationRan = React.useRef(false);
-
-
   const getMaterialsCollectionRef = React.useCallback(() => {
-    // Apunta a la colección global de materiales
     if (!db) return null;
     return collection(db, "globalMaterials");
   }, []);
@@ -110,7 +110,7 @@ export default function MaterialesPage() {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef || !db) return false;
 
-    setIsSubmitting(true); // Indicate that an operation is in progress
+    setIsSubmitting(true);
     try {
       const batch = writeBatch(db);
       DEFAULT_MATERIALS.forEach(material => {
@@ -124,7 +124,6 @@ export default function MaterialesPage() {
         });
       });
       await batch.commit();
-      // No toast for successful silent initialization
       return true;
     } catch (error) {
       console.error("Error initializing default global materials:", error);
@@ -137,7 +136,7 @@ export default function MaterialesPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [getMaterialsCollectionRef]);
+  }, [getMaterialsCollectionRef, toast]);
 
 
   const fetchMaterials = React.useCallback(async () => {
@@ -154,8 +153,8 @@ export default function MaterialesPage() {
     try {
       let querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
 
-      if (querySnapshot.empty && !initializationRan.current) {
-        initializationRan.current = true; // Mark initialization as attempted for this session
+      if (querySnapshot.empty && !initializationLock) {
+        initializationLock = true; // Activar el cerrojo de forma síncrona
         const success = await initializeDefaultMaterials();
         if (success) {
           // Re-fetch materials after successful initialization
@@ -179,7 +178,7 @@ export default function MaterialesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, initializeDefaultMaterials, user]);
+  }, [user, initializeDefaultMaterials, getMaterialsCollectionRef, toast]);
 
 
   React.useEffect(() => {
@@ -189,7 +188,6 @@ export default function MaterialesPage() {
     } else {
       setIsLoading(false);
       setMaterials([]);
-      initializationRan.current = false; // Reset on logout
     }
   }, [user, fetchMaterials]);
 
@@ -452,4 +450,3 @@ export default function MaterialesPage() {
     </div>
   );
 }
-    
