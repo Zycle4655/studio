@@ -12,22 +12,29 @@ export default function DashboardHeader({ companyName }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0"> {/* min-w-0 helps with truncation inside flex */}
-          <SidebarTrigger className="md:hidden" /> 
-          <Link href="/dashboard" className="flex items-center gap-2 min-w-0"> {/* min-w-0 for the link too */}
-            {companyName === null ? (
-              <Skeleton className="h-8 w-32" />
-            ) : (
-              <span 
-                className="text-2xl font-bold text-primary truncate block max-w-[180px] xs:max-w-[200px] sm:max-w-[240px] md:max-w-xs" 
+        {/* Left side element for justify-between */}
+        <div className="flex items-center"> {/* This div ensures SidebarTrigger is grouped */}
+          <SidebarTrigger className="md:hidden" />
+          {/* A small, non-obtrusive ZYCLE logo/icon could go here on desktop view if desired in the future */}
+        </div>
+
+        {/* Right side element for justify-between, containing Company Name and UserNav */}
+        <div className="flex items-center gap-4"> {/* Gap between company name and user nav */}
+          {/* Company Name Display (moved here) */}
+          {companyName === null ? (
+            <Skeleton className="h-8 w-32" />
+          ) : (
+            <Link href="/dashboard" className="flex items-center min-w-0"> {/* Link remains, min-w-0 for truncation */}
+              <span
+                className="text-xl font-semibold text-primary truncate block max-w-[150px] xs:max-w-[180px] sm:max-w-[220px] md:max-w-xs"
                 title={companyName || undefined}
               >
-                {companyName || " "} {/* Display a space if companyName is empty string to maintain layout */}
+                {companyName || " "}
               </span>
-            )}
-          </Link>
+            </Link>
+          )}
+          <UserNav />
         </div>
-        <UserNav />
       </div>
     </header>
   );
