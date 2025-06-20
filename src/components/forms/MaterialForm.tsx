@@ -46,13 +46,11 @@ export default function MaterialForm({
     resolver: zodResolver(MaterialFormSchema),
     defaultValues: {
       name: defaultValues?.name || "",
-      price: defaultValues?.price || undefined, // Price puede ser undefined inicialmente
+      price: defaultValues?.price || undefined, 
     },
   });
 
   React.useEffect(() => {
-    // Reset form when defaultValues change (e.g., when opening for editing)
-    // or when it's opened for a new entry after being used for editing.
     if (isOpen) {
       form.reset({
         name: defaultValues?.name || "",
@@ -62,7 +60,6 @@ export default function MaterialForm({
   }, [defaultValues, isOpen, form.reset]);
 
   const handleFormSubmit = async (data: MaterialFormData) => {
-    // Asegurar que el precio tenga como máximo dos decimales antes de enviar
     const processedData = {
       ...data,
       price: parseFloat(Number(data.price).toFixed(2)),
@@ -110,16 +107,14 @@ export default function MaterialForm({
                       <Input
                         type="number"
                         placeholder="0.00"
-                        step="0.01" // Permite incrementos de céntimos
-                        {...field}
+                        step="0.01" 
+                        {...field} // Spread field props
                         className="pl-10"
-                        value={field.value ?? ""} // Ensure value is not undefined for controlled input
+                        value={String(field.value ?? "")} // Ensure value is string for the input
                         onChange={(e) => {
-                          const value = e.target.value;
-                           // Allow empty string for clearing, or valid numbers
-                           if (value === "" || /^\d*\.?\d{0,2}$/.test(value)) {
-                            field.onChange(value === "" ? undefined : parseFloat(value));
-                          }
+                           // Pass the raw string value to react-hook-form
+                           // Zod will handle coercion to number during validation
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -145,3 +140,4 @@ export default function MaterialForm({
     </Dialog>
   );
 }
+
