@@ -38,7 +38,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -224,7 +223,6 @@ export default function MaterialesPage() {
                 <PackageOpen className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales registrados</h3>
                 <p className="text-muted-foreground mb-6">Añada un nuevo material utilizando el botón flotante.</p>
-                {/* El botón "Agregar Material" que estaba aquí fue eliminado */}
             </div>
           ) : (
             <Table>
@@ -250,17 +248,15 @@ export default function MaterialesPage() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="hover:text-destructive"
-                          onClick={() => openDeleteDialog(material)}
-                          aria-label="Eliminar material"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:text-destructive"
+                        onClick={() => openDeleteDialog(material)}
+                        aria-label="Eliminar material"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
