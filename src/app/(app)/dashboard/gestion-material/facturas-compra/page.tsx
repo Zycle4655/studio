@@ -3,7 +3,7 @@
 
 import type { Metadata } from 'next';
 import * as React from "react";
-import { Eye, Printer, Edit, ListChecks, FileText, Search, ShoppingBag, PackageSearch, CalendarDays } from "lucide-react";
+import { Printer, Edit, ShoppingBag, PackageSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -26,7 +26,7 @@ import {
   getDoc,
   Timestamp,
 } from "firebase/firestore";
-import type { FacturaCompraDocument, CompraMaterialItem } from "@/schemas/compra";
+import type { FacturaCompraDocument } from "@/schemas/compra";
 import type { CompanyProfileDocument } from "@/schemas/company";
 import {
   Dialog,
@@ -41,25 +41,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
-import { useRouter } from "next/navigation"; // Importar useRouter
-
-// Metadata (aunque no se usa directamente en client components, es buena práctica tenerla)
-// export const metadata: Metadata = {
-//   title: 'Facturas de Compra | ZYCLE',
-//   description: 'Consulte y gestione sus facturas de compra de materiales.',
-// };
+import { useRouter } from "next/navigation"; 
 
 export default function FacturasCompraPage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const router = useRouter(); // Inicializar useRouter
+  const router = useRouter(); 
   const [invoices, setInvoices] = React.useState<FacturaCompraDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
-
-  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = React.useState<FacturaCompraDocument | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = React.useState(false);
 
   const [invoiceToPrint, setInvoiceToPrint] = React.useState<FacturaCompraDocument | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = React.useState(false);
@@ -129,11 +120,6 @@ export default function FacturasCompraPage() {
     return format(date, "PPP", { locale: es });
   };
 
-  const handleOpenDetailsModal = (invoice: FacturaCompraDocument) => {
-    setSelectedInvoiceForDetails(invoice);
-    setIsDetailsModalOpen(true);
-  };
-
   const handleOpenPrintModal = (invoice: FacturaCompraDocument) => {
     setInvoiceToPrint(invoice);
     setIsPrintModalOpen(true);
@@ -148,7 +134,11 @@ export default function FacturasCompraPage() {
     const previewElement = document.getElementById("factura-print-content-modal");
     if (previewElement && invoiceToPrint) {
       const printWindow = window.open('', '_blank');
-      printWindow?.document.write('<html><head><title>Factura de Compra N° '+ invoiceToPrint.numeroFactura +'</title>');
+      if (!printWindow) {
+        toast({variant: "destructive", title:"Error de Impresión", description: "No se pudo abrir la ventana de impresión. Verifique los bloqueadores de pop-ups."})
+        return;
+      }
+      printWindow.document.write('<html><head><title>Factura de Compra N° '+ invoiceToPrint.numeroFactura +'</title>');
       
       const stylesHtml = `
         <style>
@@ -181,15 +171,17 @@ export default function FacturasCompraPage() {
           }
         </style>
       `;
-      printWindow?.document.write(stylesHtml);
-      printWindow?.document.write('</head><body>');
-      printWindow?.document.write(previewElement.innerHTML);
-      printWindow?.document.write('</body></html>');
-      printWindow?.document.close();
-      printWindow?.focus();
+      printWindow.document.write(stylesHtml);
+      printWindow.document.write('</head><body>');
+      printWindow.document.write(previewElement.innerHTML);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
       setTimeout(() => {
-         printWindow?.print();
+         printWindow.print();
       }, 250);
+    } else {
+        toast({variant: "destructive", title:"Error de Impresión", description: "No se pudo generar la vista previa. Datos de factura o perfil incompletos."})
     }
   };
 
@@ -225,10 +217,6 @@ export default function FacturasCompraPage() {
                 Consulte, imprima o gestione sus facturas de compra de materiales.
                 </CardDescription>
             </div>
-            {/* <Button variant="outline" className="mt-4 sm:mt-0">
-                <Search className="mr-2 h-4 w-4" />
-                Filtrar Facturas
-            </Button> */}
           </div>
         </CardHeader>
         <CardContent>
@@ -242,7 +230,6 @@ export default function FacturasCompraPage() {
                         <Skeleton className="h-4 w-20" />
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Skeleton className="h-8 w-8 rounded-md" />
                         <Skeleton className="h-8 w-8 rounded-md" />
                         <Skeleton className="h-8 w-8 rounded-md" />
                     </div>
@@ -278,15 +265,6 @@ export default function FacturasCompraPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:text-primary"
-                          onClick={() => handleOpenDetailsModal(invoice)}
-                          aria-label="Ver ítems de la factura"
-                        >
-                          <ListChecks className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
                           className="hover:text-green-600"
                           onClick={() => handleOpenPrintModal(invoice)}
                           aria-label="Imprimir factura"
@@ -311,55 +289,6 @@ export default function FacturasCompraPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Modal para ver detalles de ítems */}
-      {selectedInvoiceForDetails && (
-        <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center">
-                <PackageSearch className="mr-2 h-6 w-6 text-primary"/>
-                Detalle de Factura N° {selectedInvoiceForDetails.numeroFactura}
-              </DialogTitle>
-              <DialogDescription>
-                Proveedor: {selectedInvoiceForDetails.proveedorNombre || "N/A"} | Fecha: {formatDate(selectedInvoiceForDetails.fecha)}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto mt-4 pr-2">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Material</TableHead>
-                    <TableHead>Código</TableHead>
-                    <TableHead className="text-right">Peso (kg)</TableHead>
-                    <TableHead className="text-right">Vr. Unit.</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedInvoiceForDetails.items.map((item, index) => (
-                    <TableRow key={item.id || index}>
-                      <TableCell>{item.materialName}</TableCell>
-                      <TableCell>{item.materialCode || "N/A"}</TableCell>
-                      <TableCell className="text-right">{item.peso.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.precioUnitario)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.subtotal)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <DialogFooter className="mt-6">
-                <p className="text-lg font-semibold mr-auto">
-                    Total Factura: <span className="text-primary">{formatCurrency(selectedInvoiceForDetails.totalFactura)}</span>
-                </p>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cerrar</Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {/* Modal para Imprimir Factura */}
       {invoiceToPrint && companyProfile && (
@@ -408,6 +337,7 @@ export default function FacturasCompraPage() {
                         <div className="section-title">Información del Proveedor</div>
                         <div className="provider-details my-2">
                             {invoiceToPrint.proveedorNombre && <p><strong>Nombre:</strong> {invoiceToPrint.proveedorNombre}</p>}
+                            {/* {invoiceToPrint.proveedorIdentificacion && <p><strong>Identificación:</strong> {invoiceToPrint.proveedorIdentificacion}</p>} */}
                         </div>
                         </>
                     )}
@@ -476,4 +406,3 @@ export default function FacturasCompraPage() {
     </div>
   );
 }
-
