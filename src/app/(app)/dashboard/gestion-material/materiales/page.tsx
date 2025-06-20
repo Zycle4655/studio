@@ -43,18 +43,66 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Lista de materiales estándar por defecto
+// Lista de materiales estándar por defecto actualizada
 const DEFAULT_MATERIALS = [
-  { name: "Plástico PET (Botellas)", price: 1200 },
-  { name: "Cartón y Papel", price: 350 },
-  { name: "Vidrio", price: 200 },
-  { name: "Chatarra Ferrosa", price: 600 },
-  { name: "Aluminio (Latas)", price: 3500 },
-  { name: "Cobre", price: 15000 },
-  { name: "Bronce", price: 10000 },
-  { name: "Archivo (Papel Blanco)", price: 500 },
-  { name: "Plástico Soplado (HDPE)", price: 800 },
-  { name: "Pasta (Residuos Plásticos Mezclados)", price: 150 },
+  { name: "COBRE N1", price: 30000 },
+  { name: "COBRE N2", price: 30000 },
+  { name: "BRONCE", price: 20000 },
+  { name: "ACERO", price: 3300 },
+  { name: "ALUMINIO GRUESO", price: 5500 },
+  { name: "ALUMINIO GUAYA", price: 8000 },
+  { name: "ALUMINIO PERFIL", price: 7500 },
+  { name: "ALUMINIO OLLA", price: 6200 },
+  { name: "ALUMINIO LAMINA", price: 6000 },
+  { name: "CLAUSEN POTE", price: 6900 },
+  { name: "POTE AEROSOL", price: 5400 },
+  { name: "VIRUTA DE ACERO", price: 2500 },
+  { name: "VIRUTA BRONCE", price: 10000 },
+  { name: "RINES DE AUTOMOVIL", price: 6000 },
+  { name: "RINES DE BICICLETA", price: 6000 },
+  { name: "RINES DE CAMION", price: 6000 },
+  { name: "ANTIMONIO", price: 5500 },
+  { name: "RADIADOR COBRE", price: 20100 },
+  { name: "RADIADOR ALUMINIO", price: 4500 },
+  { name: "RADIADOR MIXTO", price: 16000 },
+  { name: "DESARME O INDUCIDO", price: 1200 },
+  { name: "CABLE DE PELAR", price: 9000 },
+  { name: "CABLE DE QUEMAR", price: 4000 },
+  { name: "PLANCHA", price: 2300 },
+  { name: "TARRO SALCHICHA ALUMINIO", price: 4500 },
+  { name: "CARTON", price: 500 },
+  { name: "ARCHIVO", price: 600 },
+  { name: "PERIODICO", price: 450 },
+  { name: "REVISTA", price: 450 },
+  { name: "PLEGADIZA", price: 100 },
+  { name: "PET TRANSPARENTE", price: 1700 },
+  { name: "PET VERDE", price: 700 },
+  { name: "PET ACEITE", price: 300 },
+  { name: "PET AMBAR", price: 600 },
+  { name: "PET REVUELTO", price: 950 },
+  { name: "POLICOLOR", price: 300 },
+  { name: "PLASTICO TRANSPARENTE", price: 800 },
+  { name: "POLIESTILENO", price: 500 },
+  { name: "VASIJA BLANCA", price: 900 },
+  { name: "VASIJA NEGRA", price: 600 },
+  { name: "CUÑETE", price: 1000 },
+  { name: "CANASTA GRANDE", price: 2500 },
+  { name: "CANASTA", price: 1300 },
+  { name: "ACRILICO", price: 2000 },
+  { name: "TATUCO/SOPLADO", price: 1300 },
+  { name: "TAPAS", price: 900 },
+  { name: "SELECCIÓN", price: 300 },
+  { name: "PASTA", price: 900 },
+  { name: "PVC TUBO", price: 500 },
+  { name: "PVC TECHO", price: 300 },
+  { name: "CUBETA HUEVO", price: 100 },
+  { name: "VIDRIO", price: 100 },
+  { name: "TETRA PAK", price: 200 },
+  { name: "GALONES", price: 1000 },
+  { name: "CHATARRA", price: 720 },
+  { name: "TAPA", price: 900 }, // Hay dos "TAPAS" y "TAPA", asumo que son distintos o un error, mantengo ambos por ahora.
+  { name: "BATERIA", price: 2300 },
+  // { name: "PET REVUELTO", price: 950 }, // Este ya estaba, lo comento para evitar duplicados si fue un error. Si es intencional, descomentar.
 ];
 
 
@@ -314,11 +362,11 @@ export default function MaterialesPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
+              {[...Array(5)].map((_, i) => ( // Aumentado a 5 para dar mejor impresión de carga
                 <div key={i} className="flex items-center justify-between p-4 border rounded-md">
                   <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-5 w-40" /> {/* Un poco más ancho */}
+                    <Skeleton className="h-4 w-24" /> {/* Un poco más ancho */}
                   </div>
                   <div className="flex space-x-2">
                     <Skeleton className="h-9 w-9 rounded-md" />
@@ -327,7 +375,7 @@ export default function MaterialesPage() {
                 </div>
               ))}
             </div>
-          ) : materials.length === 0 && hasInitializedMaterials ? ( // Mostrar si no hay materiales PERO la inicialización ya ocurrió
+          ) : materials.length === 0 && hasInitializedMaterials ? ( 
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <PackageOpen className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales registrados</h3>
@@ -380,7 +428,7 @@ export default function MaterialesPage() {
         size="icon"
         onClick={handleAddMaterial}
         aria-label="Agregar nuevo material"
-        disabled={!user || isLoading} // Deshabilitar si no hay usuario o está cargando
+        disabled={!user || isLoading} 
       >
         <Plus className="h-8 w-8" />
       </Button>
@@ -417,3 +465,4 @@ export default function MaterialesPage() {
     </div>
   );
 }
+
