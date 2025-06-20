@@ -23,20 +23,38 @@ import {
   FileText,
   Settings,
   ChevronDown,
+  BarChart3, 
+  Recycle, 
+  FileBadge, 
+  Briefcase, 
+  Users, 
+  Weight, 
+  UsersRound, 
+  CalendarCheck, 
+  Receipt 
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(true);
   const { open: sidebarOpen } = useSidebar();
 
-  const isActive = (path: string) => pathname === path;
-  const isGestionMaterialPath = (path: string) => pathname.startsWith(path);
+  const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(true);
+  const [reportesOpen, setReportesOpen] = React.useState(false);
+  const [suiOpen, setSuiOpen] = React.useState(false);
+  const [talentoHumanoOpen, setTalentoHumanoOpen] = React.useState(false);
 
+  const isActive = (path: string) => pathname === path;
+  const isModulePathActive = (basePath: string) => pathname.startsWith(basePath);
+
+  // Tooltip texts (only shown when sidebar is collapsed to icons)
   const dashboardTooltip = sidebarOpen ? undefined : "Dashboard";
   const gestionMaterialTooltip = sidebarOpen ? undefined : "Gestión de Material";
+  const reportesTooltip = sidebarOpen ? undefined : "Reportes";
+  const suiTooltip = sidebarOpen ? undefined : "SUI";
+  const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
+
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -55,10 +73,11 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
+          {/* Gestión de Material Module */}
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => setGestionMaterialOpen(!gestionMaterialOpen)}
-              isActive={isGestionMaterialPath('/dashboard/gestion-material')}
+              isActive={isModulePathActive('/dashboard/gestion-material')}
               tooltip={gestionMaterialTooltip}
             >
               <Package />
@@ -134,6 +153,135 @@ export function AppSidebar() {
                     <Link href="/dashboard/gestion-material/facturas-venta">
                       <FileText />
                       <span>Facturas Venta</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+
+          {/* Reportes Module */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setReportesOpen(!reportesOpen)}
+              isActive={isModulePathActive('/dashboard/reportes')}
+              tooltip={reportesTooltip}
+            >
+              <BarChart3 />
+              <span>Reportes</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  reportesOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {reportesOpen && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/reportes/toneladas-aprovechadas')}
+                  >
+                    <Link href="/dashboard/reportes/toneladas-aprovechadas">
+                      <Recycle />
+                      <span>Toneladas Aprovechadas</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/reportes/certificados')}
+                  >
+                     <Link href="/dashboard/reportes/certificados">
+                      <FileBadge />
+                      <span>Certificados</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+
+          {/* SUI Module */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setSuiOpen(!suiOpen)}
+              isActive={isModulePathActive('/dashboard/sui')}
+              tooltip={suiTooltip}
+            >
+              <Briefcase />
+              <span>SUI</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  suiOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {suiOpen && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/sui/asociados')}
+                  >
+                    <Link href="/dashboard/sui/asociados">
+                      <Users />
+                      <span>Asociados</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/sui/balance-masas')}
+                  >
+                     <Link href="/dashboard/sui/balance-masas">
+                      <Weight />
+                      <span>Balance de Masas</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+
+          {/* Talento Humano Module */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setTalentoHumanoOpen(!talentoHumanoOpen)}
+              isActive={isModulePathActive('/dashboard/talento-humano')}
+              tooltip={talentoHumanoTooltip}
+            >
+              <UsersRound />
+              <span>Talento Humano</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  talentoHumanoOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {talentoHumanoOpen && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/talento-humano/control-asistencia')}
+                  >
+                    <Link href="/dashboard/talento-humano/control-asistencia">
+                      <CalendarCheck />
+                      <span>Control Asistencia</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/talento-humano/desprendibles-pago')}
+                  >
+                     <Link href="/dashboard/talento-humano/desprendibles-pago">
+                      <Receipt />
+                      <span>Desprendibles de Pago</span>
                     </Link>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
