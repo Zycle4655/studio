@@ -15,8 +15,8 @@
     --popover: 220 30% 98%;
     --popover-foreground: 230 25% 20%;
 
-    --primary: 260 65% 60%; /* Vibrant Purple */
-    --primary-foreground: 260 20% 96%; /* Light lavender/white for text on primary */
+    --primary: 200 60% 35%; /* Petroleum Blue */
+    --primary-foreground: 200 15% 95%; /* Light text for Petroleum Blue */
 
     --secondary: 220 60% 75%; /* Soft Blue */
     --secondary-foreground: 220 25% 25%; /* Darker blue for text on secondary */
@@ -32,9 +32,9 @@
 
     --border: 220 20% 90%; /* Subtle light cool gray border */
     --input: 220 20% 95%; /* Slightly darker input background than card */
-    --ring: 260 65% 60%; /* Primary Purple for focus rings */
+    --ring: 200 60% 35%; /* Petroleum Blue for focus rings */
 
-    --chart-1: 260 65% 60%; /* Primary Purple */
+    --chart-1: 200 60% 35%; /* Petroleum Blue */
     --chart-2: 170 60% 45%; /* Teal/Green Accent */
     --chart-3: 220 60% 75%; /* Soft Blue */
     --chart-4: 340 70% 65%; /* Pink/Rose Accent (new) */
@@ -45,12 +45,12 @@
     /* Sidebar specific colors (Dark Theme for Sidebar) */
     --sidebar-background: 240 15% 18%; /* Dark Desaturated Blue/Purple */
     --sidebar-foreground: 220 20% 88%; /* Light Cool Gray for sidebar text */
-    --sidebar-primary: 260 70% 70%;    /* Brighter Purple for active items */
-    --sidebar-primary-foreground: 260 20% 97%; /* Very Light Lavender for text on primary */
+    --sidebar-primary: 200 55% 50%;    /* Brighter Petroleum Blue for active items */
+    --sidebar-primary-foreground: 200 10% 96%; /* Very Light text for sidebar primary */
     --sidebar-accent: 170 70% 60%;     /* Brighter Teal/Green for hover/accent */
     --sidebar-accent-foreground: 170 20% 15%; /* Darker text on sidebar accent */
     --sidebar-border: 240 10% 25%;     /* Subtle border for dark sidebar */
-    --sidebar-ring: 260 70% 70%;       /* Brighter Purple for focus rings */
+    --sidebar-ring: 200 55% 50%;       /* Brighter Petroleum Blue for focus rings */
   }
 
   .dark {
@@ -64,8 +64,8 @@
     --popover: 240 15% 15%;
     --popover-foreground: 220 20% 90%;
 
-    --primary: 260 70% 70%; /* Brighter Purple */
-    --primary-foreground: 260 20% 97%; /* Very Light Lavender */
+    --primary: 200 55% 50%; /* Brighter Petroleum Blue */
+    --primary-foreground: 200 10% 96%; /* Very Light text */
 
     --secondary: 220 50% 55%; /* Muted Dark Blue */
     --secondary-foreground: 220 20% 90%; /* Light Cool Gray */
@@ -81,9 +81,9 @@
 
     --border: 240 10% 25%; /* Darker Border */
     --input: 240 10% 22%;  /* Dark Input Background */
-    --ring: 260 70% 75%;   /* Lighter Purple for focus rings */
+    --ring: 200 55% 55%;   /* Lighter Petroleum Blue for focus rings */
 
-    --chart-1: 260 70% 70%; /* Brighter Purple */
+    --chart-1: 200 55% 50%; /* Brighter Petroleum Blue */
     --chart-2: 170 70% 60%; /* Brighter Teal/Green */
     --chart-3: 220 50% 55%; /* Muted Dark Blue */
     --chart-4: 340 75% 70%; /* Brighter Pink/Rose */
@@ -92,12 +92,12 @@
     /* Sidebar colors in dark mode will be the same as the general dark theme for consistency */
     --sidebar-background: 240 15% 12%;
     --sidebar-foreground: 220 20% 90%;
-    --sidebar-primary: 260 70% 70%;
-    --sidebar-primary-foreground: 260 20% 97%;
+    --sidebar-primary: 200 55% 50%;
+    --sidebar-primary-foreground: 200 10% 96%;
     --sidebar-accent: 170 70% 60%;
     --sidebar-accent-foreground: 170 15% 95%;
     --sidebar-border: 240 10% 25%;
-    --sidebar-ring: 260 70% 75%;
+    --sidebar-ring: 200 55% 55%;
   }
 }
 
