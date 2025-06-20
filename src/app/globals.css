@@ -42,15 +42,15 @@
 
     --radius: 0.5rem; /* Maintained rounded corners */
 
-    /* Sidebar specific colors (Lighter Gray) */
-    --sidebar-background: 0 0% 35%; /* Lighter Dark Gray */
-    --sidebar-foreground: 0 0% 95%; /* Light Gray / Off-white for sidebar text */
-    --sidebar-primary: 0 0% 40%;    /* Adjusted for active/hover based on new background */
-    --sidebar-primary-foreground: 0 0% 95%;
-    --sidebar-accent: 0 0% 42%;     /* Adjusted for hover/accent based on new background */
-    --sidebar-accent-foreground: 0 0% 98%; /* White text on sidebar accent */
-    --sidebar-border: 0 0% 45%;     /* Adjusted border for lighter gray */
-    --sidebar-ring: 0 0% 42%;       /* Accent color for focus rings */
+    /* Sidebar specific colors - Updated for Gradient */
+    --sidebar-background: linear-gradient(to right, #0C3C4C, #14525F);
+    --sidebar-foreground: 0 0% 95%;      /* Light Gray / Off-white for sidebar text */
+    --sidebar-primary: 200 50% 45%;      /* Medium-light blue for active items */
+    --sidebar-primary-foreground: 0 0% 98%; /* White text */
+    --sidebar-accent: 200 50% 40%;       /* Slightly darker blue for hover */
+    --sidebar-accent-foreground: 0 0% 98%;  /* White text */
+    --sidebar-border: 195 40% 35%;       /* Dark teal border for the sidebar itself */
+    --sidebar-ring: 200 50% 40%;         /* Accent color for focus rings */
   }
 
   .dark {
@@ -89,15 +89,15 @@
     --chart-4: 340 75% 70%; /* Brighter Pink/Rose */
     --chart-5: 35 90% 65%;  /* Brighter Orange */
 
-    /* Sidebar colors in dark mode will ALSO follow the Lighter Gray request for consistency */
-    --sidebar-background: 0 0% 35%;
+    /* Sidebar colors in dark mode will ALSO follow the gradient theme */
+    --sidebar-background: linear-gradient(to right, #0C3C4C, #14525F);
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 0 0% 40%;
-    --sidebar-primary-foreground: 0 0% 95%;
-    --sidebar-accent: 0 0% 42%;
+    --sidebar-primary: 200 50% 45%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 200 50% 40%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 45%;
-    --sidebar-ring: 0 0% 42%;
+    --sidebar-border: 195 40% 35%;
+    --sidebar-ring: 200 50% 40%;
   }
 }
 
@@ -112,4 +112,3 @@
     @apply font-headline;
   }
 }
-
