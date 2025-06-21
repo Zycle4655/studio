@@ -109,7 +109,7 @@ export default function EditFacturaCompraPage() {
     } finally {
       setIsFetchingMaterials(false);
     }
-  }, [getMaterialsCollectionRef, user]);
+  }, [getMaterialsCollectionRef, user, toast]);
 
 
   React.useEffect(() => {
@@ -119,8 +119,8 @@ export default function EditFacturaCompraPage() {
       return;
     }
 
-    setIsLoadingPage(true);
     const fetchInvoiceData = async () => {
+      setIsLoadingPage(true);
       try {
         const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
         const invoiceSnap = await getDoc(invoiceRef);
@@ -577,59 +577,59 @@ export default function EditFacturaCompraPage() {
                      <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto hidden">
                         {/* This div's content will be populated by printFacturaPreview and is hidden on screen */}
                      </div>
-                     <div className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto">
+                     <div className="p-4 border rounded-md bg-background text-sm max-h-[50vh] overflow-y-auto">
                         {/* Visible preview area */}
-                        <div className="invoice-header">
+                        <div className="invoice-header text-center mb-4">
                             {companyProfile?.logoUrl && (
                                 <Image
                                     src={companyProfile.logoUrl}
                                     alt={`Logo de ${companyProfile.companyName}`}
                                     width={60} height={40}
-                                    className="mx-auto mb-1 object-contain"
+                                    className="mx-auto mb-2 object-contain"
                                     data-ai-hint="logo company"
                                 />
                             )}
-                            <h1 className="text-base font-bold">{companyProfile?.companyName || "Nombre Empresa"}</h1>
-                            {companyProfile?.nit && <p>NIT: {companyProfile.nit}</p>}
-                            {companyProfile?.address && <p>{companyProfile.address}</p>}
-                            {companyProfile?.phone && <p>Tel: {companyProfile.phone}</p>}
-                            {userEmail && <p>Email: {userEmail}</p>}
+                            <h1 className="text-lg font-bold">{companyProfile?.companyName || "Nombre Empresa"}</h1>
+                            {companyProfile?.nit && <p className="text-xs">NIT: {companyProfile.nit}</p>}
+                            {companyProfile?.address && <p className="text-xs">{companyProfile.address}</p>}
+                            {companyProfile?.phone && <p className="text-xs">Tel: {companyProfile.phone}</p>}
+                            {userEmail && <p className="text-xs">Email: {userEmail}</p>}
                         </div>
                         
-                        <div className="invoice-info mt-2">
-                            <p><span>Factura N°:</span> <span className="font-semibold">{invoice.numeroFactura}</span></p>
-                            <p><span>Fecha y Hora:</span> <span>{formatDateWithTimeForDisplay(form.watch("fecha"))}</span></p>
+                        <div className="invoice-info my-2 text-xs">
+                            <p><strong>Factura N°:</strong> <span className="font-semibold float-right">{invoice.numeroFactura}</span></p>
+                            <p><strong>Fecha y Hora:</strong> <span className="float-right">{formatDateWithTimeForDisplay(form.watch("fecha"))}</span></p>
                         </div>
                         
                         {form.watch("proveedorNombre") && (
                             <>
-                            <div className="section-title mt-2">Usuario</div>
-                            <div className="user-details my-1">
+                            <div className="section-title text-center font-bold my-2 text-xs">Usuario</div>
+                            <div className="user-details my-1 text-center text-xs">
                                 <p>{form.watch("proveedorNombre")}</p>
                             </div>
                             </>
                         )}
 
-                         <div className="section-title mt-2">Detalle de la Compra</div>
-                         <table className="items-table w-full my-1">
-                            <thead><tr><th className="col-material">Material</th><th className="col-peso text-right">Peso</th><th class="col-vunit text-right">Vr. Unit.</th><th className="col-subtotal text-right">Subtotal</th></tr></thead>
+                         <div className="section-title text-center font-bold my-2 text-xs">Detalle de la Compra</div>
+                         <table className="items-table w-full my-1 text-xs">
+                            <thead><tr><th className="font-bold">Material</th><th className="text-right font-bold">Peso</th><th className="text-right font-bold">Vr. Unit.</th><th className="text-right font-bold">Subtotal</th></tr></thead>
                             <tbody>
                             {editableItems.map((item, idx) => (
                                 <tr key={item.id || idx}>
-                                <td className="col-material">{item.materialName} {item.materialCode && `(${item.materialCode})`}</td>
-                                <td className="col-peso text-right">{item.peso.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                <td className="col-vunit text-right">{formatCurrency(item.precioUnitario)}</td>
-                                <td className="col-subtotal text-right">{formatCurrency(item.subtotal)}</td>
+                                <td>{item.materialName} {item.materialCode && `(${item.materialCode})`}</td>
+                                <td className="text-right">{item.peso.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td className="text-right">{formatCurrency(item.precioUnitario)}</td>
+                                <td className="text-right">{formatCurrency(item.subtotal)}</td>
                                 </tr>
                             ))}
                             </tbody>
                          </table>
 
-                        <div className="total-section mt-2"><p>TOTAL FACTURA: <span className="total-amount">{formatCurrency(currentTotalFactura)}</span></p></div>
+                        <div className="total-section mt-4 text-right font-bold"><p>TOTAL FACTURA: <span>{formatCurrency(currentTotalFactura)}</span></p></div>
                         
-                        {form.watch("formaDePago") && <p className="payment-method mt-1"><strong>Forma de Pago:</strong> <span className="capitalize">{form.watch("formaDePago")}</span></p>}
+                        {form.watch("formaDePago") && <p className="payment-method mt-1 text-xs"><strong>Forma de Pago:</strong> <span className="capitalize float-right">{form.watch("formaDePago")}</span></p>}
                         
-                        {form.watch("observaciones") && <div className="footer-notes mt-2 pt-1 border-t"><p><strong>Observaciones:</strong> {form.watch("observaciones")}</p></div>}
+                        {form.watch("observaciones") && <div className="footer-notes mt-2 pt-1 border-t text-xs"><p><strong>Observaciones:</strong> {form.watch("observaciones")}</p></div>}
                     </div>
                 </div>
               </div>

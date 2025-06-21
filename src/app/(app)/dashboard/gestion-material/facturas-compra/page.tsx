@@ -96,7 +96,7 @@ export default function FacturasCompraPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getPurchaseInvoicesCollectionRef, getCompanyProfileRef, toast]);
+  }, [user, getPurchaseInvoicesCollectionRef, getCompanyProfileRef]);
 
   React.useEffect(() => {
     document.title = 'Facturas de Compra | ZYCLE';
@@ -142,15 +142,7 @@ export default function FacturasCompraPage() {
       
       const stylesHtml = `
         <style>
-          body { 
-            font-family: 'Arial', sans-serif; 
-            margin: 5px; 
-            color: #000; 
-            background-color: #fff;
-            font-size: 10px;
-            max-width: 280px; 
-            padding: 0;
-          }
+          body { font-family: 'Arial', sans-serif; margin: 5px; color: #000; background-color: #fff; font-size: 10px; max-width: 280px; padding: 0; }
           .invoice-header { text-align: center; margin-bottom: 8px; }
           .invoice-header img { max-height: 40px; margin-bottom: 5px; object-fit: contain; }
           .invoice-header h1 { margin: 0; font-size: 1.1em; font-weight: bold; }
@@ -171,25 +163,54 @@ export default function FacturasCompraPage() {
           .total-section .total-amount { font-size: 1.1em; }
           .payment-method { font-size: 0.85em; margin-top: 5px; text-align: left; }
           .footer-notes { margin-top: 10px; font-size: 0.75em; border-top: 1px solid #eee; padding-top: 5px; text-align: center; }
-          .no-print { display: none !important; }
-          @media print {
-            body { margin: 0; padding:0; max-width: 100%; }
-            .no-print { display: none !important; }
-            .items-table th, .items-table td { font-size: 0.8em; padding: 2px 1px;}
-            .invoice-header h1 { font-size: 1em; }
-            .section-title { font-size: 0.85em; }
-          }
-        </style>
-      `;
+          @media print { body { margin: 0; padding:0; max-width: 100%; } .items-table th, .items-table td { font-size: 0.8em; padding: 2px 1px;} .invoice-header h1 { font-size: 1em; } .section-title { font-size: 0.85em; } }
+        </style>`;
       printWindow.document.write(stylesHtml);
       printWindow.document.write('</head><body>');
-      printWindow.document.write(previewElement.innerHTML);
+      
+      let printHtml = '<div class="invoice-header">';
+      if (companyProfile?.logoUrl) {
+        printHtml += `<img src="${companyProfile.logoUrl}" alt="Logo de ${companyProfile.companyName}" style="max-height: 40px; margin-bottom: 5px; object-fit: contain; display: block; margin-left: auto; margin-right: auto;" data-ai-hint="logo company" />`;
+      }
+      printHtml += `<h1>${companyProfile?.companyName || "Nombre Empresa"}</h1>`;
+      if (companyProfile?.nit) printHtml += `<p>NIT: ${companyProfile.nit}</p>`;
+      if (companyProfile?.address) printHtml += `<p>${companyProfile.address}</p>`;
+      if (companyProfile?.phone) printHtml += `<p>Tel: ${companyProfile.phone}</p>`;
+      if (userEmail) printHtml += `<p>Email: ${userEmail}</p>`;
+      printHtml += '</div>';
+
+      printHtml += '<div class="invoice-info">';
+      printHtml += `<p><span>Factura N°:</span> <span style="font-weight: bold;">${invoiceToPrint.numeroFactura}</span></p>`;
+      printHtml += `<p><span>Fecha y Hora:</span> <span>${formatDateWithTime(invoiceToPrint.fecha)}</span></p>`;
+      printHtml += '</div>';
+
+      if (invoiceToPrint.proveedorNombre) {
+        printHtml += '<div class="section-title">Usuario</div>';
+        printHtml += `<div class="user-details"><p>${invoiceToPrint.proveedorNombre}</p></div>`;
+      }
+
+      printHtml += '<div class="section-title">Detalle de la Compra</div>';
+      printHtml += '<table class="items-table"><thead><tr><th class="col-material">Material</th><th class="col-peso text-right">Peso</th><th class="col-vunit text-right">Vr. Unit.</th><th class="col-subtotal text-right">Subtotal</th></tr></thead><tbody>';
+      invoiceToPrint.items.forEach(item => {
+        printHtml += `<tr><td class="col-material">${item.materialName}${item.materialCode ? ` (${item.materialCode})` : ''}</td><td class="col-peso text-right">${item.peso.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td><td class="col-vunit text-right">${formatCurrency(item.precioUnitario)}</td><td class="col-subtotal text-right">${formatCurrency(item.subtotal)}</td></tr>`;
+      });
+      printHtml += '</tbody></table>';
+
+      printHtml += `<div class="total-section"><p>TOTAL FACTURA: <span class="total-amount">${formatCurrency(invoiceToPrint.totalFactura)}</span></p></div>`;
+      
+      if (invoiceToPrint.formaDePago) {
+          printHtml += `<p class="payment-method"><strong>Forma de Pago:</strong> <span style="text-transform: capitalize;">${invoiceToPrint.formaDePago}</span></p>`;
+      }
+
+      if (invoiceToPrint.observaciones) {
+        printHtml += `<div class="footer-notes"><p><strong>Observaciones:</strong> ${invoiceToPrint.observaciones}</p></div>`;
+      }
+      
+      printWindow.document.write(printHtml);
       printWindow.document.write('</body></html>');
       printWindow.document.close();
       printWindow.focus();
-      setTimeout(() => {
-         printWindow.print();
-      }, 250);
+      setTimeout(() => { printWindow.print(); }, 250);
     } else {
         toast({variant: "destructive", title:"Error de Impresión", description: "No se pudo generar la vista previa. Datos de factura o perfil incompletos."})
     }
@@ -302,7 +323,7 @@ export default function FacturasCompraPage() {
 
       {invoiceToPrint && (
          <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
-            <DialogContent className="max-w-lg"> 
+            <DialogContent className="max-w-md"> 
                 <DialogHeader>
                     <DialogTitle className="flex items-center">
                         <Printer className="mr-2 h-6 w-6 text-primary"/>
@@ -397,4 +418,5 @@ export default function FacturasCompraPage() {
     </div>
   );
 }
+
 
