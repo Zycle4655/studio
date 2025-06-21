@@ -145,6 +145,8 @@ export default function VentaMaterialItemForm({
     return null;
   }
 
+  const materialsWithStock = materials.filter(material => (material.stock || 0) > 0);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {if (!isLoading) setIsOpen(open)}}>
       <DialogContent className="sm:max-w-md">
@@ -173,13 +175,13 @@ export default function VentaMaterialItemForm({
                             "w-full justify-between",
                             !field.value && "text-muted-foreground"
                           )}
-                          disabled={isLoading || materials.length === 0 || isEditingInvoiceItem}
+                          disabled={isLoading || materialsWithStock.length === 0 || isEditingInvoiceItem}
                         >
                           {field.value
                             ? materials.find(
                                 (material) => material.id === field.value
                               )?.name
-                            : (materials.length > 0 ? "Seleccione un material" : "No hay materiales")}
+                            : (materialsWithStock.length > 0 ? "Seleccione un material" : "No hay materiales con stock")}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
@@ -189,15 +191,17 @@ export default function VentaMaterialItemForm({
                         <Command>
                           <CommandInput placeholder="Buscar material..." />
                           <CommandList>
-                            <CommandEmpty>No se encontró el material.</CommandEmpty>
+                            <CommandEmpty>
+                              {materialsWithStock.length === 0
+                                ? "No hay materiales con stock para vender."
+                                : "No se encontró el material."}
+                            </CommandEmpty>
                             <CommandGroup>
-                              {materials.map((material) => (
+                              {materialsWithStock.map((material) => (
                                 <CommandItem
                                   value={material.name}
                                   key={material.id}
                                   onSelect={() => handleMaterialSelect(material.id)}
-                                  disabled={(material.stock || 0) <= 0}
-                                  className={cn((material.stock || 0) <= 0 && "text-muted-foreground line-through")}
                                 >
                                   <Check
                                     className={cn(
@@ -310,7 +314,7 @@ export default function VentaMaterialItemForm({
               </DialogClose>
               <Button
                 type="submit"
-                disabled={isLoading || materials.length === 0}
+                disabled={isLoading || materialsWithStock.length === 0}
               >
                 {isLoading ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> {defaultValues?.materialId ? "Actualizar Ítem" : "Agregar Ítem"}</>}
               </Button>
