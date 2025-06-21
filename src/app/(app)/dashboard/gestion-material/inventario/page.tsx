@@ -189,7 +189,16 @@ export default function InventarioPage() {
                                                     placeholder="0.00 kg" 
                                                     step="0.01"
                                                     {...field}
-                                                    onChange={(e) => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                                                    value={String(field.value ?? "")}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val === "") {
+                                                            field.onChange(undefined);
+                                                        } else {
+                                                            const num = parseFloat(val);
+                                                            field.onChange(isNaN(num) ? undefined : num);
+                                                        }
+                                                    }}
                                                     disabled={isSubmittingInitialStock}
                                                     className="bg-background"
                                                 />
