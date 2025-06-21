@@ -81,7 +81,7 @@ export default function EditFacturaCompraPage() {
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user, db]);
+  }, [user]);
 
   const fetchAvailableMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -109,7 +109,7 @@ export default function EditFacturaCompraPage() {
     } finally {
       setIsFetchingMaterials(false);
     }
-  }, [getMaterialsCollectionRef, toast, user]);
+  }, [getMaterialsCollectionRef, user]);
 
 
   React.useEffect(() => {
@@ -358,10 +358,10 @@ export default function EditFacturaCompraPage() {
       printHtml += `<p><span>Fecha y Hora:</span> <span>${formatDateWithTimeForDisplay(form.watch("fecha"))}</span></p>`;
       printHtml += '</div>';
 
-      const watchedProveedorNombre = form.watch("proveedorNombre");
-      if (watchedProveedorNombre) {
+      const watchedUsuarioNombre = form.watch("proveedorNombre");
+      if (watchedUsuarioNombre) {
         printHtml += '<div class="section-title">Usuario</div>';
-        printHtml += `<div class="user-details"><p>${watchedProveedorNombre}</p></div>`;
+        printHtml += `<div class="user-details"><p>${watchedUsuarioNombre}</p></div>`;
       }
 
       printHtml += '<div class="section-title">Detalle de la Compra</div>';

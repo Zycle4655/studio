@@ -75,17 +75,17 @@ export default function CompraMaterialPage() {
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user, db]);
+  }, [user]);
 
   const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "purchaseInvoices");
-  }, [user, db]);
+  }, [user]);
   
   const getCompanyProfileRef = React.useCallback(() => {
     if (!user || !db) return null;
     return doc(db, "companyProfiles", user.uid);
-  }, [user, db]);
+  }, [user]);
 
 
   const fetchAvailableMaterials = React.useCallback(async () => {
@@ -114,7 +114,7 @@ export default function CompraMaterialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, toast, user]);
+  }, [getMaterialsCollectionRef, user]);
 
   React.useEffect(() => {
     document.title = 'Compra de Materiales | ZYCLE';

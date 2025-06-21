@@ -1,7 +1,6 @@
 
 "use client";
 
-import type { Metadata } from 'next';
 import * as React from "react";
 import { Plus, Edit, Trash2, PackageOpen, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,44 +46,44 @@ import { Skeleton } from '@/components/ui/skeleton';
 let initializationLock = false;
 
 const DEFAULT_MATERIALS = [
-  { name: "ARCHIVO", price: 600, code: "201" },
-  { name: "REVISTA", price: 450, code: "207" },
-  { name: "PERIODICO", price: 450, code: "204" },
-  { name: "TETRA PAK", price: 200, code: "206" },
-  { name: "CARTON", price: 500, code: "202" },
-  { name: "CUBETA HUEVO", price: 100, code: "205" },
-  { name: "PLEGADIZA", price: 100, code: "205" },
-  { name: "VIDRIO CASCO", price: 100, code: "499" },
-  { name: "VIDRIO PLANO", price: 100, code: "499" },
-  { name: "POLICOLOR", price: 300, code: "306" },
-  { name: "PLAST TRANS", price: 800, code: "306" },
-  { name: "PET REVUELTO", price: 950, code: "303" },
-  { name: "PET VERDE", price: 700, code: "303" },
-  { name: "PET AMBAR", price: 600, code: "303" },
-  { name: "PET ACEITE", price: 300, code: "303" },
-  { name: "PET TRANS", price: 1700, code: "303" },
-  { name: "CLAUSEN", price: 6900, code: "101" },
-  { name: "GALONES", price: 1000, code: "307" },
-  { name: "PVC BLANDO", price: 400, code: "304" },
-  { name: "PVC TUBO", price: 500, code: "304" },
-  { name: "PVCTECHO", price: 300, code: "304" },
-  { name: "CUÑETE", price: 1000, code: "302" },
-  { name: "CANASTA", price: 1300, code: "302" },
-  { name: "PASTA", price: 900, code: "302" },
-  { name: "TATUCO", price: 1300, code: "307" },
-  { name: "CHATARRA", price: 720, code: "102" },
-  { name: "ACERO", price: 3300, code: "106" },
-  { name: "TAPA", price: 900, "code": "302" },
-  { name: "ALUM GRUESO", price: 5500, code: "101" },
-  { name: "POTE AEROSOL", price: 5400, code: "101" },
-  { name: "ALUMI LAMINA", price: 6000, code: "101" },
-  { name: "ALUM PERFIL", price: 7500, code: "101" },
-  { name: "ANTIMONIO", price: 5500, code: "105" },
-  { name: "ALUMINIO OLLA", price: 6200, code: "101" },
-  { name: "BRONCE", price: 20000, code: "104" },
-  { name: "COBRE #2", price: 30000, code: "103" },
-  { name: "COBRE #1", price: 30000, code: "103" },
-];
+    { name: "ARCHIVO", price: 600, code: "201" },
+    { name: "REVISTA", price: 450, code: "207" },
+    { name: "PERIODICO", price: 450, code: "204" },
+    { name: "TETRA PAK", price: 200, code: "206" },
+    { name: "CARTON", price: 500, code: "202" },
+    { name: "CUBETA HUEVO", price: 100, code: "205" },
+    { name: "PLEGADIZA", price: 100, code: "205" },
+    { name: "VIDRIO CASCO", price: 100, code: "499" },
+    { name: "VIDRIO PLANO", price: 100, code: "499" },
+    { name: "POLICOLOR", price: 300, code: "306" },
+    { name: "PLAST TRANS", price: 800, code: "306" },
+    { name: "PET REVUELTO", price: 950, code: "303" },
+    { name: "PET VERDE", price: 700, code: "303" },
+    { name: "PET AMBAR", price: 600, code: "303" },
+    { name: "PET ACEITE", price: 300, code: "303" },
+    { name: "PET TRANS", price: 1700, code: "303" },
+    { name: "CLAUSEN", price: 6900, code: "101" },
+    { name: "GALONES", price: 1000, code: "307" },
+    { name: "PVC BLANDO", price: 400, code: "304" },
+    { name: "PVC TUBO", price: 500, code: "304" },
+    { name: "PVCTECHO", price: 300, code: "304" },
+    { name: "CUÑETE", price: 1000, code: "302" },
+    { name: "CANASTA", price: 1300, code: "302" },
+    { name: "PASTA", price: 900, code: "302" },
+    { name: "TATUCO", price: 1300, code: "307" },
+    { name: "CHATARRA", price: 720, code: "102" },
+    { name: "ACERO", price: 3300, code: "106" },
+    { name: "TAPA", price: 900, "code": "302" },
+    { name: "ALUM GRUESO", price: 5500, code: "101" },
+    { name: "POTE AEROSOL", price: 5400, code: "101" },
+    { name: "ALUMI LAMINA", price: 6000, code: "101" },
+    { name: "ALUM PERFIL", price: 7500, code: "101" },
+    { name: "ANTIMONIO", price: 5500, code: "105" },
+    { name: "ALUMINIO OLLA", price: 6200, code: "101" },
+    { name: "BRONCE", price: 20000, code: "104" },
+    { name: "COBRE #2", price: 30000, code: "103" },
+    { name: "COBRE #1", price: 30000, code: "103" },
+  ];
 
 
 export default function MaterialesPage() {
@@ -123,6 +122,10 @@ export default function MaterialesPage() {
         });
       });
       await batch.commit();
+      toast({
+        title: "Lista de Materiales Creada",
+        description: "Se ha creado una lista de materiales por defecto para su empresa.",
+      });
       return true;
     } catch (error) {
       console.error("Error initializing default materials for user:", error);
@@ -135,7 +138,7 @@ export default function MaterialesPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [getMaterialsCollectionRef, toast, db]);
+  }, [getMaterialsCollectionRef]);
 
 
   const fetchMaterials = React.useCallback(async () => {
@@ -152,6 +155,7 @@ export default function MaterialesPage() {
     try {
       let querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
 
+      // Logic to initialize materials for this specific user if their list is empty
       if (querySnapshot.empty && !initializationLock) {
         initializationLock = true; 
         const success = await initializeDefaultMaterials();
@@ -177,7 +181,7 @@ export default function MaterialesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, initializeDefaultMaterials, getMaterialsCollectionRef, toast]);
+  }, [user, initializeDefaultMaterials, getMaterialsCollectionRef]);
 
 
   React.useEffect(() => {
@@ -449,6 +453,4 @@ export default function MaterialesPage() {
     </div>
   );
 }
-    
-
     
