@@ -31,8 +31,10 @@ export default function ResetPasswordForm() {
   const [isValidToken, setIsValidToken] = useState(false);
   const [oobCode, setOobCode] = useState<string | null>(null);
 
+  const oobCodeFromParams = searchParams.get("oobCode");
+
   useEffect(() => {
-    const code = searchParams.get("oobCode");
+    const code = oobCodeFromParams;
     if (code) {
       setOobCode(code);
       verifyPasswordResetCode(auth, code)
@@ -63,7 +65,7 @@ export default function ResetPasswordForm() {
       setIsValidToken(false);
       router.replace("/forgot-password");
     }
-  }, [searchParams, router, toast]);
+  }, [oobCodeFromParams, router, toast]);
 
 
   const form = useForm<ResetPasswordFormData>({
