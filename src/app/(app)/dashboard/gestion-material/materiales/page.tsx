@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { Plus, Edit, Trash2, PackageOpen, Code, Trash } from "lucide-react";
+import { Plus, Edit, Trash2, PackageOpen, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -98,7 +97,6 @@ export default function MaterialesPage() {
 
   const [materialToDelete, setMaterialToDelete] = React.useState<MaterialDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = React.useState(false);
   
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
@@ -256,49 +254,6 @@ export default function MaterialesPage() {
     }
   };
 
-  const handleDeleteAllMaterials = async () => {
-    const materialsCollectionRef = getMaterialsCollectionRef();
-    if (!materialsCollectionRef || !db) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo obtener la referencia a los materiales." });
-      return;
-    }
-    setIsSubmitting(true);
-    setIsDeleteAllDialogOpen(false);
-    try {
-      const querySnapshot = await getDocs(materialsCollectionRef);
-      if (querySnapshot.empty) {
-        toast({ title: "Sin acción", description: "No hay materiales para eliminar." });
-        return;
-      }
-      
-      const batch = writeBatch(db);
-      querySnapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-
-      toast({
-        title: "Materiales Eliminados",
-        description: "Todos sus materiales han sido eliminados. La lista por defecto se cargará ahora.",
-      });
-      
-      // We must reset the initialization lock to allow re-initialization on fetch.
-      initializationLock = false; 
-      await fetchMaterials(); 
-
-    } catch (error) {
-      console.error("Error deleting all materials:", error);
-      toast({
-        variant: "destructive",
-        title: "Error al Eliminar",
-        description: "No se pudieron eliminar todos los materiales.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleFormSubmit = async (data: MaterialFormData) => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
@@ -373,7 +328,7 @@ export default function MaterialesPage() {
   return (
     <div className="container py-8 px-4 md:px-6">
       <Card className="shadow-lg">
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader>
           <div>
             <CardTitle className="text-2xl font-headline text-primary">
               Gestión de Materiales
@@ -382,16 +337,6 @@ export default function MaterialesPage() {
               Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
             </CardDescription>
           </div>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setIsDeleteAllDialogOpen(true)}
-            disabled={isLoading || isSubmitting || materials.length === 0}
-            aria-label="Eliminar todos los materiales"
-          >
-            <Trash className="mr-2 h-4 w-4" />
-            Eliminar Todos
-          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -506,29 +451,6 @@ export default function MaterialesPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isSubmitting ? "Eliminando..." : "Eliminar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar TODOS sus materiales?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción es irreversible y eliminará permanentemente su lista de materiales actual.
-              Después de eliminar, se cargará una lista de materiales por defecto.
-              Esto es útil para restablecer su lista a los valores estándar.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteAllMaterials}
-              disabled={isSubmitting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isSubmitting ? "Eliminando..." : "Sí, Eliminar Todos"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
