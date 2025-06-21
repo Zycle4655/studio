@@ -26,7 +26,7 @@ export interface MaterialDocument {
   id: string; // ID del documento de Firestore
   name: string;
   price: number;
-  code?: string | null; // Nuevo campo para el código del material
+  code?: string | null;
   stock?: number; // Stock actual del material en kg
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
