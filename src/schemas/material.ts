@@ -27,6 +27,7 @@ export interface MaterialDocument {
   name: string;
   price: number;
   code?: string | null; // Nuevo campo para el código del material
+  stock?: number; // Stock actual del material en kg
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

@@ -5,7 +5,7 @@ import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, getDocs, query, orderBy } from "firebase/firestore";
+import { doc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, getDocs, query, orderBy, writeBatch, increment } from "firebase/firestore";
 import type { FacturaCompraDocument, CompraMaterialItem, FacturaCompraFormData } from "@/schemas/compra";
 import type { CompanyProfileDocument } from "@/schemas/company";
 import type { MaterialDocument } from "@/schemas/material";
@@ -244,12 +244,21 @@ export default function EditFacturaCompraPage() {
 
 
   const handleUpdateInvoice = async (formData: FacturaCompraFormData) => {
-    if (!user || !invoice || !facturaId) return;
+    if (!user || !invoice || !facturaId || !db) return;
     setIsSavingInvoice(true);
+    
+    const materialsRef = getMaterialsCollectionRef();
+    if (!materialsRef) {
+        toast({ variant: "destructive", title: "Error", description: "No se pudo obtener la referencia a los materiales." });
+        setIsSavingInvoice(false);
+        return;
+    }
+
     try {
       const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
       const finalTotalFactura = calculateTotal(editableItems);
 
+      // Validate items before proceeding
       for (const item of editableItems) {
         if (!item.peso || item.peso <= 0) {
           toast({ variant: "destructive", title: "Error en Ítem", description: `El peso del material "${item.materialName}" debe ser mayor a cero.` });
@@ -262,6 +271,32 @@ export default function EditFacturaCompraPage() {
           return;
         }
       }
+      
+      const batch = writeBatch(db);
+
+      // --- Stock Adjustment Logic ---
+      const stockAdjustments = new Map<string, number>();
+
+      // Decrease stock based on original items
+      invoice.items.forEach(item => {
+        const currentChange = stockAdjustments.get(item.materialId) || 0;
+        stockAdjustments.set(item.materialId, currentChange - item.peso);
+      });
+
+      // Increase stock based on new items
+      editableItems.forEach(item => {
+        const currentChange = stockAdjustments.get(item.materialId) || 0;
+        stockAdjustments.set(item.materialId, currentChange + item.peso);
+      });
+
+      // Apply net changes to the batch
+      stockAdjustments.forEach((change, materialId) => {
+        if (change !== 0) {
+          const materialDocRef = doc(materialsRef, materialId);
+          batch.update(materialDocRef, { stock: increment(change) });
+        }
+      });
+      // --- End Stock Adjustment Logic ---
 
       const updatedData: Partial<FacturaCompraDocument> = {
         fecha: Timestamp.fromDate(formData.fecha),
@@ -272,12 +307,17 @@ export default function EditFacturaCompraPage() {
         totalFactura: finalTotalFactura,
         updatedAt: serverTimestamp(),
       };
-      await updateDoc(invoiceRef, updatedData);
-      toast({ title: "Factura Actualizada", description: "Los detalles de la factura han sido actualizados." });
+      
+      batch.update(invoiceRef, updatedData);
+      
+      await batch.commit();
+
+      toast({ title: "Factura Actualizada", description: "Los detalles de la factura y el inventario han sido actualizados." });
       router.push("/dashboard/gestion-material/facturas-compra");
+
     } catch (error) {
       console.error("Error updating invoice:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudo actualizar la factura." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo actualizar la factura o el inventario." });
     } finally {
       setIsSavingInvoice(false);
     }
@@ -446,7 +486,7 @@ export default function EditFacturaCompraPage() {
             Editar Factura de Compra N° {invoice.numeroFactura}
           </CardTitle>
           <CardDescription>
-            Modifique los detalles y los ítems de la factura. La adición de nuevos ítems a una factura existente estará disponible próximamente.
+            Modifique los detalles y los ítems de la factura. El inventario se ajustará automáticamente al guardar.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -774,5 +814,3 @@ export default function EditFacturaCompraPage() {
     </div>
   );
 }
-
-    

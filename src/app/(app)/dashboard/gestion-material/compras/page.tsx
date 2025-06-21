@@ -28,6 +28,7 @@ import {
   getDoc,
   limit,
   writeBatch,
+  increment,
 } from "firebase/firestore";
 import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
 import FacturaCompraForm from "@/components/forms/FacturaCompraForm";
@@ -114,7 +115,7 @@ export default function CompraMaterialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, user]);
+  }, [getMaterialsCollectionRef, user, toast]);
 
   React.useEffect(() => {
     document.title = 'Compra de Materiales | ZYCLE';
@@ -254,7 +255,8 @@ export default function CompraMaterialPage() {
 
   const handleSaveFactura = async (formData: FacturaCompraFormData) => {
     const invoicesRef = getPurchaseInvoicesCollectionRef();
-    if (!invoicesRef || !user || nextNumeroFactura === null) {
+    const materialsRef = getMaterialsCollectionRef();
+    if (!invoicesRef || !materialsRef || !user || nextNumeroFactura === null) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la factura. Faltan datos o conexión." });
       return;
     }
@@ -278,18 +280,22 @@ export default function CompraMaterialPage() {
       const newFacturaRef = doc(invoicesRef); 
       batch.set(newFacturaRef, facturaData);
       
-      // Aquí iría la lógica para actualizar el stock de los materiales si se implementa inventario
+      // Update stock for each item in the purchase
+      currentPurchaseItems.forEach(item => {
+        const materialDocRef = doc(materialsRef, item.materialId);
+        batch.update(materialDocRef, { stock: increment(item.peso) });
+      });
 
       await batch.commit();
 
-      toast({ title: "Factura Guardada", description: `La factura N° ${nextNumeroFactura} ha sido guardada con éxito.` });
+      toast({ title: "Factura Guardada", description: `La factura N° ${nextNumeroFactura} ha sido guardada y el inventario actualizado.` });
       setCurrentPurchaseItems([]);
       setIsFacturaFormOpen(false);
       setNextNumeroFactura(null); 
 
     } catch (error) {
       console.error("Error saving factura:", error);
-      toast({ variant: "destructive", title: "Error al Guardar Factura", description: "No se pudo guardar la factura." });
+      toast({ variant: "destructive", title: "Error al Guardar Factura", description: "No se pudo guardar la factura o actualizar el inventario." });
     } finally {
       setIsSubmitting(false);
     }
@@ -346,7 +352,7 @@ export default function CompraMaterialPage() {
               Registrar Compra de Material
             </CardTitle>
             <CardDescription>
-              Añada los materiales comprados y genere una factura.
+              Añada los materiales comprados y genere una factura. El inventario se actualizará automáticamente.
             </CardDescription>
           </div>
         </CardHeader>
@@ -499,5 +505,3 @@ export default function CompraMaterialPage() {
     </div>
   );
 }
-
-    
