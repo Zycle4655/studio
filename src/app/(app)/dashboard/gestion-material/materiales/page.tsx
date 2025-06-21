@@ -138,7 +138,7 @@ export default function MaterialesPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [getMaterialsCollectionRef]);
+  }, [getMaterialsCollectionRef, toast]);
 
 
   const fetchMaterials = React.useCallback(async () => {
@@ -181,7 +181,7 @@ export default function MaterialesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, initializeDefaultMaterials, getMaterialsCollectionRef]);
+  }, [user, initializeDefaultMaterials, getMaterialsCollectionRef, toast]);
 
 
   React.useEffect(() => {
@@ -453,4 +453,5 @@ export default function MaterialesPage() {
     </div>
   );
 }
+
     
