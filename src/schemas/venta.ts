@@ -32,7 +32,7 @@ export interface VentaMaterialItem {
 // Esquema para el formulario de facturación (encabezado)
 export const FacturaVentaFormSchema = z.object({
   fecha: z.date({ required_error: "La fecha es obligatoria." }),
-  formaDePago: z.enum(["efectivo", "nequi", "transferencia"], { required_error: "La forma de pago es obligatoria."}),
+  formaDePago: z.enum(["efectivo", "nequi", "cheque"], { required_error: "La forma de pago es obligatoria."}),
   clienteNombre: z.string().max(100, "El nombre del cliente no puede exceder los 100 caracteres.").optional().nullable(),
   observaciones: z.string().max(500, "Las observaciones no pueden exceder los 500 caracteres.").optional().nullable(),
 });
@@ -49,8 +49,9 @@ export interface FacturaVentaDocument {
   items: VentaMaterialItem[]; 
   totalFactura: number;
   numeroFactura: number; 
-  formaDePago: "efectivo" | "nequi" | "transferencia"; 
+  formaDePago: "efectivo" | "nequi" | "cheque"; 
   observaciones?: string | null; 
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
+

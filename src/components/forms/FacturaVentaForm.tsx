@@ -272,7 +272,7 @@ export default function FacturaVentaForm({
                         <SelectContent>
                           <SelectItem value="efectivo">Efectivo</SelectItem>
                           <SelectItem value="nequi">Nequi</SelectItem>
-                          <SelectItem value="transferencia">Transferencia</SelectItem>
+                          <SelectItem value="cheque">Cheque</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -391,3 +391,4 @@ export default function FacturaVentaForm({
     </Dialog>
   );
 }
+
