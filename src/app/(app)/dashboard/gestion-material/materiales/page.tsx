@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Edit, Trash2, PackageOpen, Code } from "lucide-react";
+import { Plus, Edit, Trash2, PackageOpen, Code, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -46,44 +46,44 @@ import { Skeleton } from '@/components/ui/skeleton';
 let initializationLock = false;
 
 const DEFAULT_MATERIALS = [
-    { name: "ARCHIVO", price: 600, code: "201" },
-    { name: "REVISTA", price: 450, code: "207" },
-    { name: "PERIODICO", price: 450, code: "204" },
-    { name: "TETRA PAK", price: 200, code: "206" },
-    { name: "CARTON", price: 500, code: "202" },
-    { name: "CUBETA HUEVO", price: 100, code: "205" },
-    { name: "PLEGADIZA", price: 100, code: "205" },
-    { name: "VIDRIO CASCO", price: 100, code: "499" },
-    { name: "VIDRIO PLANO", price: 100, code: "499" },
-    { name: "POLICOLOR", price: 300, code: "306" },
-    { name: "PLAST TRANS", price: 800, code: "306" },
-    { name: "PET REVUELTO", price: 950, code: "303" },
-    { name: "PET VERDE", price: 700, code: "303" },
-    { name: "PET AMBAR", price: 600, code: "303" },
-    { name: "PET ACEITE", price: 300, code: "303" },
-    { name: "PET TRANS", price: 1700, code: "303" },
-    { name: "CLAUSEN", price: 6900, code: "101" },
-    { name: "GALONES", price: 1000, code: "307" },
-    { name: "PVC BLANDO", price: 400, code: "304" },
-    { name: "PVC TUBO", price: 500, code: "304" },
-    { name: "PVCTECHO", price: 300, code: "304" },
-    { name: "CUÑETE", price: 1000, code: "302" },
-    { name: "CANASTA", price: 1300, code: "302" },
-    { name: "PASTA", price: 900, code: "302" },
-    { name: "TATUCO", price: 1300, code: "307" },
-    { name: "CHATARRA", price: 720, code: "102" },
-    { name: "ACERO", price: 3300, code: "106" },
-    { name: "TAPA", price: 900, "code": "302" },
-    { name: "ALUM GRUESO", price: 5500, code: "101" },
-    { name: "POTE AEROSOL", price: 5400, code: "101" },
-    { name: "ALUMI LAMINA", price: 6000, code: "101" },
-    { name: "ALUM PERFIL", price: 7500, code: "101" },
-    { name: "ANTIMONIO", price: 5500, code: "105" },
-    { name: "ALUMINIO OLLA", price: 6200, code: "101" },
-    { name: "BRONCE", price: 20000, code: "104" },
-    { name: "COBRE #2", price: 30000, code: "103" },
-    { name: "COBRE #1", price: 30000, code: "103" },
-  ];
+  { name: "ARCHIVO", price: 600, code: "201" },
+  { name: "REVISTA", price: 450, code: "207" },
+  { name: "PERIODICO", price: 450, code: "204" },
+  { name: "TETRA PAK", price: 200, code: "206" },
+  { name: "CARTON", price: 500, code: "202" },
+  { name: "CUBETA HUEVO", price: 100, code: "205" },
+  { name: "PLEGADIZA", price: 100, code: "205" },
+  { name: "VIDRIO CASCO", price: 100, code: "499" },
+  { name: "VIDRIO PLANO", price: 100, code: "499" },
+  { name: "POLICOLOR", price: 300, code: "306" },
+  { name: "PLAST TRANS", price: 800, code: "306" },
+  { name: "PET REVUELTO", price: 950, code: "303" },
+  { name: "PET VERDE", price: 700, code: "303" },
+  { name: "PET AMBAR", price: 600, code: "303" },
+  { name: "PET ACEITE", price: 300, code: "303" },
+  { name: "PET TRANS", price: 1700, code: "303" },
+  { name: "CLAUSEN", price: 6900, code: "101" },
+  { name: "GALONES", price: 1000, code: "307" },
+  { name: "PVC BLANDO", price: 400, code: "304" },
+  { name: "PVC TUBO", price: 500, code: "304" },
+  { name: "PVCTECHO", price: 300, code: "304" },
+  { name: "CUÑETE", price: 1000, code: "302" },
+  { name: "CANASTA", price: 1300, code: "302" },
+  { name: "PASTA", price: 900, code: "302" },
+  { name: "TATUCO", price: 1300, code: "307" },
+  { name: "CHATARRA", price: 720, code: "102" },
+  { name: "ACERO", price: 3300, code: "106" },
+  { name: "TAPA", price: 900, code: "302" },
+  { name: "ALUM GRUESO", price: 5500, code: "101" },
+  { name: "POTE AEROSOL", price: 5400, code: "101" },
+  { name: "ALUMI LAMINA", price: 6000, code: "101" },
+  { name: "ALUM PERFIL", price: 7500, code: "101" },
+  { name: "ANTIMONIO", price: 5500, code: "105" },
+  { name: "ALUMINIO OLLA", price: 6200, code: "101" },
+  { name: "BRONCE", price: 20000, code: "104" },
+  { name: "COBRE #2", price: 30000, code: "103" },
+  { name: "COBRE #1", price: 30000, code: "103" },
+];
 
 
 export default function MaterialesPage() {
@@ -98,6 +98,7 @@ export default function MaterialesPage() {
 
   const [materialToDelete, setMaterialToDelete] = React.useState<MaterialDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = React.useState(false);
   
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
@@ -192,6 +193,10 @@ export default function MaterialesPage() {
       setIsLoading(false);
       setMaterials([]);
     }
+    // Reset the lock when the user changes or logs out
+    return () => {
+        initializationLock = false;
+    }
   }, [user, fetchMaterials]);
 
 
@@ -247,6 +252,49 @@ export default function MaterialesPage() {
       setIsSubmitting(false);
       setIsDeleteDialogOpen(false);
       setMaterialToDelete(null);
+    }
+  };
+
+  const handleDeleteAllMaterials = async () => {
+    const materialsCollectionRef = getMaterialsCollectionRef();
+    if (!materialsCollectionRef || !db) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo obtener la referencia a los materiales." });
+      return;
+    }
+    setIsSubmitting(true);
+    setIsDeleteAllDialogOpen(false);
+    try {
+      const querySnapshot = await getDocs(materialsCollectionRef);
+      if (querySnapshot.empty) {
+        toast({ title: "Sin acción", description: "No hay materiales para eliminar." });
+        return;
+      }
+      
+      const batch = writeBatch(db);
+      querySnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      toast({
+        title: "Materiales Eliminados",
+        description: "Todos sus materiales han sido eliminados. La lista por defecto se cargará ahora.",
+      });
+      
+      // We must reset the initialization lock to allow re-initialization on fetch.
+      initializationLock = false; 
+      await fetchMaterials(); 
+
+    } catch (error) {
+      console.error("Error deleting all materials:", error);
+      toast({
+        variant: "destructive",
+        title: "Error al Eliminar",
+        description: "No se pudieron eliminar todos los materiales.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -323,7 +371,7 @@ export default function MaterialesPage() {
   return (
     <div className="container py-8 px-4 md:px-6">
       <Card className="shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-2xl font-headline text-primary">
               Gestión de Materiales
@@ -332,6 +380,16 @@ export default function MaterialesPage() {
               Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
             </CardDescription>
           </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setIsDeleteAllDialogOpen(true)}
+            disabled={isLoading || isSubmitting || materials.length === 0}
+            aria-label="Eliminar todos los materiales"
+          >
+            <Trash className="mr-2 h-4 w-4" />
+            Eliminar Todos
+          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -450,8 +508,29 @@ export default function MaterialesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar TODOS sus materiales?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible y eliminará permanentemente su lista de materiales actual.
+              Después de eliminar, se cargará una lista de materiales por defecto.
+              Esto es útil para restablecer su lista a los valores estándar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAllMaterials}
+              disabled={isSubmitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSubmitting ? "Eliminando..." : "Sí, Eliminar Todos"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
-    
