@@ -28,6 +28,7 @@ import {
 } from "firebase/firestore";
 import AsociadoForm from "@/components/forms/AsociadoForm";
 import type { AsociadoFormData, AsociadoDocument } from "@/schemas/sui";
+import { TIPOS_IDENTIFICACION } from "@/schemas/sui";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -282,7 +283,7 @@ export default function AsociadosPage() {
                     <TableRow key={asociado.id}>
                         <TableCell className="font-medium">{asociado.nombre}</TableCell>
                         <TableCell>
-                            <Badge variant="secondary">{asociado.tipoIdentificacion}</Badge> {asociado.numeroIdentificacion}
+                            <Badge variant="secondary">{TIPOS_IDENTIFICACION[asociado.tipoIdentificacion]}</Badge> {asociado.numeroIdentificacion}
                         </TableCell>
                         <TableCell>{asociado.telefono}</TableCell>
                         <TableCell>{asociado.placaVehiculo || <span className="text-muted-foreground italic text-xs">N/A</span>}</TableCell>

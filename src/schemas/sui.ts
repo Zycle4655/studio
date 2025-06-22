@@ -1,7 +1,19 @@
 import * as z from "zod";
 import type { Timestamp } from "firebase/firestore";
 
-export const TipoIdentificacionEnum = z.enum(["CC", "NIT", "CE"], {
+// Mapping for document types, making it reusable and the single source of truth.
+export const TIPOS_IDENTIFICACION = {
+  "1": "CC",
+  "2": "CE",
+  "3": "Pasaporte",
+  "4": "NIT",
+} as const;
+
+// This creates a type from the keys of the mapping object (e.g., "1" | "2" | "3" | "4")
+export type TipoIdentificacionKey = keyof typeof TIPOS_IDENTIFICACION;
+
+// The Zod enum is now created dynamically from the keys of our mapping object.
+export const TipoIdentificacionEnum = z.enum(Object.keys(TIPOS_IDENTIFICACION) as [TipoIdentificacionKey, ...TipoIdentificacionKey[]], {
     errorMap: () => ({ message: "Debe seleccionar un tipo de identificación válido." }),
 });
 
@@ -18,10 +30,11 @@ export const AsociadoFormSchema = z.object({
 
 export type AsociadoFormData = z.infer<typeof AsociadoFormSchema>;
 
+// The document interface is updated to use the new key type.
 export interface AsociadoDocument {
   id: string; // Firestore document ID
   nombre: string;
-  tipoIdentificacion: "CC" | "NIT" | "CE";
+  tipoIdentificacion: TipoIdentificacionKey;
   numeroIdentificacion: string;
   telefono: string;
   direccion: string;
