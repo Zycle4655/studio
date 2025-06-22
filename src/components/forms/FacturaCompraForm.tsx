@@ -37,9 +37,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FacturaCompraFormSchema, type FacturaCompraFormData, type CompraMaterialItem } from "@/schemas/compra";
 import type { CompanyProfileDocument } from "@/schemas/company";
-import { Save, XCircle, CalendarIcon, FileText, UserSquare, Printer, Info } from "lucide-react";
+import type { AsociadoDocument } from "@/schemas/sui";
+import { Save, XCircle, CalendarIcon, FileText, UserSquare, Printer, Info, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -59,6 +69,7 @@ interface FacturaCompraFormProps {
   nextNumeroFactura: number | null;
   companyProfile: CompanyProfileDocument | null;
   userEmail: string | null;
+  asociados: AsociadoDocument[];
 }
 
 export default function FacturaCompraForm({
@@ -71,20 +82,26 @@ export default function FacturaCompraForm({
   nextNumeroFactura,
   companyProfile,
   userEmail,
+  asociados,
 }: FacturaCompraFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [providerSuggestions, setProviderSuggestions] = React.useState<string[]>([]);
+  const [isComboboxOpen, setIsComboboxOpen] = React.useState(false);
   
   const form = useForm<FacturaCompraFormData>({
     resolver: zodResolver(FacturaCompraFormSchema),
     defaultValues: {
       fecha: new Date(),
       formaDePago: "efectivo",
+      tipoProveedor: "general",
+      proveedorId: null,
       proveedorNombre: "",
       observaciones: "",
     },
   });
+
+  const tipoProveedor = form.watch("tipoProveedor");
   
   React.useEffect(() => {
     if (!user || !db || !isOpen) return;
@@ -97,14 +114,13 @@ export default function FacturaCompraForm({
         const names = new Set<string>();
         querySnapshot.forEach(doc => {
           const data = doc.data();
-          if (data.proveedorNombre) {
+          if (data.proveedorNombre && data.tipoProveedor === 'general') {
             names.add(data.proveedorNombre);
           }
         });
         setProviderSuggestions(Array.from(names));
       } catch (error) {
         console.error("Error fetching provider suggestions:", error);
-        // Opcional: mostrar un toast si falla la carga de sugerencias
       }
     };
 
@@ -117,11 +133,19 @@ export default function FacturaCompraForm({
       form.reset({
         fecha: new Date(),
         formaDePago: "efectivo",
+        tipoProveedor: "general",
+        proveedorId: null,
         proveedorNombre: "",
         observaciones: "",
       });
     }
   }, [isOpen, form]);
+  
+  React.useEffect(() => {
+    form.setValue("proveedorId", null);
+    form.setValue("proveedorNombre", "");
+  }, [tipoProveedor, form]);
+
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
@@ -214,7 +238,7 @@ export default function FacturaCompraForm({
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6 max-h-[70vh] overflow-y-auto p-1">
           <div className="space-y-5">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" autoComplete="off">
                 <div>
                     <FormLabel className="text-foreground/80">Número de Factura</FormLabel>
                     <Input value={nextNumeroFactura ?? "Calculando..."} readOnly disabled className="mt-1 bg-muted/50 font-semibold" />
@@ -273,33 +297,129 @@ export default function FacturaCompraForm({
                 />
                 
                 <FormField
-                  control={form.control}
-                  name="proveedorNombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground/80">Nombre del Usuario (Opcional)</FormLabel>
-                      <div className="relative">
-                        <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    control={form.control}
+                    name="tipoProveedor"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                        <FormLabel>Tipo de Proveedor</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Ej: Juan Pérez" 
-                            {...field} 
-                            value={field.value ?? ""} 
-                            className="pl-10" 
-                            disabled={isLoading} 
-                            list="provider-suggestions"
-                          />
+                            <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex items-center space-x-4"
+                            >
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="general" />
+                                </FormControl>
+                                <FormLabel className="font-normal">General</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="asociado" />
+                                </FormControl>
+                                <FormLabel className="font-normal">Asociado</FormLabel>
+                            </FormItem>
+                            </RadioGroup>
                         </FormControl>
-                      </div>
-                      <datalist id="provider-suggestions">
-                        {providerSuggestions.map((suggestion) => (
-                          <option key={suggestion} value={suggestion} />
-                        ))}
-                      </datalist>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                        <FormMessage />
+                        </FormItem>
+                    )}
                 />
+
+                {tipoProveedor === 'general' ? (
+                  <FormField
+                    control={form.control}
+                    name="proveedorNombre"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/80">Nombre del Proveedor (Opcional)</FormLabel>
+                        <div className="relative">
+                          <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <FormControl>
+                            <Input 
+                              placeholder="Ej: Juan Pérez" 
+                              {...field} 
+                              value={field.value ?? ""} 
+                              className="pl-10" 
+                              disabled={isLoading} 
+                              list="provider-suggestions"
+                            />
+                          </FormControl>
+                        </div>
+                        <datalist id="provider-suggestions">
+                          {providerSuggestions.map((suggestion) => (
+                            <option key={suggestion} value={suggestion} />
+                          ))}
+                        </datalist>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="proveedorId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Asociado</FormLabel>
+                        <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value
+                                  ? asociados.find(
+                                      (asociado) => asociado.id === field.value
+                                    )?.nombre
+                                  : "Seleccione un asociado"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                              <CommandInput placeholder="Buscar asociado..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontró el asociado.</CommandEmpty>
+                                <CommandGroup>
+                                  {asociados.map((asociado) => (
+                                    <CommandItem
+                                      value={asociado.nombre}
+                                      key={asociado.id}
+                                      onSelect={() => {
+                                        form.setValue("proveedorId", asociado.id)
+                                        form.setValue("proveedorNombre", asociado.nombre)
+                                        setIsComboboxOpen(false)
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          asociado.id === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      {asociado.nombre}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 
                 <FormField
                   control={form.control}
@@ -434,3 +554,5 @@ export default function FacturaCompraForm({
     </Dialog>
   );
 }
+
+    

@@ -33,10 +33,33 @@ export interface CompraMaterialItem {
 export const FacturaCompraFormSchema = z.object({
   fecha: z.date({ required_error: "La fecha es obligatoria." }),
   formaDePago: z.enum(["efectivo", "nequi"], { required_error: "La forma de pago es obligatoria."}),
-  proveedorNombre: z.string().max(100, "El nombre del proveedor no puede exceder los 100 caracteres.").optional().nullable(),
-  // proveedorIdentificacion ya fue eliminado
+  
+  tipoProveedor: z.enum(['general', 'asociado'], { required_error: "Debe seleccionar un tipo de proveedor." }),
+  
+  proveedorNombre: z.string().max(100).optional().nullable(),
+  proveedorId: z.string().optional().nullable(),
+
   observaciones: z.string().max(500, "Las observaciones no pueden exceder los 500 caracteres.").optional().nullable(),
+}).refine(data => {
+    // Si el proveedor es 'asociado', se debe seleccionar un ID.
+    if (data.tipoProveedor === 'asociado') {
+        return !!data.proveedorId;
+    }
+    return true;
+}, {
+    message: "Debe seleccionar un asociado de la lista.",
+    path: ["proveedorId"],
+}).refine(data => {
+    // Si el proveedor es 'asociado', el nombre del proveedor no debe estar vacío.
+    if (data.tipoProveedor === 'asociado') {
+        return !!data.proveedorNombre;
+    }
+    return true;
+}, {
+    message: "El nombre del asociado no puede estar vacío.",
+    path: ["proveedorNombre"],
 });
+
 
 export type FacturaCompraFormData = z.infer<typeof FacturaCompraFormSchema>;
 
@@ -46,8 +69,11 @@ export interface FacturaCompraDocument {
   id?: string; // ID del documento de Firestore (opcional aquí, se asigna al crear)
   userId: string; 
   fecha: Timestamp; 
+
+  tipoProveedor: 'general' | 'asociado';
+  proveedorId?: string | null;
   proveedorNombre?: string | null; 
-  // proveedorIdentificacion ya fue eliminado
+
   items: CompraMaterialItem[]; 
   totalFactura: number;
   numeroFactura: number; 
@@ -56,4 +82,5 @@ export interface FacturaCompraDocument {
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
+
     

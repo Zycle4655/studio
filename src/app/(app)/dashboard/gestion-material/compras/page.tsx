@@ -35,6 +35,7 @@ import FacturaCompraForm from "@/components/forms/FacturaCompraForm";
 import type { CompraMaterialItemFormData, CompraMaterialItem, FacturaCompraFormData, FacturaCompraDocument } from "@/schemas/compra";
 import type { MaterialDocument } from "@/schemas/material";
 import type { CompanyProfileDocument } from "@/schemas/company";
+import type { AsociadoDocument } from "@/schemas/sui";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +58,7 @@ export default function CompraMaterialPage() {
 
 
   const [availableMaterials, setAvailableMaterials] = React.useState<MaterialDocument[]>([]);
+  const [availableAsociados, setAvailableAsociados] = React.useState<AsociadoDocument[]>([]);
   const [currentPurchaseItems, setCurrentPurchaseItems] = React.useState<CompraMaterialItem[]>([]);
   const [companyProfileData, setCompanyProfileData] = React.useState<CompanyProfileDocument | null>(null);
   const [nextNumeroFactura, setNextNumeroFactura] = React.useState<number | null>(null);
@@ -78,6 +80,11 @@ export default function CompraMaterialPage() {
     return collection(db, "companyProfiles", user.uid, "materials");
   }, [user]);
 
+  const getAsociadosCollectionRef = React.useCallback(() => {
+    if (!user || !db) return null;
+    return collection(db, "companyProfiles", user.uid, "asociados");
+  }, [user]);
+
   const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "purchaseInvoices");
@@ -89,45 +96,57 @@ export default function CompraMaterialPage() {
   }, [user]);
 
 
-  const fetchAvailableMaterials = React.useCallback(async () => {
+  const fetchInitialData = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
-    if (!materialsCollectionRef) {
+    const asociadosCollectionRef = getAsociadosCollectionRef();
+
+    if (!materialsCollectionRef || !asociadosCollectionRef) {
       if (user) {
-        toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista para cargar materiales." });
+        toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
-      const querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
-      const materialsList = querySnapshot.docs.map(
+      // Fetch materials
+      const matQuerySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
+      const materialsList = matQuerySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
       );
       setAvailableMaterials(materialsList);
+
+      // Fetch asociados
+      const asocQuerySnapshot = await getDocs(query(asociadosCollectionRef, orderBy("nombre", "asc")));
+      const asociadosList = asocQuerySnapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as AsociadoDocument)
+      );
+      setAvailableAsociados(asociadosList);
+
     } catch (error) {
-      console.error("Error fetching available materials:", error);
+      console.error("Error fetching initial data:", error);
       toast({
         variant: "destructive",
-        title: "Error al Cargar Materiales Disponibles",
-        description: "No se pudieron cargar los materiales para la compra.",
+        title: "Error al Cargar Datos",
+        description: "No se pudieron cargar los materiales o asociados.",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, user, toast]);
+  }, [getMaterialsCollectionRef, getAsociadosCollectionRef, user, toast]);
 
   React.useEffect(() => {
     document.title = 'Compra de Materiales | ZYCLE';
     if (user) {
-      fetchAvailableMaterials();
+      fetchInitialData();
     } else {
       setIsLoading(false);
       setAvailableMaterials([]);
+      setAvailableAsociados([]);
       setCurrentPurchaseItems([]);
       setCompanyProfileData(null);
     }
-  }, [user, fetchAvailableMaterials]);
+  }, [user, fetchInitialData]);
 
   const handleOpenAddItemForm = (item?: CompraMaterialItem, index?: number) => {
     if (!user) {
@@ -270,6 +289,8 @@ export default function CompraMaterialPage() {
         totalFactura: total,
         numeroFactura: nextNumeroFactura,
         formaDePago: formData.formaDePago,
+        tipoProveedor: formData.tipoProveedor,
+        proveedorId: formData.proveedorId || null,
         proveedorNombre: formData.proveedorNombre || null,
         observaciones: formData.observaciones || null,
         createdAt: serverTimestamp(),
@@ -318,7 +339,7 @@ export default function CompraMaterialPage() {
     );
   }
   
-  if (isLoading && availableMaterials.length === 0) {
+  if (isLoading) {
     return (
         <div className="container py-8 px-4 md:px-6">
             <Card className="shadow-lg">
@@ -478,6 +499,7 @@ export default function CompraMaterialPage() {
             nextNumeroFactura={nextNumeroFactura}
             companyProfile={companyProfileData}
             userEmail={user?.email || null}
+            asociados={availableAsociados}
         />
       )}
 
@@ -505,3 +527,5 @@ export default function CompraMaterialPage() {
     </div>
   );
 }
+
+    

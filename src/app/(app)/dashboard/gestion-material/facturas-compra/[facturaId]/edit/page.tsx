@@ -9,6 +9,7 @@ import { doc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, getDocs
 import type { FacturaCompraDocument, CompraMaterialItem, FacturaCompraFormData } from "@/schemas/compra";
 import type { CompanyProfileDocument } from "@/schemas/company";
 import type { MaterialDocument } from "@/schemas/material";
+import type { AsociadoDocument } from "@/schemas/sui";
 import { FacturaCompraFormSchema } from "@/schemas/compra";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, FormProvider } from "react-hook-form";
@@ -24,7 +25,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { CalendarIcon, Save, XCircle, UserSquare, ListOrdered, FileEdit, DollarSign, Info, Printer, Trash2, PlusCircle } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { CalendarIcon, Save, XCircle, UserSquare, ListOrdered, FileEdit, DollarSign, Info, Printer, Trash2, PlusCircle, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -60,56 +63,48 @@ export default function EditFacturaCompraPage() {
   const [isSavingInvoice, setIsSavingInvoice] = React.useState(false);
 
   const [availableMaterials, setAvailableMaterials] = React.useState<MaterialDocument[]>([]);
+  const [availableAsociados, setAvailableAsociados] = React.useState<AsociadoDocument[]>([]);
   const [isItemFormOpen, setIsItemFormOpen] = React.useState(false);
-  const [isFetchingMaterials, setIsFetchingMaterials] = React.useState(false);
+  const [isFetchingData, setIsFetchingData] = React.useState(false);
 
   const [itemToDeleteIndex, setItemToDeleteIndex] = React.useState<number | null>(null);
   const [itemToDeleteName, setItemToDeleteName] = React.useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [isComboboxOpen, setIsComboboxOpen] = React.useState(false);
 
 
   const form = useForm<FacturaCompraFormData>({
     resolver: zodResolver(FacturaCompraFormSchema),
     defaultValues: {
       fecha: new Date(),
+      tipoProveedor: "general",
+      proveedorId: null,
       proveedorNombre: "",
       formaDePago: undefined,
       observaciones: "",
     },
   });
 
+  const tipoProveedor = form.watch("tipoProveedor");
+
+   React.useEffect(() => {
+    // Reset provider fields when type changes
+    if (form.formState.isDirty) { // only reset if user interacts with the form
+      form.setValue("proveedorId", null);
+      form.setValue("proveedorNombre", "");
+    }
+  }, [tipoProveedor, form]);
+
+
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "materials");
   }, [user]);
-
-  const fetchAvailableMaterials = React.useCallback(async () => {
-    const materialsCollectionRef = getMaterialsCollectionRef();
-    if (!materialsCollectionRef) {
-      if (user) {
-        toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista para cargar materiales." });
-      }
-      setIsFetchingMaterials(false);
-      return;
-    }
-    setIsFetchingMaterials(true);
-    try {
-      const querySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
-      const materialsList = querySnapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
-      );
-      setAvailableMaterials(materialsList);
-    } catch (error) {
-      console.error("Error fetching available materials for edit page:", error);
-      toast({
-        variant: "destructive",
-        title: "Error al Cargar Materiales",
-        description: "No se pudieron cargar los materiales para agregar.",
-      });
-    } finally {
-      setIsFetchingMaterials(false);
-    }
-  }, [getMaterialsCollectionRef, user, toast]);
+  
+  const getAsociadosCollectionRef = React.useCallback(() => {
+    if (!user || !db) return null;
+    return collection(db, "companyProfiles", user.uid, "asociados");
+  }, [user]);
 
 
   React.useEffect(() => {
@@ -121,6 +116,7 @@ export default function EditFacturaCompraPage() {
 
     const fetchInvoiceData = async () => {
       setIsLoadingPage(true);
+      setIsFetchingData(true);
       try {
         const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
         const invoiceSnap = await getDoc(invoiceRef);
@@ -132,6 +128,8 @@ export default function EditFacturaCompraPage() {
           setCurrentTotalFactura(data.totalFactura);
           form.reset({
             fecha: data.fecha instanceof Timestamp ? data.fecha.toDate() : new Date(data.fecha),
+            tipoProveedor: data.tipoProveedor || 'general',
+            proveedorId: data.proveedorId || null,
             proveedorNombre: data.proveedorNombre || "",
             formaDePago: data.formaDePago,
             observaciones: data.observaciones || "",
@@ -148,18 +146,37 @@ export default function EditFacturaCompraPage() {
         }
         setUserEmail(user.email);
         
-        await fetchAvailableMaterials();
+        // Fetch materials and aociados
+        const materialsCollectionRef = getMaterialsCollectionRef();
+        const asociadosCollectionRef = getAsociadosCollectionRef();
+        
+        if(materialsCollectionRef) {
+            const matQuerySnapshot = await getDocs(query(materialsCollectionRef, orderBy("name", "asc")));
+            const materialsList = matQuerySnapshot.docs.map(
+                (doc) => ({ id: doc.id, ...doc.data() } as MaterialDocument)
+            );
+            setAvailableMaterials(materialsList);
+        }
+        if(asociadosCollectionRef) {
+            const asocQuerySnapshot = await getDocs(query(asociadosCollectionRef, orderBy("nombre", "asc")));
+            const asociadosList = asocQuerySnapshot.docs.map(
+                (doc) => ({ id: doc.id, ...doc.data() } as AsociadoDocument)
+            );
+            setAvailableAsociados(asociadosList);
+        }
+
 
       } catch (error) {
-        console.error("Error fetching invoice or profile for edit:", error);
+        console.error("Error fetching invoice or related data for edit:", error);
         toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos para editar." });
       } finally {
         setIsLoadingPage(false);
+        setIsFetchingData(false);
       }
     };
 
     fetchInvoiceData();
-  }, [user, facturaId, router, toast, form, fetchAvailableMaterials]);
+  }, [user, facturaId, router, toast, form, getMaterialsCollectionRef, getAsociadosCollectionRef]);
 
   const calculateTotal = React.useCallback((items: CompraMaterialItem[]) => {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -211,7 +228,7 @@ export default function EditFacturaCompraPage() {
         toast({ variant: "destructive", title: "Error", description: "Debe iniciar sesión para agregar ítems." });
         return;
     }
-    if (availableMaterials.length === 0 && !isFetchingMaterials) {
+    if (availableMaterials.length === 0 && !isFetchingData) {
        toast({ variant: "destructive", title: "Sin Materiales", description: "No hay materiales registrados para agregar. Regístrelos primero en 'Gestión de Material > Materiales'." });
        return;
     }
@@ -258,7 +275,6 @@ export default function EditFacturaCompraPage() {
       const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
       const finalTotalFactura = calculateTotal(editableItems);
 
-      // Validate items before proceeding
       for (const item of editableItems) {
         if (!item.peso || item.peso <= 0) {
           toast({ variant: "destructive", title: "Error en Ítem", description: `El peso del material "${item.materialName}" debe ser mayor a cero.` });
@@ -274,32 +290,26 @@ export default function EditFacturaCompraPage() {
       
       const batch = writeBatch(db);
 
-      // --- Stock Adjustment Logic ---
       const stockAdjustments = new Map<string, number>();
-
-      // Decrease stock based on original items
       invoice.items.forEach(item => {
         const currentChange = stockAdjustments.get(item.materialId) || 0;
         stockAdjustments.set(item.materialId, currentChange - item.peso);
       });
-
-      // Increase stock based on new items
       editableItems.forEach(item => {
         const currentChange = stockAdjustments.get(item.materialId) || 0;
         stockAdjustments.set(item.materialId, currentChange + item.peso);
       });
-
-      // Apply net changes to the batch
       stockAdjustments.forEach((change, materialId) => {
         if (change !== 0) {
           const materialDocRef = doc(materialsRef, materialId);
           batch.update(materialDocRef, { stock: increment(change) });
         }
       });
-      // --- End Stock Adjustment Logic ---
-
+      
       const updatedData: Partial<FacturaCompraDocument> = {
         fecha: Timestamp.fromDate(formData.fecha),
+        tipoProveedor: formData.tipoProveedor,
+        proveedorId: formData.proveedorId || null,
         proveedorNombre: formData.proveedorNombre || null,
         formaDePago: formData.formaDePago,
         observaciones: formData.observaciones || null,
@@ -330,7 +340,7 @@ export default function EditFacturaCompraPage() {
             toast({ variant: "destructive", title: "Factura Vacía", description: "La factura debe tener al menos un ítem." });
             return;
         }
-        handleUpdateInvoice(form.getValues() as FacturaCompraFormData);
+        handleUpdateInvoice(form.getValues());
     }
   };
 
@@ -548,12 +558,43 @@ export default function EditFacturaCompraPage() {
                       </FormItem>
                     )}
                   />
+                 <FormField
+                    control={form.control}
+                    name="tipoProveedor"
+                    render={({ field }) => (
+                        <FormItem className="space-y-3">
+                        <FormLabel>Tipo de Proveedor</FormLabel>
+                        <FormControl>
+                            <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex items-center space-x-4"
+                            >
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="general" />
+                                </FormControl>
+                                <FormLabel className="font-normal">General</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                <RadioGroupItem value="asociado" />
+                                </FormControl>
+                                <FormLabel className="font-normal">Asociado</FormLabel>
+                            </FormItem>
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 {tipoProveedor === 'general' ? (
                   <FormField
                     control={form.control}
                     name="proveedorNombre"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground/80">Nombre del Usuario (Opcional)</FormLabel>
+                        <FormLabel className="text-foreground/80">Nombre del Proveedor (Opcional)</FormLabel>
                         <div className="relative">
                           <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                           <FormControl>
@@ -564,6 +605,66 @@ export default function EditFacturaCompraPage() {
                       </FormItem>
                     )}
                   />
+                  ) : (
+                  <FormField
+                    control={form.control}
+                    name="proveedorId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Asociado</FormLabel>
+                        <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {form.watch("proveedorNombre") || "Seleccione un asociado"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                              <CommandInput placeholder="Buscar asociado..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontró el asociado.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableAsociados.map((asociado) => (
+                                    <CommandItem
+                                      value={asociado.nombre}
+                                      key={asociado.id}
+                                      onSelect={() => {
+                                        form.setValue("proveedorId", asociado.id)
+                                        form.setValue("proveedorNombre", asociado.nombre)
+                                        setIsComboboxOpen(false)
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          asociado.id === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      {asociado.nombre}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  )}
                   <FormField
                     control={form.control}
                     name="formaDePago"
@@ -615,10 +716,8 @@ export default function EditFacturaCompraPage() {
                         </Button>
                     </div>
                      <div id="factura-edit-preview-content" className="p-1 border rounded-md bg-background text-xs max-h-[50vh] overflow-y-auto hidden">
-                        {/* This div's content will be populated by printFacturaPreview and is hidden on screen */}
                      </div>
                      <div className="p-4 border rounded-md bg-background text-sm max-h-[50vh] overflow-y-auto">
-                        {/* Visible preview area */}
                         <div className="invoice-header text-center mb-4">
                             {companyProfile?.logoUrl && (
                                 <Image
@@ -685,7 +784,7 @@ export default function EditFacturaCompraPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleOpenAddItemForm}
-                      disabled={isSavingInvoice || isFetchingMaterials || availableMaterials.length === 0}
+                      disabled={isSavingInvoice || isFetchingData || availableMaterials.length === 0}
                     >
                       <PlusCircle className="mr-2 h-4 w-4"/>
                       Agregar Ítem
@@ -767,12 +866,12 @@ export default function EditFacturaCompraPage() {
             setIsOpen={setIsItemFormOpen}
             onSubmit={handleAddNewItemToInvoice}
             materials={availableMaterials}
-            isLoading={isSavingInvoice || isFetchingMaterials}
+            isLoading={isSavingInvoice || isFetchingData}
             title="Agregar Nuevo Ítem a la Factura"
             isEditingInvoiceItem={false}
         />
       )}
-       {isItemFormOpen && availableMaterials.length === 0 && !isFetchingMaterials && (
+       {isItemFormOpen && availableMaterials.length === 0 && !isFetchingData && (
           <AlertDialog open={isItemFormOpen} onOpenChange={setIsItemFormOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -814,3 +913,5 @@ export default function EditFacturaCompraPage() {
     </div>
   );
 }
+
+    
