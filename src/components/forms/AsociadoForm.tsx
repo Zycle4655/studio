@@ -65,7 +65,7 @@ export default function AsociadoForm({
     resolver: zodResolver(AsociadoFormSchema),
     defaultValues: {
       nombre: defaultValues?.nombre || "",
-      tipoIdentificacion: defaultValues?.tipoIdentificacion,
+      tipoIdentificacion: defaultValues?.tipoIdentificacion || "1",
       numeroIdentificacion: defaultValues?.numeroIdentificacion || "",
       telefono: defaultValues?.telefono || "",
       direccion: defaultValues?.direccion || "",
@@ -79,7 +79,7 @@ export default function AsociadoForm({
     if (isOpen) {
       form.reset({
         nombre: defaultValues?.nombre || "",
-        tipoIdentificacion: defaultValues?.tipoIdentificacion,
+        tipoIdentificacion: defaultValues?.tipoIdentificacion || "1",
         numeroIdentificacion: defaultValues?.numeroIdentificacion || "",
         telefono: defaultValues?.telefono || "",
         direccion: defaultValues?.direccion || "",
