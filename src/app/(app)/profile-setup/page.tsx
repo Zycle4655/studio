@@ -229,13 +229,13 @@ export default function ProfileSetupPage() {
       
       if (!emailUpdateAttempted || emailUpdatedSuccessfully) {
          toast({
-            title: "Perfil Guardado",
-            description: `El perfil de ${data.companyName} ha sido ${isEditing ? 'actualizado' : 'guardado'} con éxito.`,
+            title: "Éxito",
+            description: "Datos de la empresa guardados.",
         });
       } else if (emailUpdateAttempted && !emailUpdatedSuccessfully) {
          toast({
             title: "Perfil de Empresa Guardado",
-            description: `Los datos de la empresa ${data.companyName} han sido actualizados. El correo no pudo ser cambiado esta vez.`,
+            description: "Los datos de la empresa se actualizaron, pero el correo no pudo ser cambiado.",
         });
       }
       router.push('/dashboard');
