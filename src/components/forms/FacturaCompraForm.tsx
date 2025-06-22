@@ -45,6 +45,9 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, query, getDocs } from "firebase/firestore";
 
 interface FacturaCompraFormProps {
   isOpen: boolean;
@@ -70,6 +73,9 @@ export default function FacturaCompraForm({
   userEmail,
 }: FacturaCompraFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [providerSuggestions, setProviderSuggestions] = React.useState<string[]>([]);
+  
   const form = useForm<FacturaCompraFormData>({
     resolver: zodResolver(FacturaCompraFormSchema),
     defaultValues: {
@@ -79,6 +85,32 @@ export default function FacturaCompraForm({
       observaciones: "",
     },
   });
+  
+  React.useEffect(() => {
+    if (!user || !db || !isOpen) return;
+
+    const fetchSuggestions = async () => {
+      try {
+        const invoicesRef = collection(db, "companyProfiles", user.uid, "purchaseInvoices");
+        const q = query(invoicesRef);
+        const querySnapshot = await getDocs(q);
+        const names = new Set<string>();
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.proveedorNombre) {
+            names.add(data.proveedorNombre);
+          }
+        });
+        setProviderSuggestions(Array.from(names));
+      } catch (error) {
+        console.error("Error fetching provider suggestions:", error);
+        // Opcional: mostrar un toast si falla la carga de sugerencias
+      }
+    };
+
+    fetchSuggestions();
+  }, [user, isOpen]);
+
 
   React.useEffect(() => {
     if (isOpen) {
@@ -182,7 +214,7 @@ export default function FacturaCompraForm({
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6 max-h-[70vh] overflow-y-auto p-1">
           <div className="space-y-5">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" autoComplete="off">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                     <FormLabel className="text-foreground/80">Número de Factura</FormLabel>
                     <Input value={nextNumeroFactura ?? "Calculando..."} readOnly disabled className="mt-1 bg-muted/50 font-semibold" />
@@ -249,9 +281,21 @@ export default function FacturaCompraForm({
                       <div className="relative">
                         <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <FormControl>
-                          <Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ""} className="pl-10" disabled={isLoading} />
+                          <Input 
+                            placeholder="Ej: Juan Pérez" 
+                            {...field} 
+                            value={field.value ?? ""} 
+                            className="pl-10" 
+                            disabled={isLoading} 
+                            list="provider-suggestions"
+                          />
                         </FormControl>
                       </div>
+                      <datalist id="provider-suggestions">
+                        {providerSuggestions.map((suggestion) => (
+                          <option key={suggestion} value={suggestion} />
+                        ))}
+                      </datalist>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -122,7 +122,7 @@ export default function MaterialForm({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4" autoComplete="off">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
             <FormField
               control={form.control}
               name="name"

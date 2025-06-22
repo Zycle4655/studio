@@ -114,7 +114,7 @@ export default function CompanyProfileForm({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6" autoComplete="off">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             
             <FormField
               control={form.control}
