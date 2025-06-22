@@ -19,9 +19,8 @@ import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { collection, getDocs, query, orderBy, writeBatch, doc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, writeBatch, doc } from "firebase/firestore";
 import type { MaterialDocument } from "@/schemas/material";
-import type { CompraMaterialItem, FacturaCompraDocument } from "@/schemas/compra";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
@@ -57,11 +56,6 @@ export default function InventarioPage() {
   const getMaterialsCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
-
-  const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "purchaseInvoices");
   }, [user]);
 
 
@@ -124,57 +118,23 @@ export default function InventarioPage() {
   
   const handleInitialInventorySubmit = async (data: Record<string, any>) => {
     const materialsCollectionRef = getMaterialsCollectionRef();
-    const purchaseInvoicesRef = getPurchaseInvoicesCollectionRef();
-    if (!materialsCollectionRef || !purchaseInvoicesRef || !db || !user) {
+    if (!materialsCollectionRef || !db || !user) {
         toast({ variant: "destructive", title: "Error", description: "No se puede guardar el inventario, la conexión falló." });
         return;
     }
     setIsSubmittingInitialStock(true);
     try {
         const batch = writeBatch(db);
-        const initialItems: CompraMaterialItem[] = [];
-        let initialTotalValue = 0;
 
         materials.forEach(material => {
             const stockValue = parseFloat(data[material.id]);
             if (!isNaN(stockValue) && stockValue > 0) {
-                // 1. Update stock in material document
+                // Update stock in material document
                 const materialRef = doc(materialsCollectionRef, material.id);
                 batch.update(materialRef, { stock: stockValue });
-
-                // 2. Prepare item for the initial inventory invoice
-                const subtotal = stockValue * material.price;
-                initialItems.push({
-                    id: material.id,
-                    materialId: material.id,
-                    materialName: material.name,
-                    materialCode: material.code || null,
-                    peso: stockValue,
-                    precioUnitario: material.price,
-                    subtotal: subtotal,
-                });
-                initialTotalValue += subtotal;
             }
         });
         
-        // 3. Create the special initial inventory invoice document if there are items
-        if (initialItems.length > 0) {
-            const initialInvoiceData: FacturaCompraDocument = {
-                userId: user.uid,
-                fecha: Timestamp.fromDate(new Date()),
-                items: initialItems,
-                totalFactura: initialTotalValue,
-                numeroFactura: 0, // Special number for initial inventory
-                formaDePago: 'efectivo',
-                proveedorNombre: 'Inventario Inicial',
-                observaciones: 'Registro automático de inventario inicial.',
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-            };
-            const newFacturaRef = doc(purchaseInvoicesRef);
-            batch.set(newFacturaRef, initialInvoiceData);
-        }
-
         await batch.commit();
         toast({ title: "Inventario Actualizado", description: "Se ha actualizado tu stock." });
         setShowInitialInventoryForm(false);
@@ -212,7 +172,6 @@ export default function InventarioPage() {
                 <CardTitle className="text-xl font-headline text-primary">Configurar Inventario Inicial</CardTitle>
                 <CardDescription>
                     Parece que es tu primera vez aquí o no tienes stock. Ingresa las cantidades iniciales (en kg) de los materiales que ya tienes en tu bodega.
-                    Esto creará un registro de "compra" inicial para tus reportes.
                 </CardDescription>
             </CardHeader>
             <CardContent>
