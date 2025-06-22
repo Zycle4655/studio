@@ -108,7 +108,7 @@ export default function AsociadoForm({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 py-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 py-4" autoComplete="off">
             <FormField
               control={form.control}
               name="nombre"
@@ -137,7 +137,7 @@ export default function AsociadoForm({
                       </FormControl>
                       <SelectContent>
                         {Object.entries(TIPO_ID_LABELS).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                          <SelectItem key={key} value={key}>{`${key}: ${label}`}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
