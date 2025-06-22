@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -150,7 +151,7 @@ export default function AsociadoForm({
                 name="numeroIdentificacion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground/80">Número de ID</FormLabel>
+                    <FormLabel className="text-foreground/80">Número de Documento</FormLabel>
                     <FormControl>
                       <Input placeholder="Número" {...field} disabled={isLoading} />
                     </FormControl>
