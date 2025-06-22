@@ -119,7 +119,7 @@ export default function ToneladasAprovechadasPage() {
   }, [user, toast]);
 
   React.useEffect(() => {
-    document.title = 'Reporte: Toneladas Compradas | ZYCLE';
+    document.title = 'Reporte: Compras | ZYCLE';
     fetchPurchaseReportData(selectedPeriod);
   }, [fetchPurchaseReportData, selectedPeriod]);
 
@@ -183,9 +183,10 @@ export default function ToneladasAprovechadasPage() {
           </Tabs>
           
           {isLoading ? (
-            <div className="grid gap-6 md:grid-cols-3">
-               <Skeleton className="h-24 w-full md:col-span-1" />
-               <Skeleton className="h-80 w-full md:col-span-2" />
+             <div className="grid gap-6 md:grid-cols-5">
+               <div className="md:col-span-5"><Skeleton className="h-24 w-full" /></div>
+               <div className="md:col-span-3"><Skeleton className="h-80 w-full" /></div>
+               <div className="md:col-span-2"><Skeleton className="h-80 w-full" /></div>
             </div>
           ) : (
             <>

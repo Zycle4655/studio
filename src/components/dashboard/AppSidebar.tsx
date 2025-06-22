@@ -31,7 +31,8 @@ import {
   Weight, 
   UsersRound, 
   CalendarCheck, 
-  Receipt 
+  Receipt,
+  Truck
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -42,6 +43,9 @@ export function AppSidebar() {
 
   const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(
     isModulePathActive('/dashboard/gestion-material')
+  );
+  const [transporteOpen, setTransporteOpen] = React.useState(
+    isModulePathActive('/dashboard/transporte')
   );
   const [reportesOpen, setReportesOpen] = React.useState(
     isModulePathActive('/dashboard/reportes')
@@ -60,6 +64,7 @@ export function AppSidebar() {
   // Update open state if path changes
   React.useEffect(() => {
     setGestionMaterialOpen(isModulePathActive('/dashboard/gestion-material'));
+    setTransporteOpen(isModulePathActive('/dashboard/transporte'));
     setReportesOpen(isModulePathActive('/dashboard/reportes'));
     setSuiOpen(isModulePathActive('/dashboard/sui'));
     setTalentoHumanoOpen(isModulePathActive('/dashboard/talento-humano'));
@@ -72,6 +77,7 @@ export function AppSidebar() {
   // Tooltip texts (only shown when sidebar is collapsed to icons)
   const dashboardTooltip = sidebarOpen ? undefined : "Dashboard";
   const gestionMaterialTooltip = sidebarOpen ? undefined : "Gestión de Material";
+  const transporteTooltip = sidebarOpen ? undefined : "Transporte";
   const reportesTooltip = sidebarOpen ? undefined : "Reportes";
   const suiTooltip = sidebarOpen ? undefined : "SUI";
   const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
@@ -181,6 +187,38 @@ export function AppSidebar() {
             )}
           </SidebarMenuItem>
 
+          {/* Transporte Module */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setTransporteOpen(!transporteOpen)}
+              isActive={isModulePathActive('/dashboard/transporte')}
+              tooltip={transporteTooltip}
+            >
+              <Truck />
+              <span>Transporte</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  transporteOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {transporteOpen && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/transporte/vehiculos')}
+                  >
+                    <Link href="/dashboard/transporte/vehiculos">
+                      <Truck />
+                      <span>Vehículos</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+
           {/* Reportes Module */}
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -205,7 +243,7 @@ export function AppSidebar() {
                   >
                     <Link href="/dashboard/reportes/toneladas-aprovechadas">
                       <Recycle />
-                      <span>Toneladas Aprovechadas</span>
+                      <span>Reporte de Compras</span>
                     </Link>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
