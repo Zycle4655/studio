@@ -60,7 +60,7 @@ const DEFAULT_MATERIALS = [
     { name: "PET VERDE", price: 700, code: "303" },
     { name: "PET AMBAR", price: 600, code: "303" },
     { name: "PET ACEITE", price: 300, code: "303" },
-    { name: "PET TRANS", price: 1700, code: "303" },
+    { name: "PET TRANSPARENTE", price: 1700, code: "303" },
     { name: "CLAUSEN", price: 6900, code: "101" },
     { name: "GALONES", price: 1000, code: "307" },
     { name: "PVC BLANDO", price: 400, code: "304" },
