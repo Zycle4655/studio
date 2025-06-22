@@ -176,7 +176,7 @@ export default function InventarioPage() {
         }
 
         await batch.commit();
-        toast({ title: "Inventario Inicial Guardado", description: "El stock inicial ha sido configurado y se ha creado un registro en su historial de compras." });
+        toast({ title: "Inventario Actualizado", description: "Se ha actualizado tu stock." });
         setShowInitialInventoryForm(false);
         fetchMaterials(); // Recargar los materiales para mostrar el nuevo stock
     } catch (error) {
