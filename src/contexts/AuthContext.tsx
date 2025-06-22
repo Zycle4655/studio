@@ -3,7 +3,7 @@
 
 import type { User } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { CompanyProfileDocument } from "@/schemas/company";
@@ -15,12 +15,7 @@ interface AuthContextType {
   refreshCompanyProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  companyProfile: null,
-  refreshCompanyProfile: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -64,8 +59,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, [fetchCompanyProfile]);
 
+  const value = useMemo(() => ({
+    user,
+    loading,
+    companyProfile,
+    refreshCompanyProfile,
+  }), [user, loading, companyProfile, refreshCompanyProfile]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, companyProfile, refreshCompanyProfile }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
