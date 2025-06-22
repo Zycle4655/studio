@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -121,7 +122,7 @@ export default function MaterialForm({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4" autoComplete="off">
             <FormField
               control={form.control}
               name="name"

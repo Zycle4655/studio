@@ -147,7 +147,7 @@ export default function ResetPasswordForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" autoComplete="off">
             <FormField
               control={form.control}
               name="password"
@@ -163,6 +163,7 @@ export default function ResetPasswordForm() {
                         {...field} 
                         className="pl-10"
                         aria-label="Nueva Contraseña"
+                        autoComplete="new-password"
                       />
                     </FormControl>
                   </div>
@@ -185,6 +186,7 @@ export default function ResetPasswordForm() {
                         {...field} 
                         className="pl-10"
                         aria-label="Confirmar Nueva Contraseña"
+                        autoComplete="new-password"
                       />
                     </FormControl>
                   </div>

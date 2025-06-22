@@ -57,8 +57,6 @@ export default function CompraMaterialItemForm({
   onSubmit,
   materials,
   defaultValues,
-  // isLoading prop ya no se usa aquí directamente para deshabilitar el botón del modal,
-  // se usará isSubmittingItem
   title = "Agregar Ítem",
   isEditingInvoiceItem = false,
 }: CompraMaterialItemFormProps) {
@@ -114,25 +112,14 @@ export default function CompraMaterialItemForm({
 
   const currentPrecioUnitario = form.watch("precioUnitario");
 
-  // Esta función interna llama al onSubmit pasado por props.
   const callParentOnSubmit = (data: CompraMaterialItemFormData) => {
     setIsSubmittingItem(true);
     try {
-      onSubmit(data); // onSubmit (handleItemFormSubmit de la página padre) es síncrono
+      onSubmit(data); 
     } catch (error) {
       console.error("Error submitting item form:", error);
-      // Aquí se podría añadir un toast de error si onSubmit pudiera fallar
     } finally {
       setIsSubmittingItem(false);
-      // El cierre del modal (setIsOpen(false)) lo maneja la página padre después de que onSubmit se complete.
-    }
-  };
-
-  // Nueva función para el onClick del botón de guardar del modal
-  const handleModalFormSubmit = async () => {
-    const isValid = await form.trigger(); // Valida solo el formulario del modal
-    if (isValid) {
-      callParentOnSubmit(form.getValues() as CompraMaterialItemFormData);
     }
   };
 
@@ -151,8 +138,7 @@ export default function CompraMaterialItemForm({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          {/* OJO: NO hay <form onSubmit={...}> aquí, el submit lo manejamos con el onClick del botón */}
-          <div className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(callParentOnSubmit)} autoComplete="off" className="space-y-6 py-4">
             <FormField
               control={form.control}
               name="materialId"
@@ -302,14 +288,13 @@ export default function CompraMaterialItemForm({
                 </Button>
               </DialogClose>
               <Button
-                type="button"
-                onClick={handleModalFormSubmit} // Cambiado aquí
+                type="submit"
                 disabled={isSubmittingItem || materials.length === 0}
               >
                 {isSubmittingItem ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> {defaultValues?.materialId ? "Actualizar Ítem" : "Agregar Ítem"}</>}
               </Button>
             </DialogFooter>
-          </div>
+          </form>
         </Form>
       </DialogContent>
     </Dialog>

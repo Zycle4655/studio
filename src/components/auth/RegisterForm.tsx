@@ -78,7 +78,7 @@ export default function RegisterForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" autoComplete="off">
             <FormField
               control={form.control}
               name="email"
@@ -116,6 +116,7 @@ export default function RegisterForm() {
                         {...field} 
                         className="pl-10"
                         aria-label="Contraseña para registro"
+                        autoComplete="new-password"
                       />
                     </FormControl>
                   </div>
@@ -138,6 +139,7 @@ export default function RegisterForm() {
                         {...field} 
                         className="pl-10"
                         aria-label="Confirmar Contraseña"
+                        autoComplete="new-password"
                       />
                     </FormControl>
                   </div>

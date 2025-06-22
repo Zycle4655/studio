@@ -182,7 +182,7 @@ export default function FacturaVentaForm({
         <div className="grid md:grid-cols-2 gap-x-8 gap-y-6 max-h-[70vh] overflow-y-auto p-1">
           <div className="space-y-5">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" autoComplete="off">
                 <div>
                     <FormLabel className="text-foreground/80">Número de Factura</FormLabel>
                     <Input value={nextNumeroFactura ?? "Calculando..."} readOnly disabled className="mt-1 bg-muted/50 font-semibold" />
@@ -391,4 +391,3 @@ export default function FacturaVentaForm({
     </Dialog>
   );
 }
-

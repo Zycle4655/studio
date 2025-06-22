@@ -157,7 +157,7 @@ export default function VentaMaterialItemForm({
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormInternalSubmit)} className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(handleFormInternalSubmit)} className="space-y-6 py-4" autoComplete="off">
             <FormField
               control={form.control}
               name="materialId"
