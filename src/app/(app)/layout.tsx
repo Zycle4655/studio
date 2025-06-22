@@ -4,14 +4,10 @@
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { AppSidebar } from "@/components/dashboard/AppSidebar"; 
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"; 
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react"; // Added useCallback
-import type { User } from "firebase/auth";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/lib/firebase"; 
-import { doc, getDoc } from "firebase/firestore"; 
-import type { CompanyProfileDocument } from "@/schemas/company";
 
 export default function AppLayout({
   children,
@@ -19,97 +15,25 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
-  const [profileChecked, setProfileChecked] = useState(false); 
-  const [isInitialLoading, setIsInitialLoading] = useState(true); 
-  const [companyNameToDisplay, setCompanyNameToDisplay] = useState<string | null>(null);
-  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const pathname = usePathname();
+  const { user, companyProfile, loading } = useAuth();
 
-  const fetchCompanyData = useCallback(async (currentUser: User) => {
-    if (!db) {
-      console.warn("Firestore (db) is not initialized in AppLayout. Skipping company data fetch.");
-      setCompanyNameToDisplay(null);
-      setCompanyLogoUrl(null);
-      return;
-    }
-    try {
-      const profileRef = doc(db, "companyProfiles", currentUser.uid);
-      const profileSnap = await getDoc(profileRef);
-      if (profileSnap.exists()) {
-        const companyData = profileSnap.data() as CompanyProfileDocument;
-        setCompanyNameToDisplay(companyData.companyName);
-        setCompanyLogoUrl(companyData.logoUrl || null);
-      } else {
-        // If profile doesn't exist, it might be a new user, or data is missing.
-        // The other useEffect will handle redirection to profile-setup if needed.
-        setCompanyNameToDisplay(null);
-        setCompanyLogoUrl(null);
-      }
-    } catch (error: any) {
-      console.error("Error fetching company data in AppLayout:", error);
-      setCompanyNameToDisplay(null);
-      setCompanyLogoUrl(null);
-      if (error.message && error.message.toLowerCase().includes("offline")) {
-        console.warn("Firebase reported client is offline in AppLayout. Please check your internet connection and ensure Firestore is enabled and properly configured in your Firebase project console.");
-      }
-    }
-  }, []); // Empty dependency array as db should be stable
-
-  // Effect for fetching company-specific data (name, logo)
   useEffect(() => {
-    if (user && !authLoading) {
-      fetchCompanyData(user);
-    } else if (!user && !authLoading) {
-      setCompanyNameToDisplay(null);
-      setCompanyLogoUrl(null);
-    }
-  }, [user, authLoading, fetchCompanyData]); // Re-fetch if user or authLoading state changes
-
-  // Effect for initial auth check, profile existence, and redirection logic
-  useEffect(() => {
-    if (authLoading) {
-      setIsInitialLoading(true);
-      return;
+    if (loading) {
+      return; // Wait until auth state and profile are resolved
     }
 
     if (!user) {
       router.replace("/login");
-      setIsInitialLoading(false);
-      setProfileChecked(false); // Reset profileChecked when user logs out
       return;
     }
 
-    // User is authenticated, now check profile if not already checked
-    if (!profileChecked) {
-      const checkProfileExistence = async () => {
-        if (!db) {
-          console.warn("Firestore (db) is not initialized in AppLayout during profile existence check.");
-          setProfileChecked(true); // Mark as checked to avoid loop, but data might be missing
-          setIsInitialLoading(false);
-          return;
-        }
-        try {
-          const profileRef = doc(db, "companyProfiles", user.uid);
-          const profileSnap = await getDoc(profileRef);
-          if (!profileSnap.exists()) {
-            router.replace("/profile-setup");
-          }
-          // Company data (name, logo) is already being fetched by the other useEffect
-        } catch (error: any) {
-          console.error("Error checking company profile existence in AppLayout:", error);
-        } finally {
-          setProfileChecked(true);
-          setIsInitialLoading(false);
-        }
-      };
-      checkProfileExistence();
-    } else {
-      // Profile has been checked before, and user exists and auth is not loading
-      setIsInitialLoading(false);
+    if (!companyProfile && pathname !== "/profile-setup") {
+      router.replace("/profile-setup");
     }
-  }, [user, authLoading, router, profileChecked, db]); // Added db to dependencies
+  }, [user, companyProfile, loading, router, pathname]);
 
-  if (isInitialLoading) { 
+  if (loading) { 
     return (
       <div className="flex flex-col min-h-screen">
         <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -133,15 +57,21 @@ export default function AppLayout({
     ); 
   }
 
-  if (!user) {
-    return null; 
+  // If we are redirecting, we can return null to avoid flashing content.
+  if (!user || (!companyProfile && pathname !== "/profile-setup")) {
+    return null;
+  }
+  
+  // The profile setup page has its own layout; don't wrap it with the dashboard UI.
+  if (pathname === '/profile-setup') {
+      return <>{children}</>;
   }
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <DashboardHeader companyName={companyNameToDisplay} companyLogoUrl={companyLogoUrl} />
+        <DashboardHeader companyName={companyProfile?.companyName || null} companyLogoUrl={companyProfile?.logoUrl || null} />
         <main className="flex-1">{children}</main>
       </SidebarInset>
     </SidebarProvider>

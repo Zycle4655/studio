@@ -53,7 +53,7 @@ async function deleteLogo(userId: string, currentLogoUrl: string | null | undefi
 
 
 export default function ProfileSetupPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, companyProfile, loading: authLoading, refreshCompanyProfile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -71,74 +71,41 @@ export default function ProfileSetupPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    async function fetchProfileAndSetDefaults() {
-      if (user && db) {
-        setIsFetchingProfile(true);
+    // We get the profile from the AuthContext now, which is more reliable.
+    if (!authLoading && user) {
         let resolvedDefaultValues: CompanyProfileFormData;
-        try {
-            const profileRef = doc(db, "companyProfiles", user.uid);
-            const profileSnap = await getDoc(profileRef);
-            if (profileSnap.exists()) {
-                const existingData = profileSnap.data() as CompanyProfileDocument;
-                resolvedDefaultValues = {
-                    email: user.email || "",
-                    companyName: existingData.companyName || "",
-                    nit: existingData.nit || "",
-                    phone: existingData.phone || "",
-                    address: existingData.address || "",
-                    logoUrl: existingData.logoUrl || null,
-                };
-                setExistingCreatedAt(existingData.createdAt || null);
-                setExistingLogoUrl(existingData.logoUrl || null);
-                setIsEditing(true);
-            } else {
-                resolvedDefaultValues = { 
-                    email: user.email || "",
-                    companyName: "",
-                    nit: "",
-                    phone: "",
-                    address: "",
-                    logoUrl: null,
-                };
-                setIsEditing(false);
-                setExistingCreatedAt(null);
-                setExistingLogoUrl(null);
-            }
-            setDefaultFormValues(resolvedDefaultValues);
-        } catch (error: any) {
-            console.error("Error fetching company profile in ProfileSetupPage:", error);
-            if (error.message && error.message.toLowerCase().includes("offline")) {
-                console.warn("Firebase reported client is offline in ProfileSetupPage. Please check your internet connection and ensure Firestore is enabled and properly configured in your Firebase project console.");
-                toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo conectar a la base de datos. Verifique su conexión y que Firestore esté habilitado."});
-            } else {
-                 toast({ variant: "destructive", title: "Error al Cargar Perfil", description: "No se pudo cargar el perfil existente."});
-            }
-            if (!defaultFormValues) { 
-                 resolvedDefaultValues = {
-                    email: user.email || "", companyName: "", nit: "", phone: "", address: "", logoUrl: null,
-                 };
-                 setDefaultFormValues(resolvedDefaultValues);
-            }
-        } finally {
-            setIsFetchingProfile(false);
+        if (companyProfile) {
+            const existingData = companyProfile;
+            resolvedDefaultValues = {
+                email: user.email || "",
+                companyName: existingData.companyName || "",
+                nit: existingData.nit || "",
+                phone: existingData.phone || "",
+                address: existingData.address || "",
+                logoUrl: existingData.logoUrl || null,
+            };
+            setExistingCreatedAt(existingData.createdAt || null);
+            setExistingLogoUrl(existingData.logoUrl || null);
+            setIsEditing(true);
+        } else {
+            resolvedDefaultValues = { 
+                email: user.email || "",
+                companyName: "",
+                nit: "",
+                phone: "",
+                address: "",
+                logoUrl: null,
+            };
+            setIsEditing(false);
+            setExistingCreatedAt(null);
+            setExistingLogoUrl(null);
         }
-      } else if (!user && !authLoading) {
+        setDefaultFormValues(resolvedDefaultValues);
         setIsFetchingProfile(false);
-         setDefaultFormValues({ email: "", companyName: "", nit: "", phone: "", address: "", logoUrl: null });
-      } else if (!db && user && !authLoading) {
-        console.warn("Firestore (db) is not initialized in ProfileSetupPage. Skipping profile fetch.");
-        toast({ variant: "destructive", title: "Error de Configuración", description: "La base de datos no está disponible. Contacte al soporte."});
-        setDefaultFormValues({ email: user.email || "", companyName: "", nit: "", phone: "", address: "", logoUrl: null });
+    } else if (!authLoading && !user) {
         setIsFetchingProfile(false);
-      }
     }
-    if (user) {
-      fetchProfileAndSetDefaults();
-    } else if (!authLoading) {
-        setIsFetchingProfile(false);
-        setDefaultFormValues({ email: "", companyName: "", nit: "", phone: "", address: "", logoUrl: null });
-    }
-  }, [user, authLoading, toast]); // Removido defaultFormValues de las dependencias para evitar bucles
+  }, [user, authLoading, companyProfile]);
 
 
   const handleSubmit = async (data: CompanyProfileFormData, logoFile?: File | null) => {
@@ -187,10 +154,7 @@ export default function ProfileSetupPage() {
 
     if (logoFile) { // Si se subió un nuevo archivo
       try {
-        // Antes de subir el nuevo logo, si había uno antiguo y es diferente al que se va a subir, bórralo.
         if (existingLogoUrl) {
-            // Se podría hacer más robusto verificando si existingLogoUrl es una URL de Firebase Storage
-            // pero por ahora, si existe, intentamos borrarlo.
             await deleteLogo(user.uid, existingLogoUrl);
         }
         finalLogoUrl = await uploadLogo(user.uid, logoFile);
@@ -198,18 +162,14 @@ export default function ProfileSetupPage() {
       } catch (error) {
         console.error("Error uploading logo:", error);
         toast({ variant: "destructive", title: "Error al Subir Logo", description: "No se pudo subir el nuevo logo." });
-        // No continuar si la subida del logo falló, o decidir si guardar el resto de datos
         setIsLoading(false);
         return;
       }
     } else if (data.logoUrl === null && existingLogoUrl !== null) { 
-      // Si data.logoUrl es null, significa que el usuario quiere eliminar el logo existente
       await deleteLogo(user.uid, existingLogoUrl);
       finalLogoUrl = null;
       toast({ title: "Logo Eliminado", description: "El logo ha sido eliminado." });
     }
-    // Si no se seleccionó un nuevo archivo y data.logoUrl no es null, se mantiene el existingLogoUrl (que ya está en finalLogoUrl).
-
 
     try {
       const profileRef = doc(db, "companyProfiles", user.uid);
@@ -225,7 +185,8 @@ export default function ProfileSetupPage() {
         updatedAt: serverTimestamp(),
       };
       await setDoc(profileRef, companyProfileData, { merge: true });
-      setExistingLogoUrl(finalLogoUrl); // Actualizar el estado local del logo existente
+      
+      await refreshCompanyProfile();
       
       if (!emailUpdateAttempted || emailUpdatedSuccessfully) {
          toast({
