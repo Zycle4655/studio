@@ -129,7 +129,7 @@ export default function AsociadoForm({
                 name="tipoIdentificacion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground/80">Tipo de ID</FormLabel>
+                    <FormLabel className="text-foreground/80">Tipo de Documento</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                       <FormControl>
                         <SelectTrigger>
