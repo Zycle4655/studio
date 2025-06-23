@@ -43,11 +43,10 @@ import VentaMaterialItemForm from "@/components/forms/VentaMaterialItemForm";
 import type { VentaMaterialItemFormData } from "@/schemas/venta";
 
 
-export default function EditFacturaVentaPage({ params }: { params: { facturaId: string } }) {
+export default function EditFacturaVentaPage({ params: { facturaId } }: { params: { facturaId: string } }) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
-  const facturaId = params.facturaId;
 
   const [invoice, setInvoice] = React.useState<FacturaVentaDocument | null>(null);
   const [editableItems, setEditableItems] = React.useState<VentaMaterialItem[]>([]);

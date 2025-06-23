@@ -46,11 +46,10 @@ import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
 import type { CompraMaterialItemFormData } from "@/schemas/compra";
 
 
-export default function EditFacturaCompraPage({ params }: { params: { facturaId: string } }) {
+export default function EditFacturaCompraPage({ params: { facturaId } }: { params: { facturaId: string } }) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
-  const facturaId = params.facturaId;
 
   const [invoice, setInvoice] = React.useState<FacturaCompraDocument | null>(null);
   const [editableItems, setEditableItems] = React.useState<CompraMaterialItem[]>([]);
