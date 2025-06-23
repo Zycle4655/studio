@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, getDocs, query, orderBy, writeBatch, increment } from "firebase/firestore";
@@ -43,12 +43,11 @@ import VentaMaterialItemForm from "@/components/forms/VentaMaterialItemForm";
 import type { VentaMaterialItemFormData } from "@/schemas/venta";
 
 
-export default function EditFacturaVentaPage() {
-  const params = useParams();
+export default function EditFacturaVentaPage({ params }: { params: { facturaId: string } }) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
-  const facturaId = params.facturaId as string;
+  const facturaId = params.facturaId;
 
   const [invoice, setInvoice] = React.useState<FacturaVentaDocument | null>(null);
   const [editableItems, setEditableItems] = React.useState<VentaMaterialItem[]>([]);
