@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -12,6 +13,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,6 +57,8 @@ export default function AsociadosPage() {
   const [asociadoToDelete, setAsociadoToDelete] = React.useState<AsociadoDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   
+  const [searchTerm, setSearchTerm] = React.useState("");
+
   const getAsociadosCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "asociados");
@@ -208,6 +212,13 @@ export default function AsociadosPage() {
     }
   };
 
+  const filteredAsociados = asociados.filter(asociado => {
+    const term = searchTerm.toLowerCase();
+    const nameMatch = asociado.nombre.toLowerCase().includes(term);
+    const idMatch = asociado.numeroIdentificacion.toLowerCase().includes(term);
+    return nameMatch || idMatch;
+  });
+
   if (!user && !isLoading) {
     return (
         <div className="container py-8 px-4 md:px-6">
@@ -228,20 +239,31 @@ export default function AsociadosPage() {
     <div className="container py-8 px-4 md:px-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl font-headline text-primary flex items-center">
                 <Users className="mr-3 h-7 w-7" />
                 Gestión de Asociados
               </CardTitle>
               <CardDescription>
-                Añada, edite o elimine los asociados de su empresa.
+                Añada, edite, elimine o busque los asociados de su empresa.
               </CardDescription>
             </div>
-            <Button onClick={handleAddAsociado} className="mt-4 sm:mt-0" disabled={isLoading || isSubmitting}>
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Asociado
-            </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre o ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full sm:w-64"
+                />
+              </div>
+              <Button onClick={handleAddAsociado} disabled={isLoading || isSubmitting} className="flex-shrink-0">
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -262,9 +284,15 @@ export default function AsociadosPage() {
             </div>
           ) : asociados.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Users className="w-16 h-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No hay asociados registrados</h3>
+                <p className="text-muted-foreground mb-6">Utilice el botón "Agregar" para registrar el primero.</p>
+            </div>
+          ) : filteredAsociados.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Search className="w-16 h-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron asociados</h3>
-                <p className="text-muted-foreground mb-6">Utilice el botón "Agregar Asociado" para registrar el primero.</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
+                <p className="text-muted-foreground">Ningún asociado coincide con "{searchTerm}".</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -279,7 +307,7 @@ export default function AsociadosPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {asociados.map((asociado) => (
+                    {filteredAsociados.map((asociado) => (
                     <TableRow key={asociado.id}>
                         <TableCell className="font-medium">{asociado.nombre}</TableCell>
                         <TableCell>
