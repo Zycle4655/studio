@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Warehouse, PackageSearch, Package, Code, Save } from "lucide-react";
+import { Warehouse, PackageSearch, Package, Code, Save, Search } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -47,6 +47,7 @@ export default function InventarioPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [showInitialInventoryForm, setShowInitialInventoryForm] = React.useState(false);
   const [isSubmittingInitialStock, setIsSubmittingInitialStock] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const form = useForm({
     // El resolver se establecerá dinámicamente
@@ -147,6 +148,14 @@ export default function InventarioPage() {
     }
   };
 
+  const filteredMaterials = materials.filter(material => {
+    const term = searchTerm.toLowerCase();
+    const nameMatch = material.name.toLowerCase().includes(term);
+    const codeMatch = material.code ? material.code.toLowerCase().includes(term) : false;
+    return nameMatch || codeMatch;
+  });
+
+
   if (!user && !isLoading) {
     return (
         <div className="container py-8 px-4 md:px-6">
@@ -225,15 +234,24 @@ export default function InventarioPage() {
 
       <Card className="shadow-lg">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl font-headline text-primary flex items-center">
                 <Warehouse className="mr-3 h-7 w-7" />
                 Inventario de Materiales
               </CardTitle>
               <CardDescription>
-                Consulte el stock actual de todos sus materiales registrados.
+                Consulte y busque el stock actual de todos sus materiales.
               </CardDescription>
+            </div>
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar por nombre o código..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                />
             </div>
           </div>
         </CardHeader>
@@ -256,6 +274,12 @@ export default function InventarioPage() {
               <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales en el inventario</h3>
               <p className="text-muted-foreground">Cuando registre materiales y realice compras, su stock aparecerá aquí.</p>
             </div>
+          ) : filteredMaterials.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <PackageSearch className="w-16 h-16 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
+              <p className="text-muted-foreground">No se encontró ningún material que coincida con "{searchTerm}".</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -267,7 +291,7 @@ export default function InventarioPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {materials.map((material) => (
+                  {filteredMaterials.map((material) => (
                     <TableRow key={material.id}>
                       <TableCell className="font-medium flex items-center gap-2">
                         <Package size={16} className="text-muted-foreground" />
