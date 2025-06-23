@@ -32,55 +32,67 @@ const ZiaOutputSchema = z.object({
 export type ZiaOutput = z.infer<typeof ZiaOutputSchema>;
 
 
+// Tool definitions must be at the top level of the module.
+// The implementation of the tool will be provided with the necessary context (userId)
+// within the flow itself. This separates the tool's definition from its execution.
+
+const getInventoryTool = ai.defineTool(
+  {
+    name: 'getInventory',
+    description: "Returns a list of all materials in the company's inventory, including their current stock in kilograms.",
+    inputSchema: z.object({}), // The model doesn't need to provide input here.
+    outputSchema: z.any(),
+  },
+  async (_, context) => {
+    // The context object is populated by the flow that calls the tool.
+    if (!context?.userId) throw new Error("userId is required to get inventory.");
+    return getInventory(context.userId);
+  }
+);
+
+const getRecentPurchasesTool = ai.defineTool(
+  {
+    name: 'getRecentPurchases',
+    description: 'Returns the 5 most recent purchase invoices, including items, totals, and dates. Useful for questions about recent buying activity.',
+    inputSchema: z.object({}),
+    outputSchema: z.any(),
+  },
+  async (_, context) => {
+    if (!context?.userId) throw new Error("userId is required to get purchases.");
+    return getRecentPurchases(context.userId, 5);
+  }
+);
+
+const getRecentSalesTool = ai.defineTool(
+  {
+    name: 'getRecentSales',
+    description: 'Returns the 5 most recent sales invoices, including items, totals, and dates. Useful for questions about recent selling activity.',
+    inputSchema: z.object({}),
+    outputSchema: z.any(),
+  },
+  async (_, context) => {
+    if (!context?.userId) throw new Error("userId is required to get sales.");
+    return getRecentSales(context.userId, 5);
+  }
+);
+
+
 // Wrapper function that will be called from the client.
-// It now expects the userId to be part of the input.
 export async function askZia(input: ZiaInput): Promise<ZiaOutput> {
     if (!input.userId) {
         throw new Error("User ID is missing from the request.");
     }
-    // The input is passed directly to the flow, which expects the userId.
     return ziaFlow(input);
 }
 
 const ziaFlow = ai.defineFlow(
   {
     name: 'ziaFlow',
-    inputSchema: ZiaInputSchema, // The userId is now part of the base schema
+    inputSchema: ZiaInputSchema,
     outputSchema: ZiaOutputSchema,
   },
   async (input) => {
     const { userId, query, history } = input;
-
-    // Define tools within the flow's scope to capture userId
-    const getInventoryTool = ai.defineTool(
-      {
-        name: 'getInventory',
-        description: "Returns a list of all materials in the company's inventory, including their current stock in kilograms.",
-        inputSchema: z.object({}), // Model doesn't need to provide userId
-        outputSchema: z.any(),
-      },
-      async () => getInventory(userId) // The tool uses the userId from the flow's closure
-    );
-
-    const getRecentPurchasesTool = ai.defineTool(
-      {
-        name: 'getRecentPurchases',
-        description: 'Returns the 5 most recent purchase invoices, including items, totals, and dates. Useful for questions about recent buying activity.',
-        inputSchema: z.object({}),
-        outputSchema: z.any(),
-      },
-      async () => getRecentPurchases(userId, 5)
-    );
-
-    const getRecentSalesTool = ai.defineTool(
-      {
-        name: 'getRecentSales',
-        description: 'Returns the 5 most recent sales invoices, including items, totals, and dates. Useful for questions about recent selling activity.',
-        inputSchema: z.object({}),
-        outputSchema: z.any(),
-      },
-      async () => getRecentSales(userId, 5)
-    );
 
     const historyForGenkit = history.map(msg => ({
         role: msg.role,
@@ -97,12 +109,14 @@ const ziaFlow = ai.defineFlow(
     - IMPORTANT: Always respond in Spanish.
     - If you cannot answer the question with the available tools, say so politely.`;
     
+    // The context parameter is used to pass the userId to the tool implementations.
     const { output } = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       prompt: query,
       system: prompt,
       tools: [getInventoryTool, getRecentPurchasesTool, getRecentSalesTool],
       history: historyForGenkit,
+      context: { userId }, 
     });
     
     return { response: output?.text || "Lo siento, no pude procesar tu solicitud en este momento. Por favor, intenta de nuevo." };
