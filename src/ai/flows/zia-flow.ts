@@ -19,14 +19,14 @@ const MessageSchema = z.object({
   content: z.string(),
 });
 
-const ZiaInputSchema = z.object({
+export const ZiaInputSchema = z.object({
   query: z.string().describe("The user's current question or message."),
   history: z.array(MessageSchema).describe('The previous conversation history.'),
   userId: z.string().describe("The ID of the authenticated user."),
 });
 export type ZiaInput = z.infer<typeof ZiaInputSchema>;
 
-const ZiaOutputSchema = z.object({
+export const ZiaOutputSchema = z.object({
   response: z.string().describe("ZIA's response to the user's query."),
 });
 export type ZiaOutput = z.infer<typeof ZiaOutputSchema>;
@@ -101,6 +101,7 @@ const ziaFlow = ai.defineFlow(
 
     const prompt = `You are ZIA, the ZYCLE Intelligent Assistant. You are a friendly and helpful AI expert in recycling business operations.
     Your goal is to answer the user's questions about their company data using the tools you have.
+    - If the user's query is a greeting, a simple question, or something you can answer without tools, respond naturally and conversationally.
     - Use the getInventory tool for questions about stock levels, what materials exist, or which materials are low.
     - Use the getRecentPurchases tool for questions about recent buying activity.
     - Use the getRecentSales tool for questions about recent selling activity.
