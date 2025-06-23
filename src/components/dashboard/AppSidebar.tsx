@@ -32,7 +32,8 @@ import {
   UsersRound, 
   CalendarCheck, 
   Receipt,
-  Truck
+  Truck,
+  Sparkles
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -76,6 +77,7 @@ export function AppSidebar() {
 
   // Tooltip texts (only shown when sidebar is collapsed to icons)
   const dashboardTooltip = sidebarOpen ? undefined : "Dashboard";
+  const ziaTooltip = sidebarOpen ? undefined : "Asistente ZIA";
   const gestionMaterialTooltip = sidebarOpen ? undefined : "Gestión de Material";
   const transporteTooltip = sidebarOpen ? undefined : "Transporte";
   const reportesTooltip = sidebarOpen ? undefined : "Reportes";
@@ -96,6 +98,20 @@ export function AppSidebar() {
               <Link href="/dashboard">
                 <Home />
                 <span>Dashboard</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          {/* ZIA Chat Assistant */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive('/dashboard/zia')}
+              tooltip={ziaTooltip}
+            >
+              <Link href="/dashboard/zia">
+                <Sparkles />
+                <span>Asistente ZIA</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
