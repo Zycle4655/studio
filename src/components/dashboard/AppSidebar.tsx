@@ -32,7 +32,8 @@ import {
   UsersRound, 
   CalendarCheck, 
   Receipt,
-  Truck
+  Truck,
+  HandCoins
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -322,6 +323,17 @@ export function AppSidebar() {
             </SidebarMenuButton>
             {talentoHumanoOpen && (
               <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/talento-humano/prestamos')}
+                  >
+                    <Link href="/dashboard/talento-humano/prestamos">
+                      <HandCoins />
+                      <span>Préstamos</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
                 <SidebarMenuSubItem>
                   <SidebarMenuSubButton
                     asChild
