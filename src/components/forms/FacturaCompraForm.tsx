@@ -49,6 +49,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FacturaCompraFormSchema, type FacturaCompraFormData, type CompraMaterialItem } from "@/schemas/compra";
 import type { CompanyProfileDocument } from "@/schemas/company";
 import type { AsociadoDocument } from "@/schemas/sui";
+import type { PrestamoDocument } from "@/schemas/prestamo";
 import { Save, XCircle, CalendarIcon, FileText, UserSquare, Printer, Info, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -70,6 +71,7 @@ interface FacturaCompraFormProps {
   companyProfile: CompanyProfileDocument | null;
   userEmail: string | null;
   asociados: AsociadoDocument[];
+  pendingLoans: PrestamoDocument[];
 }
 
 export default function FacturaCompraForm({
@@ -83,11 +85,14 @@ export default function FacturaCompraForm({
   companyProfile,
   userEmail,
   asociados,
+  pendingLoans,
 }: FacturaCompraFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [userSuggestions, setUserSuggestions] = React.useState<string[]>([]);
   const [isComboboxOpen, setIsComboboxOpen] = React.useState(false);
+  const [currentLoan, setCurrentLoan] = React.useState<PrestamoDocument | null>(null);
+  const [netoPagar, setNetoPagar] = React.useState(totalCompra);
   
   const form = useForm<FacturaCompraFormData>({
     resolver: zodResolver(FacturaCompraFormSchema),
@@ -98,11 +103,15 @@ export default function FacturaCompraForm({
       proveedorId: null,
       proveedorNombre: "",
       observaciones: "",
+      abonoPrestamo: 0,
+      prestamoIdAbonado: null,
     },
   });
 
   const tipoProveedor = form.watch("tipoProveedor");
-  
+  const abonoValue = form.watch("abonoPrestamo");
+  const selectedProveedorId = form.watch("proveedorId");
+
   React.useEffect(() => {
     if (!user || !db || !isOpen) return;
 
@@ -137,14 +146,52 @@ export default function FacturaCompraForm({
         proveedorId: null,
         proveedorNombre: "",
         observaciones: "",
+        abonoPrestamo: 0,
+        prestamoIdAbonado: null,
       });
+      setCurrentLoan(null);
     }
   }, [isOpen, form]);
   
   React.useEffect(() => {
     form.setValue("proveedorId", null);
     form.setValue("proveedorNombre", "");
+    form.setValue("abonoPrestamo", 0);
+    setCurrentLoan(null);
   }, [tipoProveedor, form]);
+  
+  React.useEffect(() => {
+    if (tipoProveedor === 'asociado' && selectedProveedorId) {
+        const loan = pendingLoans.find(p => p.asociadoId === selectedProveedorId);
+        setCurrentLoan(loan || null);
+        form.setValue('prestamoIdAbonado', loan?.id || null);
+    } else {
+        setCurrentLoan(null);
+        form.setValue('prestamoIdAbonado', null);
+        form.setValue('abonoPrestamo', 0);
+    }
+  }, [selectedProveedorId, tipoProveedor, pendingLoans, form]);
+
+  React.useEffect(() => {
+    const abono = abonoValue || 0;
+    setNetoPagar(totalCompra - abono);
+  }, [abonoValue, totalCompra]);
+
+  const handleAbonoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+    
+    form.clearErrors("abonoPrestamo");
+
+    if (value < 0) {
+        form.setError("abonoPrestamo", { message: "El abono no puede ser negativo." });
+    } else if (currentLoan && value > currentLoan.saldoPendiente) {
+        form.setError("abonoPrestamo", { message: `Máximo: ${formatCurrency(currentLoan.saldoPendiente)}` });
+    } else if (value > totalCompra) {
+         form.setError("abonoPrestamo", { message: `Máximo: ${formatCurrency(totalCompra)}` });
+    }
+
+    form.setValue("abonoPrestamo", isNaN(value) ? undefined : value, { shouldValidate: true });
+  };
 
 
   const formatCurrency = (value: number) => {
@@ -192,8 +239,9 @@ export default function FacturaCompraForm({
           .items-table .col-material { width: 45%; }
           .items-table .col-peso, .items-table .col-vunit, .items-table .col-subtotal { width: 18.33%; }
           .total-section { margin-top: 10px; text-align: right; font-size: 1em; }
-          .total-section p { margin: 3px 0; font-weight: bold; }
-          .total-section .total-amount { font-size: 1.1em; }
+          .total-section p { margin: 3px 0; display:flex; justify-content: space-between; font-size: 0.9em; }
+          .total-section .neto-pagar { font-weight: bold; font-size: 1.1em; border-top: 1px solid #555; padding-top: 3px;}
+          .total-section .neto-pagar span:first-child { font-size: 1.1em; }
           .payment-method { font-size: 0.85em; margin-top: 5px; text-align: left; }
           .footer-notes { margin-top: 10px; font-size: 0.75em; border-top: 1px solid #eee; padding-top: 5px; text-align: center; }
           .no-print { display: none !important; }
@@ -207,7 +255,21 @@ export default function FacturaCompraForm({
         </style>`;
       printWindow.document.write(stylesHtml);
       printWindow.document.write('</head><body>');
-      printWindow.document.write(previewElement.innerHTML);
+      
+      const previewNode = document.getElementById("factura-create-preview-content")?.cloneNode(true) as HTMLElement;
+      if(previewNode) {
+          // Clone the node to avoid modifying the one in the DOM if it causes issues.
+          const totalSection = previewNode.querySelector('.total-section');
+          if (totalSection) {
+              totalSection.innerHTML = `
+                  <p><span>Total Compra:</span> <span>${formatCurrency(totalCompra)}</span></p>
+                  ${(abonoValue || 0) > 0 ? `<p style="color: red;"><span>Abono a Préstamo:</span> <span>- ${formatCurrency(abonoValue!)}</span></p>` : ''}
+                  <p class="neto-pagar"><span>NETO A PAGAR:</span> <span>${formatCurrency(netoPagar)}</span></p>
+              `;
+          }
+          printWindow.document.write(previewNode.innerHTML);
+      }
+      
       printWindow.document.write('</body></html>');
       printWindow.document.close();
       printWindow.focus();
@@ -420,6 +482,36 @@ export default function FacturaCompraForm({
                     )}
                   />
                 )}
+
+                 {currentLoan && (
+                  <div className="p-3 border-l-4 border-amber-500 bg-amber-50 rounded-r-md space-y-2">
+                      <h4 className="font-semibold text-amber-800 text-sm">Préstamo Pendiente Detectado</h4>
+                      <p className="text-xs text-amber-700">
+                          Este usuario tiene un saldo pendiente de <span className="font-bold">{formatCurrency(currentLoan.saldoPendiente)}</span>.
+                      </p>
+                      <FormField
+                          control={form.control}
+                          name="abonoPrestamo"
+                          render={({ field }) => (
+                              <FormItem>
+                              <FormLabel className="text-xs text-foreground/80">Abonar a Préstamo (Opcional)</FormLabel>
+                              <FormControl>
+                                    <Input
+                                        type="number"
+                                        placeholder="0"
+                                        step="1"
+                                        {...field}
+                                        value={String(field.value ?? "")}
+                                        onChange={handleAbonoChange}
+                                        className="bg-white h-9"
+                                    />
+                              </FormControl>
+                              <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                  </div>
+                )}
                 
                 <FormField
                   control={form.control}
@@ -540,8 +632,10 @@ export default function FacturaCompraForm({
                 </tbody>
                 </table>
                 
-                <div className="total-section mt-2">
-                    <p>TOTAL FACTURA: <span className="total-amount">{formatCurrency(totalCompra)}</span></p>
+                <div className="total-section mt-2 border-t pt-2">
+                    <p><span>Total Compra:</span> <span>{formatCurrency(totalCompra)}</span></p>
+                     {(abonoValue || 0) > 0 && <p className="text-destructive"><span>Abono a Préstamo:</span> <span>- {formatCurrency(abonoValue!)}</span></p>}
+                    <p className="font-bold text-base mt-1 neto-pagar"><span>NETO A PAGAR:</span> <span>{formatCurrency(netoPagar)}</span></p>
                 </div>
 
                 {form.watch("formaDePago") && <p className="payment-method mt-1"><strong>Forma de Pago:</strong> <span className="capitalize">{form.watch("formaDePago")}</span></p>}

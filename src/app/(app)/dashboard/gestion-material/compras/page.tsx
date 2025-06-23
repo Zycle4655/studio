@@ -29,6 +29,9 @@ import {
   limit,
   writeBatch,
   increment,
+  where,
+  Timestamp,
+  arrayUnion,
 } from "firebase/firestore";
 import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
 import FacturaCompraForm from "@/components/forms/FacturaCompraForm";
@@ -36,6 +39,7 @@ import type { CompraMaterialItemFormData, CompraMaterialItem, FacturaCompraFormD
 import type { MaterialDocument } from "@/schemas/material";
 import type { CompanyProfileDocument } from "@/schemas/company";
 import type { AsociadoDocument } from "@/schemas/sui";
+import type { PrestamoDocument } from "@/schemas/prestamo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +63,7 @@ export default function CompraMaterialPage() {
 
   const [availableMaterials, setAvailableMaterials] = React.useState<MaterialDocument[]>([]);
   const [availableAsociados, setAvailableAsociados] = React.useState<AsociadoDocument[]>([]);
+  const [pendingLoans, setPendingLoans] = React.useState<PrestamoDocument[]>([]);
   const [currentPurchaseItems, setCurrentPurchaseItems] = React.useState<CompraMaterialItem[]>([]);
   const [companyProfileData, setCompanyProfileData] = React.useState<CompanyProfileDocument | null>(null);
   const [nextNumeroFactura, setNextNumeroFactura] = React.useState<number | null>(null);
@@ -88,6 +93,11 @@ export default function CompraMaterialPage() {
   const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
     return collection(db, "companyProfiles", user.uid, "purchaseInvoices");
+  }, [user]);
+
+  const getPrestamosCollectionRef = React.useCallback(() => {
+    if (!user || !db) return null;
+    return collection(db, "companyProfiles", user.uid, "prestamos");
   }, [user]);
   
   const getCompanyProfileRef = React.useCallback(() => {
@@ -262,6 +272,14 @@ export default function CompraMaterialPage() {
          setIsFetchingCompanyProfile(false);
          return;
       }
+      
+      const loansRef = getPrestamosCollectionRef();
+      if(loansRef){
+          const loansQuery = query(loansRef, where("estado", "==", "Pendiente"));
+          const loansSnapshot = await getDocs(loansQuery);
+          const loansList = loansSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PrestamoDocument));
+          setPendingLoans(loansList);
+      }
 
       setIsFacturaFormOpen(true);
     } catch (error) {
@@ -275,18 +293,25 @@ export default function CompraMaterialPage() {
   const handleSaveFactura = async (formData: FacturaCompraFormData) => {
     const invoicesRef = getPurchaseInvoicesCollectionRef();
     const materialsRef = getMaterialsCollectionRef();
-    if (!invoicesRef || !materialsRef || !user || nextNumeroFactura === null) {
+    const prestamosRef = getPrestamosCollectionRef();
+    if (!invoicesRef || !materialsRef || !prestamosRef || !user || nextNumeroFactura === null) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la factura. Faltan datos o conexión." });
       return;
     }
     setIsSubmitting(true);
     try {
       const total = calculateTotal();
+      const abono = formData.abonoPrestamo || 0;
+      const netoPagado = total - abono;
+
       const facturaData: FacturaCompraDocument = {
         userId: user.uid,
         fecha: formData.fecha, 
         items: currentPurchaseItems,
         totalFactura: total,
+        netoPagado: netoPagado,
+        abonoPrestamo: abono > 0 ? abono : null,
+        prestamoIdAbonado: abono > 0 ? formData.prestamoIdAbonado : null,
         numeroFactura: nextNumeroFactura,
         formaDePago: formData.formaDePago,
         tipoProveedor: formData.tipoProveedor,
@@ -306,17 +331,43 @@ export default function CompraMaterialPage() {
         const materialDocRef = doc(materialsRef, item.materialId);
         batch.update(materialDocRef, { stock: increment(item.peso) });
       });
+      
+      // Update loan if a payment was made
+      if (abono > 0 && formData.prestamoIdAbonado) {
+          const loanToUpdate = pendingLoans.find(p => p.id === formData.prestamoIdAbonado);
+          if (loanToUpdate) {
+              const loanRef = doc(prestamosRef, formData.prestamoIdAbonado);
+              const nuevoSaldo = loanToUpdate.saldoPendiente - abono;
+              const nuevoAbono = {
+                  id: new Date().toISOString(),
+                  monto: abono,
+                  fecha: Timestamp.fromDate(formData.fecha),
+                  observacion: `Abono desde Factura de Compra N° ${nextNumeroFactura}`
+              };
+              
+              batch.update(loanRef, {
+                  saldoPendiente: nuevoSaldo,
+                  estado: nuevoSaldo <= 0 ? 'Pagado' : 'Pendiente',
+                  abonos: arrayUnion(nuevoAbono),
+                  updatedAt: serverTimestamp(),
+              });
+          } else {
+              // This should ideally not happen due to form logic, but as a safeguard:
+              throw new Error("El préstamo a abonar no fue encontrado. La transacción será cancelada.");
+          }
+      }
 
       await batch.commit();
 
       toast({ title: "Factura Guardada", description: `La factura N° ${nextNumeroFactura} ha sido guardada y el inventario actualizado.` });
       setCurrentPurchaseItems([]);
       setIsFacturaFormOpen(false);
-      setNextNumeroFactura(null); 
+      setNextNumeroFactura(null);
+      setPendingLoans([]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving factura:", error);
-      toast({ variant: "destructive", title: "Error al Guardar Factura", description: "No se pudo guardar la factura o actualizar el inventario." });
+      toast({ variant: "destructive", title: "Error al Guardar Factura", description: error.message || "No se pudo guardar la factura o actualizar el inventario." });
     } finally {
       setIsSubmitting(false);
     }
@@ -500,6 +551,7 @@ export default function CompraMaterialPage() {
             companyProfile={companyProfileData}
             userEmail={user?.email || null}
             asociados={availableAsociados}
+            pendingLoans={pendingLoans}
         />
       )}
 
@@ -527,5 +579,3 @@ export default function CompraMaterialPage() {
     </div>
   );
 }
-
-    

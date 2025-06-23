@@ -40,6 +40,10 @@ export const FacturaCompraFormSchema = z.object({
   proveedorId: z.string().optional().nullable(),
 
   observaciones: z.string().max(500, "Las observaciones no pueden exceder los 500 caracteres.").optional().nullable(),
+  
+  // Nuevos campos para el abono a préstamos
+  abonoPrestamo: z.coerce.number().min(0, "El abono no puede ser negativo.").optional().nullable(),
+  prestamoIdAbonado: z.string().optional().nullable(),
 }).refine(data => {
     // Si el tipo es 'asociado', se debe seleccionar un ID.
     if (data.tipoProveedor === 'asociado') {
@@ -58,6 +62,15 @@ export const FacturaCompraFormSchema = z.object({
 }, {
     message: "Si el tipo es 'Asociado', el nombre no puede estar vacío.",
     path: ["proveedorNombre"],
+}).refine(data => {
+    // Si se realiza un abono a préstamo, debe haber un ID de préstamo asociado.
+    if ((data.abonoPrestamo || 0) > 0) {
+        return !!data.prestamoIdAbonado;
+    }
+    return true;
+}, {
+    message: "Se requiere un ID de préstamo si se realiza un abono.",
+    path: ["abonoPrestamo"],
 });
 
 
@@ -76,6 +89,9 @@ export interface FacturaCompraDocument {
 
   items: CompraMaterialItem[]; 
   totalFactura: number;
+  netoPagado: number;
+  abonoPrestamo?: number | null;
+  prestamoIdAbonado?: string | null;
   numeroFactura: number; 
   formaDePago: "efectivo" | "nequi"; 
   observaciones?: string | null; 

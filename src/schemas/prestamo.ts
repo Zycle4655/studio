@@ -28,6 +28,7 @@ export interface Abono {
   id: string; // Unique ID for the payment, e.g., timestamp + random string
   monto: number;
   fecha: Timestamp;
+  observacion?: string; // Optional: To add notes like "From Purchase Invoice #123"
 }
 
 // Main document interface for a loan in Firestore
