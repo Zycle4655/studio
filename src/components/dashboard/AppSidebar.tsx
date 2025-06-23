@@ -243,7 +243,7 @@ export function AppSidebar() {
                   >
                     <Link href="/dashboard/reportes/toneladas-aprovechadas">
                       <Recycle />
-                      <span>Reporte de Compras</span>
+                      <span>Toneladas Aprovechadas</span>
                     </Link>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>

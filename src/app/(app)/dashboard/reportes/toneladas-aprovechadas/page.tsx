@@ -119,7 +119,7 @@ export default function ToneladasAprovechadasPage() {
   }, [user, toast]);
 
   React.useEffect(() => {
-    document.title = 'Reporte: Compras | ZYCLE';
+    document.title = 'Reporte: Toneladas Aprovechadas | ZYCLE';
     fetchPurchaseReportData(selectedPeriod);
   }, [fetchPurchaseReportData, selectedPeriod]);
 
@@ -130,7 +130,7 @@ export default function ToneladasAprovechadasPage() {
       return;
     }
 
-    const headers = ["Material", "Peso Comprado (kg)"];
+    const headers = ["Material", "Peso Aprovechado (kg)"];
     const rows = reportData.map(item => [item.name, item.totalWeight.toFixed(2)]);
     
     let csvContent = "data:text/csv;charset=utf-8," 
@@ -140,7 +140,7 @@ export default function ToneladasAprovechadasPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `reporte_compras_${selectedPeriod}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `reporte_toneladas-aprovechadas_${selectedPeriod}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -160,10 +160,10 @@ export default function ToneladasAprovechadasPage() {
             <div>
               <CardTitle className="text-2xl font-headline text-primary flex items-center">
                 <Recycle className="mr-3 h-7 w-7" />
-                Reporte de Compras
+                Reporte de Toneladas Aprovechadas
               </CardTitle>
               <CardDescription>
-                Analice el total de material comprado por período. Los datos se basan en las facturas de compra.
+                Analice el total de material aprovechado (comprado) por período. Los datos se basan en las facturas de compra.
               </CardDescription>
             </div>
             <Button onClick={handleExportCSV} variant="outline" size="sm" disabled={isLoading || reportData.length === 0}>
@@ -194,7 +194,7 @@ export default function ToneladasAprovechadasPage() {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-medium flex items-center">
                         <Weight className="mr-2 h-5 w-5 text-primary"/>
-                        Peso Total Comprado en el Período
+                        Peso Total Aprovechado en el Período
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -207,7 +207,7 @@ export default function ToneladasAprovechadasPage() {
                 <div className="grid gap-6 md:grid-cols-5">
                 <Card className="md:col-span-3">
                     <CardHeader>
-                    <CardTitle className="flex items-center"><LineChart className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales Comprados</CardTitle>
+                    <CardTitle className="flex items-center"><LineChart className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales Aprovechados</CardTitle>
                     </CardHeader>
                     <CardContent className="h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -222,9 +222,9 @@ export default function ToneladasAprovechadasPage() {
                                     borderRadius: 'var(--radius)',
                                 }}
                                 cursor={{ fill: "hsl(var(--muted))" }}
-                                formatter={(value: number) => [`${formatWeightForDisplay(value)} kg`, "Comprado"]}
+                                formatter={(value: number) => [`${formatWeightForDisplay(value)} kg`, "Aprovechado"]}
                             />
-                            <Bar dataKey="totalWeight" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Peso Comprado" />
+                            <Bar dataKey="totalWeight" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Peso Aprovechado" />
                         </BarChart>
                     </ResponsiveContainer>
                     </CardContent>
@@ -255,7 +255,7 @@ export default function ToneladasAprovechadasPage() {
                 </div>
             ) : (
                 <div className="text-center py-12 text-muted-foreground">
-                    <p>No se encontraron compras en el período seleccionado.</p>
+                    <p>No se encontraron materiales aprovechados (compras) en el período seleccionado.</p>
                 </div>
             )}
             </>
