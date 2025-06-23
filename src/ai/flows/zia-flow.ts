@@ -20,13 +20,13 @@ const MessageSchema = z.object({
   content: z.string(),
 });
 
-export const ZiaInputSchema = z.object({
+const ZiaInputSchema = z.object({
   query: z.string().describe("The user's current question or message."),
   history: z.array(MessageSchema).describe('The previous conversation history.'),
 });
 export type ZiaInput = z.infer<typeof ZiaInputSchema>;
 
-export const ZiaOutputSchema = z.object({
+const ZiaOutputSchema = z.object({
   response: z.string().describe("ZIA's response to the user's query."),
 });
 export type ZiaOutput = z.infer<typeof ZiaOutputSchema>;
