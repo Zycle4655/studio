@@ -46,7 +46,8 @@ import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
 import type { CompraMaterialItemFormData } from "@/schemas/compra";
 
 
-export default function EditFacturaCompraPage({ params: { facturaId } }: { params: { facturaId: string } }) {
+export default function EditFacturaCompraPage({ params }: { params: { facturaId: string } }) {
+  const { facturaId } = params;
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -561,7 +562,7 @@ export default function EditFacturaCompraPage({ params: { facturaId } }: { param
                     name="tipoProveedor"
                     render={({ field }) => (
                         <FormItem className="space-y-3">
-                        <FormLabel>Tipo de Proveedor</FormLabel>
+                        <FormLabel>Tipo de Usuario</FormLabel>
                         <FormControl>
                             <RadioGroup
                             onValueChange={field.onChange}
@@ -592,7 +593,7 @@ export default function EditFacturaCompraPage({ params: { facturaId } }: { param
                     name="proveedorNombre"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground/80">Nombre del Proveedor (Opcional)</FormLabel>
+                        <FormLabel className="text-foreground/80">Nombre del Usuario (Opcional)</FormLabel>
                         <div className="relative">
                           <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                           <FormControl>

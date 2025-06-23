@@ -34,29 +34,29 @@ export const FacturaCompraFormSchema = z.object({
   fecha: z.date({ required_error: "La fecha es obligatoria." }),
   formaDePago: z.enum(["efectivo", "nequi"], { required_error: "La forma de pago es obligatoria."}),
   
-  tipoProveedor: z.enum(['general', 'asociado'], { required_error: "Debe seleccionar un tipo de proveedor." }),
+  tipoProveedor: z.enum(['general', 'asociado'], { required_error: "Debe seleccionar un tipo de usuario." }),
   
   proveedorNombre: z.string().max(100).optional().nullable(),
   proveedorId: z.string().optional().nullable(),
 
   observaciones: z.string().max(500, "Las observaciones no pueden exceder los 500 caracteres.").optional().nullable(),
 }).refine(data => {
-    // Si el proveedor es 'asociado', se debe seleccionar un ID.
+    // Si el tipo es 'asociado', se debe seleccionar un ID.
     if (data.tipoProveedor === 'asociado') {
         return !!data.proveedorId;
     }
     return true;
 }, {
-    message: "Debe seleccionar un asociado de la lista.",
+    message: "Si el tipo es 'Asociado', debe seleccionar uno de la lista.",
     path: ["proveedorId"],
 }).refine(data => {
-    // Si el proveedor es 'asociado', el nombre del proveedor no debe estar vacío.
+    // Si el tipo es 'asociado', el nombre del proveedor no debe estar vacío.
     if (data.tipoProveedor === 'asociado') {
         return !!data.proveedorNombre;
     }
     return true;
 }, {
-    message: "El nombre del asociado no puede estar vacío.",
+    message: "Si el tipo es 'Asociado', el nombre no puede estar vacío.",
     path: ["proveedorNombre"],
 });
 
@@ -82,5 +82,3 @@ export interface FacturaCompraDocument {
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
-
-    

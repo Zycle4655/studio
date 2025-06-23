@@ -220,8 +220,8 @@ export default function FacturasCompraPage() {
   const filteredInvoices = invoices.filter(invoice => {
     const term = searchTerm.toLowerCase();
     const numberMatch = String(invoice.numeroFactura).includes(term);
-    const providerMatch = invoice.proveedorNombre ? invoice.proveedorNombre.toLowerCase().includes(term) : false;
-    return numberMatch || providerMatch;
+    const userMatch = invoice.proveedorNombre ? invoice.proveedorNombre.toLowerCase().includes(term) : false;
+    return numberMatch || userMatch;
   });
 
   if (!user && !isLoading) {
@@ -258,7 +258,7 @@ export default function FacturasCompraPage() {
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Buscar por N° o proveedor..."
+                    placeholder="Buscar por N° o usuario..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-full sm:w-64"

@@ -86,7 +86,7 @@ export default function FacturaCompraForm({
 }: FacturaCompraFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [providerSuggestions, setProviderSuggestions] = React.useState<string[]>([]);
+  const [userSuggestions, setUserSuggestions] = React.useState<string[]>([]);
   const [isComboboxOpen, setIsComboboxOpen] = React.useState(false);
   
   const form = useForm<FacturaCompraFormData>({
@@ -118,9 +118,9 @@ export default function FacturaCompraForm({
             names.add(data.proveedorNombre);
           }
         });
-        setProviderSuggestions(Array.from(names));
+        setUserSuggestions(Array.from(names));
       } catch (error) {
-        console.error("Error fetching provider suggestions:", error);
+        console.error("Error fetching user suggestions:", error);
       }
     };
 
@@ -301,7 +301,7 @@ export default function FacturaCompraForm({
                     name="tipoProveedor"
                     render={({ field }) => (
                         <FormItem className="space-y-3">
-                        <FormLabel>Tipo de Proveedor</FormLabel>
+                        <FormLabel>Tipo de Usuario</FormLabel>
                         <FormControl>
                             <RadioGroup
                             onValueChange={field.onChange}
@@ -333,7 +333,7 @@ export default function FacturaCompraForm({
                     name="proveedorNombre"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground/80">Nombre del Proveedor (Opcional)</FormLabel>
+                        <FormLabel className="text-foreground/80">Nombre del Usuario (Opcional)</FormLabel>
                         <div className="relative">
                           <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                           <FormControl>
@@ -343,12 +343,12 @@ export default function FacturaCompraForm({
                               value={field.value ?? ""} 
                               className="pl-10" 
                               disabled={isLoading} 
-                              list="provider-suggestions"
+                              list="user-suggestions"
                             />
                           </FormControl>
                         </div>
-                        <datalist id="provider-suggestions">
-                          {providerSuggestions.map((suggestion) => (
+                        <datalist id="user-suggestions">
+                          {userSuggestions.map((suggestion) => (
                             <option key={suggestion} value={suggestion} />
                           ))}
                         </datalist>
@@ -554,5 +554,3 @@ export default function FacturaCompraForm({
     </Dialog>
   );
 }
-
-    
