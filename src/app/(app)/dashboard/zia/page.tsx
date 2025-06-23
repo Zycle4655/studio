@@ -36,7 +36,16 @@ export default function ZiaChatPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !user) {
+        if (!user) {
+          toast({
+            variant: "destructive",
+            title: "Error de autenticación",
+            description: "No se ha podido verificar tu sesión. Por favor, recarga la página.",
+          });
+        }
+        return;
+    }
 
     const userMessage: Message = { role: "user", content: input };
     setMessages(prev => [...prev, userMessage]);
@@ -47,6 +56,7 @@ export default function ZiaChatPage() {
       const ziaInput: ZiaInput = {
         query: input,
         history: messages.map(m => ({ role: m.role, content: m.content })),
+        userId: user.uid,
       };
       const response = await askZia(ziaInput);
       const ziaMessage: Message = { role: "model", content: response.response };

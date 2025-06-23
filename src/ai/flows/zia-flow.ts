@@ -12,7 +12,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getInventory, getRecentPurchases, getRecentSales } from '@/services/data-service';
-import { auth } from '@/lib/firebase';
 
 // Define schemas for conversation history
 const MessageSchema = z.object({
@@ -23,6 +22,7 @@ const MessageSchema = z.object({
 const ZiaInputSchema = z.object({
   query: z.string().describe("The user's current question or message."),
   history: z.array(MessageSchema).describe('The previous conversation history.'),
+  userId: z.string().describe("The ID of the authenticated user."),
 });
 export type ZiaInput = z.infer<typeof ZiaInputSchema>;
 
@@ -33,19 +33,19 @@ export type ZiaOutput = z.infer<typeof ZiaOutputSchema>;
 
 
 // Wrapper function that will be called from the client.
-// It ensures the user is authenticated before proceeding.
+// It now expects the userId to be part of the input.
 export async function askZia(input: ZiaInput): Promise<ZiaOutput> {
-    const user = auth.currentUser;
-    if (!user) {
-        throw new Error("User is not authenticated.");
+    if (!input.userId) {
+        throw new Error("User ID is missing from the request.");
     }
-    return ziaFlow({ ...input, userId: user.uid });
+    // The input is passed directly to the flow, which expects the userId.
+    return ziaFlow(input);
 }
 
 const ziaFlow = ai.defineFlow(
   {
     name: 'ziaFlow',
-    inputSchema: ZiaInputSchema.extend({ userId: z.string() }), // Flow knows about userId
+    inputSchema: ZiaInputSchema, // The userId is now part of the base schema
     outputSchema: ZiaOutputSchema,
   },
   async (input) => {
