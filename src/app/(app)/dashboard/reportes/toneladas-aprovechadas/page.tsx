@@ -2,7 +2,6 @@
 "use client";
 
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
   Card,
   CardContent,
@@ -31,7 +30,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import type { FacturaCompraDocument, CompraMaterialItem } from "@/schemas/compra";
 import { useToast } from "@/hooks/use-toast";
-import { Recycle, FileDown, Weight, LineChart } from "lucide-react";
+import { Recycle, FileDown, Weight } from "lucide-react";
 import { startOfWeek, startOfMonth, startOfYear, endOfDay, sub } from "date-fns";
 
 interface ReportMaterial {
@@ -150,7 +149,6 @@ export default function ToneladasAprovechadasPage() {
     return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
   
-  const chartData = reportData.slice(0, 5);
 
   return (
     <div className="container py-8 px-4 md:px-6">
@@ -183,10 +181,9 @@ export default function ToneladasAprovechadasPage() {
           </Tabs>
           
           {isLoading ? (
-             <div className="grid gap-6 md:grid-cols-5">
-               <div className="md:col-span-5"><Skeleton className="h-24 w-full" /></div>
-               <div className="md:col-span-3"><Skeleton className="h-80 w-full" /></div>
-               <div className="md:col-span-2"><Skeleton className="h-80 w-full" /></div>
+             <div className="space-y-6">
+               <Skeleton className="h-24 w-full" />
+               <Skeleton className="h-80 w-full" />
             </div>
           ) : (
             <>
@@ -204,36 +201,11 @@ export default function ToneladasAprovechadasPage() {
                 </CardContent>
             </Card>
             {reportData.length > 0 ? (
-                <div className="grid gap-6 md:grid-cols-5">
-                <Card className="md:col-span-3">
+                <Card className="mt-6">
                     <CardHeader>
-                    <CardTitle className="flex items-center"><LineChart className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales Aprovechados</CardTitle>
+                    <CardTitle>Detalle de Materiales Aprovechados</CardTitle>
                     </CardHeader>
-                    <CardContent className="h-[350px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value} kg`} />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    borderColor: 'hsl(var(--border))',
-                                    borderRadius: 'var(--radius)',
-                                }}
-                                cursor={{ fill: "hsl(var(--muted))" }}
-                                formatter={(value: number) => [`${formatWeightForDisplay(value)} kg`, "Aprovechado"]}
-                            />
-                            <Bar dataKey="totalWeight" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Peso Aprovechado" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-                <Card className="md:col-span-2">
-                    <CardHeader>
-                    <CardTitle>Detalle del Período</CardTitle>
-                    </CardHeader>
-                    <CardContent className="max-h-[350px] overflow-y-auto">
+                    <CardContent>
                     <Table>
                         <TableHeader>
                         <TableRow>
@@ -252,7 +224,6 @@ export default function ToneladasAprovechadasPage() {
                     </Table>
                     </CardContent>
                 </Card>
-                </div>
             ) : (
                 <div className="text-center py-12 text-muted-foreground">
                     <p>No se encontraron materiales aprovechados (compras) en el período seleccionado.</p>
