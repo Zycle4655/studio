@@ -46,8 +46,7 @@ import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
 import type { CompraMaterialItemFormData } from "@/schemas/compra";
 
 
-export default function EditFacturaCompraPage({ params }: { params: { facturaId: string } }) {
-  const { facturaId } = params;
+export default function EditFacturaCompraPage({ params: { facturaId } }: { params: { facturaId: string } }) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
