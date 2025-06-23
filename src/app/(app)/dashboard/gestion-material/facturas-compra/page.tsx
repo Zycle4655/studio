@@ -1,9 +1,8 @@
 
 "use client";
 
-import type { Metadata } from 'next';
 import * as React from "react";
-import { Printer, Edit, ShoppingBag, PackageSearch } from "lucide-react";
+import { Printer, Edit, ShoppingBag, PackageSearch, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,6 +13,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,6 +54,7 @@ export default function FacturasCompraPage() {
 
   const [invoiceToPrint, setInvoiceToPrint] = React.useState<FacturaCompraDocument | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
     if (!user || !db) return null;
@@ -96,7 +97,7 @@ export default function FacturasCompraPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getPurchaseInvoicesCollectionRef, getCompanyProfileRef]);
+  }, [user, getPurchaseInvoicesCollectionRef, getCompanyProfileRef, toast]);
 
   React.useEffect(() => {
     document.title = 'Facturas de Compra | ZYCLE';
@@ -216,6 +217,12 @@ export default function FacturasCompraPage() {
     }
   };
 
+  const filteredInvoices = invoices.filter(invoice => {
+    const term = searchTerm.toLowerCase();
+    const numberMatch = String(invoice.numeroFactura).includes(term);
+    const providerMatch = invoice.proveedorNombre ? invoice.proveedorNombre.toLowerCase().includes(term) : false;
+    return numberMatch || providerMatch;
+  });
 
   if (!user && !isLoading) {
     return (
@@ -238,7 +245,7 @@ export default function FacturasCompraPage() {
     <div className="container py-8 px-4 md:px-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <CardTitle className="text-2xl font-headline text-primary flex items-center">
                 <ShoppingBag className="mr-3 h-7 w-7" />
@@ -247,6 +254,15 @@ export default function FacturasCompraPage() {
                 <CardDescription>
                 Consulte, imprima o gestione sus facturas de compra de materiales.
                 </CardDescription>
+            </div>
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar por N° o proveedor..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                />
             </div>
           </div>
         </CardHeader>
@@ -273,6 +289,12 @@ export default function FacturasCompraPage() {
               <h3 className="text-xl font-semibold text-foreground mb-2">No hay facturas de compra registradas</h3>
               <p className="text-muted-foreground">Cuando registre una compra, aparecerá aquí.</p>
             </div>
+          ) : filteredInvoices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+                <PackageSearch className="w-16 h-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
+                <p className="text-muted-foreground">Ninguna factura coincide con "{searchTerm}".</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -286,7 +308,7 @@ export default function FacturasCompraPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.map((invoice) => (
+                  {filteredInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">{invoice.numeroFactura}</TableCell>
                       <TableCell>{formatDateWithTime(invoice.fecha)}</TableCell>
@@ -418,5 +440,3 @@ export default function FacturasCompraPage() {
     </div>
   );
 }
-
-
