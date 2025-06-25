@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { ResetPasswordSchema, type ResetPasswordFormData } from "@/schemas/auth";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, RefreshCw } from "lucide-react";
+import { Lock, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
@@ -30,6 +30,7 @@ export default function ResetPasswordForm() {
   const [isVerifyingToken, setIsVerifyingToken] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
   const [oobCode, setOobCode] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const oobCodeFromParams = searchParams.get("oobCode");
 
@@ -158,14 +159,25 @@ export default function ResetPasswordForm() {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
                       <Input 
-                        type="password" 
+                        type={showPassword ? "text" : "password"} 
                         placeholder="••••••••" 
                         {...field} 
-                        className="pl-10"
+                        className="pl-10 pr-10"
                         aria-label="Nueva Contraseña"
                         autoComplete="new-password"
                       />
                     </FormControl>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </Button>
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -181,14 +193,25 @@ export default function ResetPasswordForm() {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
                       <Input 
-                        type="password" 
+                        type={showPassword ? "text" : "password"} 
                         placeholder="••••••••" 
                         {...field} 
-                        className="pl-10"
+                        className="pl-10 pr-10"
                         aria-label="Confirmar Nueva Contraseña"
                         autoComplete="new-password"
                       />
                     </FormControl>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </Button>
                   </div>
                   <FormMessage />
                 </FormItem>
