@@ -313,7 +313,7 @@ export default function CollaboratorForm({
             
             <div>
               <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma</FormLabel>
-              <FormDescriptionComponent className="text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</FormDescriptionComponent>
+              <p className="text-xs text-muted-foreground mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</p>
               <div className="space-y-3 mt-3">
                 {Object.keys(permissionLabels).map((key) => (
                     <FormField
