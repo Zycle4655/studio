@@ -12,7 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,9 +32,9 @@ import {
   DialogClose,
   DialogDescription as DialogDescriptionComponent,
 } from "@/components/ui/dialog";
-import { CollaboratorFormSchema, type CollaboratorFormData, type Permissions } from "@/schemas/equipo";
+import { CollaboratorFormSchema, type CollaboratorFormData, type Permissions, DEFAULT_ROLES } from "@/schemas/equipo";
 import type { CargoDocument } from "@/schemas/cargo";
-import { Save, XCircle, UserCog } from "lucide-react";
+import { Save, XCircle, UserCog, Lock, Eye, EyeOff } from "lucide-react";
 import { Separator } from "../ui/separator";
 
 interface CollaboratorFormProps {
@@ -57,6 +57,12 @@ const permissionLabels: { [key in keyof Permissions]: string } = {
     equipo: "Gestión de Equipo (Admin)",
 };
 
+const defaultPermissionsByRole: { [key: string]: Partial<Permissions> } = {
+  admin: { gestionMaterial: true, transporte: true, reportes: true, sui: true, talentoHumano: true, equipo: true },
+  bodeguero: { gestionMaterial: true, transporte: false, reportes: true, sui: false, talentoHumano: false, equipo: false },
+  recolector: { gestionMaterial: false, transporte: true, reportes: false, sui: false, talentoHumano: false, equipo: false },
+};
+
 export default function CollaboratorForm({
   isOpen,
   setIsOpen,
@@ -67,12 +73,17 @@ export default function CollaboratorForm({
   title = "Agregar Colaborador",
   description = "Complete la información del nuevo colaborador."
 }: CollaboratorFormProps) {
+  const [showPassword, setShowPassword] = React.useState(false);
+  const isEditing = !!defaultValues?.email;
+
   const form = useForm<CollaboratorFormData>({
     resolver: zodResolver(CollaboratorFormSchema),
     defaultValues: {
       nombre: "",
       email: "",
       rol: "",
+      password: "",
+      confirmPassword: "",
       permissions: {
         gestionMaterial: false,
         transporte: false,
@@ -90,6 +101,8 @@ export default function CollaboratorForm({
             nombre: defaultValues?.nombre || "",
             email: defaultValues?.email || "",
             rol: defaultValues?.rol || "",
+            password: "",
+            confirmPassword: "",
             permissions: defaultValues?.permissions || {
                 gestionMaterial: false,
                 transporte: false,
@@ -102,8 +115,18 @@ export default function CollaboratorForm({
     }
   }, [defaultValues, isOpen, form]);
 
-  const handleFormSubmit = async (data: CollaboratorFormData) => {
-    await onSubmit(data);
+  const handleRoleChange = (roleKey: string) => {
+    form.setValue("rol", roleKey);
+    const selectedCargo = cargos.find(c => c.name === roleKey);
+    const roleNameKey = Object.keys(DEFAULT_ROLES).find(
+      key => DEFAULT_ROLES[key as keyof typeof DEFAULT_ROLES] === selectedCargo?.name
+    ) || 'bodeguero';
+    
+    const permissions = defaultPermissionsByRole[roleNameKey] || {};
+    form.setValue("permissions", {
+        ...form.getValues("permissions"),
+        ...permissions
+    });
   };
 
   if (!isOpen) {
@@ -121,7 +144,7 @@ export default function CollaboratorForm({
           {description && <DialogDescriptionComponent>{description}</DialogDescriptionComponent>}
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 py-4" autoComplete="off">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 py-4" autoComplete="off">
             <FormField
               control={form.control}
               name="nombre"
@@ -140,14 +163,75 @@ export default function CollaboratorForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground/80">Correo Electrónico</FormLabel>
+                  <FormLabel className="text-foreground/80">Correo Electrónico de Acceso</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading} />
+                    <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading || isEditing} />
                   </FormControl>
+                   {isEditing && <FormDescription className="text-xs">El correo no se puede cambiar al editar.</FormDescription>}
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {!isEditing && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground/80">Contraseña Inicial</FormLabel>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <FormControl>
+                          <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            {...field} 
+                            className="pl-10 pr-10"
+                            autoComplete="new-password"
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground/80">Confirmar Contraseña</FormLabel>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <FormControl>
+                          <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            {...field} 
+                            className="pl-10 pr-10"
+                            autoComplete="new-password"
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
             
             <FormField
               control={form.control}
@@ -155,7 +239,7 @@ export default function CollaboratorForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-foreground/80">Cargo del Colaborador</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                   <Select onValueChange={handleRoleChange} value={field.value} disabled={isLoading}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione un cargo..." />
@@ -179,7 +263,7 @@ export default function CollaboratorForm({
             
             <div>
               <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma</FormLabel>
-              <p className="text-sm text-muted-foreground text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</p>
+              <FormDescription className="text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</FormDescription>
               <div className="space-y-3 mt-3">
                 {Object.keys(permissionLabels).map((key) => (
                     <FormField

@@ -183,6 +183,7 @@ export default function EquipoPage() {
     }
     setIsSubmitting(true);
 
+    // Prepare the data for Firestore, excluding password fields.
     const collaboratorData = {
       nombre: data.nombre,
       email: data.email,
@@ -192,6 +193,7 @@ export default function EquipoPage() {
 
     try {
       if (editingCollaborator) {
+        // Editing existing collaborator
         const collaboratorRef = doc(collectionRef, editingCollaborator.id);
         await updateDoc(collaboratorRef, {
           ...collaboratorData,
@@ -202,6 +204,21 @@ export default function EquipoPage() {
           description: `Los datos de "${data.nombre}" han sido actualizados.`,
         });
       } else {
+        // Creating a new collaborator
+        // TODO: Implement Firebase Auth user creation here using data.email and data.password.
+        // This is the next logical step. For now, we are just creating the profile in Firestore.
+        // Example of future logic:
+        // try {
+        //   const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password!);
+        //   const newAuthUserId = userCredential.user.uid;
+        //   // Then, save the collaborator profile with this newAuthUserId to link them.
+        // } catch (authError) {
+        //   console.error("Firebase Auth user creation failed:", authError);
+        //   toast({ variant: "destructive", title: "Error de Autenticación", description: "No se pudo crear la cuenta para el colaborador." });
+        //   setIsSubmitting(false);
+        //   return;
+        // }
+
         await addDoc(collectionRef, {
           ...collaboratorData,
           createdAt: serverTimestamp(),
