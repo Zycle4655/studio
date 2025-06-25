@@ -12,10 +12,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +32,7 @@ import {
   DialogDescription as DialogDescriptionComponent,
 } from "@/components/ui/dialog";
 import { CollaboratorFormSchema, type CollaboratorFormData, type Role, type Permissions, ROLES } from "@/schemas/equipo";
-import { Save, XCircle, UserCog } from "lucide-react";
+import { Save, XCircle, UserCog, Briefcase } from "lucide-react";
 import { Separator } from "../ui/separator";
 
 interface CollaboratorFormProps {
@@ -48,7 +54,6 @@ const permissionLabels: { [key in keyof Permissions]: string } = {
     equipo: "Gestión de Equipo (Admin)",
 };
 
-// Function to get default permissions based on a role
 const getPermissionsFromRole = (role: Role): Permissions => {
     switch (role) {
         case 'admin':
@@ -61,7 +66,6 @@ const getPermissionsFromRole = (role: Role): Permissions => {
             return { gestionMaterial: false, transporte: false, reportes: false, sui: false, talentoHumano: false, equipo: false };
     }
 };
-
 
 export default function CollaboratorForm({
   isOpen,
@@ -77,23 +81,28 @@ export default function CollaboratorForm({
     defaultValues: {
       nombre: "",
       email: "",
-      permissions: {
-        gestionMaterial: false,
-        transporte: false,
-        reportes: false,
-        sui: false,
-        talentoHumano: false,
-        equipo: false,
-      }
+      rol: 'recolector',
+      permissions: getPermissionsFromRole('recolector'),
     },
   });
 
+  const selectedRole = form.watch("rol");
+
+  React.useEffect(() => {
+    if (form.formState.isDirty) {
+        const newPermissions = getPermissionsFromRole(selectedRole);
+        form.setValue("permissions", newPermissions);
+    }
+  }, [selectedRole, form]);
+
   React.useEffect(() => {
     if (isOpen) {
-        const initialPermissions = defaultValues?.permissions || getPermissionsFromRole(defaultValues?.rol || 'recolector');
+        const initialRole = defaultValues?.rol || 'recolector';
+        const initialPermissions = defaultValues?.permissions || getPermissionsFromRole(initialRole);
         form.reset({
             nombre: defaultValues?.nombre || "",
             email: defaultValues?.email || "",
+            rol: initialRole,
             permissions: initialPermissions,
         });
     }
@@ -141,19 +150,39 @@ export default function CollaboratorForm({
                   <FormControl>
                     <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading} />
                   </FormControl>
-                   <FormDescription className="text-xs">
-                    Este correo se usará para el inicio de sesión.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
+            <FormField
+              control={form.control}
+              name="rol"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground/80">Rol del Colaborador</FormLabel>
+                   <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione un rol..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(ROLES).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <Separator />
             
             <div>
-              <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma Web</FormLabel>
-              <p className="text-sm text-muted-foreground text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</p>
+              <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma</FormLabel>
+              <p className="text-sm text-muted-foreground text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador. Se ajustan según el rol.</p>
               <div className="space-y-3 mt-3">
                 {Object.keys(permissionLabels).map((key) => (
                     <FormField

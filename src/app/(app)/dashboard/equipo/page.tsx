@@ -43,15 +43,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from "@/components/ui/badge";
 
-const deriveRoleFromPermissions = (permissions: Permissions): Role => {
-    if (permissions.equipo || permissions.sui || permissions.talentoHumano) {
-        return 'admin';
-    }
-    if (permissions.gestionMaterial || permissions.reportes || permissions.transporte) {
-        return 'bodeguero';
-    }
-    return 'recolector';
-};
 
 export default function EquipoPage() {
   const { toast } = useToast();
@@ -175,15 +166,12 @@ export default function EquipoPage() {
       return;
     }
     setIsSubmitting(true);
-    
-    // Derive role from permissions for current functionality
-    const derivedRole = deriveRoleFromPermissions(data.permissions);
 
     const collaboratorData = {
       nombre: data.nombre,
       email: data.email,
       permissions: data.permissions,
-      rol: derivedRole, // Save the derived role
+      rol: data.rol, // The role now comes directly from the form
     };
 
     try {

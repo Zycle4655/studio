@@ -13,6 +13,10 @@ export const ROLES = {
 
 export type Role = keyof typeof ROLES;
 
+// Dynamically create a Zod enum from the ROLES keys
+const roleKeys = Object.keys(ROLES) as [Role, ...Role[]];
+export const RoleEnum = z.enum(roleKeys);
+
 export const permissionsSchema = z.object({
     gestionMaterial: z.boolean().default(false),
     transporte: z.boolean().default(false),
@@ -28,6 +32,7 @@ export type Permissions = z.infer<typeof permissionsSchema>;
 export const CollaboratorFormSchema = z.object({
   nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }).max(100),
   email: z.string().email({ message: "Debe ser un correo electrónico válido." }),
+  rol: RoleEnum,
   permissions: permissionsSchema,
 });
 
