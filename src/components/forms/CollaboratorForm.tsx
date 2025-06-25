@@ -34,8 +34,10 @@ import {
 } from "@/components/ui/dialog";
 import { CollaboratorFormSchema, type CollaboratorFormData, type Permissions, DEFAULT_ROLES } from "@/schemas/equipo";
 import type { CargoDocument } from "@/schemas/cargo";
-import { Save, XCircle, UserCog, Lock, Eye, EyeOff } from "lucide-react";
+import { Save, XCircle, UserCog, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 import { Separator } from "../ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface CollaboratorFormProps {
   isOpen: boolean;
@@ -74,6 +76,8 @@ export default function CollaboratorForm({
   description = "Complete la información del nuevo colaborador."
 }: CollaboratorFormProps) {
   const [showPassword, setShowPassword] = React.useState(false);
+  const { companyProfile } = useAuth();
+  const { toast } = useToast();
   const isEditing = !!defaultValues?.email;
 
   const form = useForm<CollaboratorFormData>({
@@ -118,16 +122,48 @@ export default function CollaboratorForm({
   const handleRoleChange = (roleKey: string) => {
     form.setValue("rol", roleKey);
     const selectedCargo = cargos.find(c => c.name === roleKey);
+    // Find role key from DEFAULT_ROLES
     const roleNameKey = Object.keys(DEFAULT_ROLES).find(
       key => DEFAULT_ROLES[key as keyof typeof DEFAULT_ROLES] === selectedCargo?.name
     ) || 'bodeguero';
     
     const permissions = defaultPermissionsByRole[roleNameKey] || {};
     form.setValue("permissions", {
-        ...form.getValues("permissions"),
+        gestionMaterial: false, // Reset all to false first
+        transporte: false,
+        reportes: false,
+        sui: false,
+        talentoHumano: false,
+        equipo: false,
         ...permissions
     });
   };
+  
+  const generateEmail = () => {
+    const nombre = form.getValues("nombre");
+    const companyName = companyProfile?.companyName;
+
+    if (!nombre) {
+      toast({ variant: "destructive", title: "Nombre Requerido", description: "Por favor, ingrese el nombre del colaborador primero." });
+      return;
+    }
+    if (!companyName) {
+      toast({ variant: "destructive", title: "Nombre de Empresa no Encontrado", description: "No se pudo encontrar el nombre de la empresa para generar el correo." });
+      return;
+    }
+
+    const sanitizedDomain = companyName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '').substring(0, 20);
+    const nameParts = nombre.trim().toLowerCase().split(' ');
+    let userPart = nameParts[0];
+    if (nameParts.length > 1) {
+      userPart = `${nameParts[0]}.${nameParts[nameParts.length - 1].charAt(0)}`;
+    }
+
+    const finalEmail = `${userPart}@${sanitizedDomain}.local`;
+    form.setValue("email", finalEmail, { shouldValidate: true });
+    toast({ title: "Correo Generado", description: `Se ha sugerido el correo: ${finalEmail}` });
+  };
+
 
   if (!isOpen) {
     return null;
@@ -163,7 +199,21 @@ export default function CollaboratorForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground/80">Correo Electrónico de Acceso</FormLabel>
+                  <div className="flex justify-between items-center">
+                    <FormLabel className="text-foreground/80">Correo Electrónico de Acceso</FormLabel>
+                     {!isEditing && (
+                        <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={generateEmail}
+                        disabled={isLoading || !form.watch("nombre")}
+                        >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generar
+                        </Button>
+                    )}
+                  </div>
                   <FormControl>
                     <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading || isEditing} />
                   </FormControl>
@@ -263,7 +313,7 @@ export default function CollaboratorForm({
             
             <div>
               <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma</FormLabel>
-              <FormDescription className="text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</FormDescription>
+              <FormDescriptionComponent className="text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</FormDescriptionComponent>
               <div className="space-y-3 mt-3">
                 {Object.keys(permissionLabels).map((key) => (
                     <FormField
