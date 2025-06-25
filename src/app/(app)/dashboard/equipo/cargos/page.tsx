@@ -268,7 +268,10 @@ export default function CargosPage() {
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="flex items-center justify-between p-4 border rounded-md">
                   <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-9 w-20 rounded-md" />
+                  <div className="flex items-center space-x-2">
+                    <Skeleton className="h-9 w-9 rounded-md" />
+                    <Skeleton className="h-9 w-9 rounded-md" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -297,7 +300,7 @@ export default function CargosPage() {
                         className="hover:text-primary"
                         onClick={() => handleEditCargo(cargo)}
                         aria-label="Editar cargo"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !cargo.isDeletable}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
