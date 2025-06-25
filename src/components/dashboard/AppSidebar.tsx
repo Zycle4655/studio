@@ -57,6 +57,9 @@ export function AppSidebar() {
   const [talentoHumanoOpen, setTalentoHumanoOpen] = React.useState(
     isModulePathActive('/dashboard/talento-humano')
   );
+   const [equipoOpen, setEquipoOpen] = React.useState(
+    isModulePathActive('/dashboard/equipo')
+  );
 
   function isModulePathActive(basePath: string) {
     return pathname.startsWith(basePath);
@@ -69,10 +72,11 @@ export function AppSidebar() {
     setReportesOpen(isModulePathActive('/dashboard/reportes'));
     setSuiOpen(isModulePathActive('/dashboard/sui'));
     setTalentoHumanoOpen(isModulePathActive('/dashboard/talento-humano'));
+    setEquipoOpen(isModulePathActive('/dashboard/equipo'));
   }, [pathname]);
 
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path || (path === '/dashboard/equipo' && pathname.startsWith('/dashboard/equipo'));
   
 
   // Tooltip texts (only shown when sidebar is collapsed to icons)
@@ -82,6 +86,7 @@ export function AppSidebar() {
   const reportesTooltip = sidebarOpen ? undefined : "Reportes";
   const suiTooltip = sidebarOpen ? undefined : "SUI";
   const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
+  const equipoTooltip = sidebarOpen ? undefined : "Equipo";
 
 
   return (
@@ -360,6 +365,38 @@ export function AppSidebar() {
             )}
           </SidebarMenuItem>
           
+          {/* Equipo Module */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setEquipoOpen(!equipoOpen)}
+              isActive={isModulePathActive('/dashboard/equipo')}
+              tooltip={equipoTooltip}
+            >
+              <Users />
+              <span>Equipo</span>
+              <ChevronDown
+                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  equipoOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </SidebarMenuButton>
+            {equipoOpen && (
+              <SidebarMenuSub>
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={isActive('/dashboard/equipo')}
+                  >
+                    <Link href="/dashboard/equipo">
+                      <Users />
+                      <span>Gestionar Equipo</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </SidebarMenuSub>
+            )}
+          </SidebarMenuItem>
+
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
