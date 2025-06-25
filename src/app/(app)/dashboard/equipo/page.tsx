@@ -28,7 +28,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import CollaboratorForm from "@/components/forms/CollaboratorForm";
-import type { CollaboratorFormData, CollaboratorDocument } from "@/schemas/equipo";
+import type { CollaboratorFormData, CollaboratorDocument, Role, Permissions } from "@/schemas/equipo";
 import { ROLES } from "@/schemas/equipo";
 import {
   AlertDialog,
@@ -42,6 +42,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from "@/components/ui/badge";
+
+const deriveRoleFromPermissions = (permissions: Permissions): Role => {
+    if (permissions.equipo || permissions.sui || permissions.talentoHumano) {
+        return 'admin';
+    }
+    if (permissions.gestionMaterial || permissions.reportes || permissions.transporte) {
+        return 'bodeguero';
+    }
+    return 'recolector';
+};
 
 export default function EquipoPage() {
   const { toast } = useToast();
@@ -166,11 +176,21 @@ export default function EquipoPage() {
     }
     setIsSubmitting(true);
     
+    // Derive role from permissions for current functionality
+    const derivedRole = deriveRoleFromPermissions(data.permissions);
+
+    const collaboratorData = {
+      nombre: data.nombre,
+      email: data.email,
+      permissions: data.permissions,
+      rol: derivedRole, // Save the derived role
+    };
+
     try {
       if (editingCollaborator) {
         const collaboratorRef = doc(collectionRef, editingCollaborator.id);
         await updateDoc(collaboratorRef, {
-          ...data,
+          ...collaboratorData,
           updatedAt: serverTimestamp(),
         });
         toast({
@@ -179,7 +199,7 @@ export default function EquipoPage() {
         });
       } else {
         await addDoc(collectionRef, {
-          ...data,
+          ...collaboratorData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -229,7 +249,7 @@ export default function EquipoPage() {
                 Gestión de Equipo
               </CardTitle>
               <CardDescription>
-                Añada, edite y gestione los roles de los colaboradores que tendrán acceso a la app móvil.
+                Añada, edite y gestione los permisos de los colaboradores que tendrán acceso a la plataforma.
               </CardDescription>
             </div>
         </CardHeader>
@@ -262,7 +282,7 @@ export default function EquipoPage() {
                     <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Rol</TableHead>
+                    <TableHead>Rol Principal</TableHead>
                     <TableHead className="text-right w-[120px]">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -321,10 +341,10 @@ export default function EquipoPage() {
         isOpen={isFormOpen}
         setIsOpen={setIsFormOpen}
         onSubmit={handleFormSubmit}
-        defaultValues={editingCollaborator || {}}
+        defaultValues={editingCollaborator}
         isLoading={isSubmitting}
         title={editingCollaborator ? "Editar Colaborador" : "Agregar Nuevo Colaborador"}
-        description={editingCollaborator ? "Actualice la información del colaborador." : "Complete los datos para el nuevo colaborador."}
+        description={editingCollaborator ? "Actualice la información y permisos del colaborador." : "Complete los datos y asigne permisos para el nuevo colaborador."}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
