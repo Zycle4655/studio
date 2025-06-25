@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,7 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-  DialogDescription,
+  DialogDescription as DialogDescriptionComponent,
 } from "@/components/ui/dialog";
 import { CollaboratorFormSchema, type CollaboratorFormData, type Role, type Permissions, ROLES } from "@/schemas/equipo";
 import { Save, XCircle, UserCog } from "lucide-react";
@@ -114,7 +115,7 @@ export default function CollaboratorForm({
             <UserCog className="mr-2 h-5 w-5 text-primary" />
             {title}
           </DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
+          {description && <DialogDescriptionComponent>{description}</DialogDescriptionComponent>}
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 py-4" autoComplete="off">
@@ -152,7 +153,7 @@ export default function CollaboratorForm({
             
             <div>
               <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma Web</FormLabel>
-              <FormDescription className="text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</FormDescription>
+              <p className="text-sm text-muted-foreground text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</p>
               <div className="space-y-3 mt-3">
                 {Object.keys(permissionLabels).map((key) => (
                     <FormField
