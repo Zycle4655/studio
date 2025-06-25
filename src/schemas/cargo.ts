@@ -13,7 +13,6 @@ export type CargoFormData = z.infer<typeof CargoFormSchema>;
 export interface CargoDocument {
   id: string; // Firestore document ID
   name: string;
-  isDeletable: boolean; // To protect default roles
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

@@ -26,7 +26,6 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  writeBatch,
 } from "firebase/firestore";
 import CargoForm from "@/components/forms/CargoForm";
 import type { CargoFormData, CargoDocument } from "@/schemas/cargo";
@@ -42,14 +41,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Lock to prevent multiple initializations in the same session
-let initializationLock = false;
-
-const DEFAULT_CARGOS = [
-    { name: "Administrador", isDeletable: false },
-    { name: "Bodeguero", isDeletable: false },
-    { name: "Recolector", isDeletable: false },
-];
 
 export default function CargosPage() {
   const { toast } = useToast();
@@ -69,40 +60,6 @@ export default function CargosPage() {
     return collection(db, "companyProfiles", user.uid, "cargos");
   }, [user]);
 
-  const initializeDefaultCargos = React.useCallback(async () => {
-    const collectionRef = getCargosCollectionRef();
-    if (!collectionRef || !db) return false;
-
-    setIsSubmitting(true);
-    try {
-      const batch = writeBatch(db);
-      DEFAULT_CARGOS.forEach(cargo => {
-        const newCargoRef = doc(collectionRef);
-        batch.set(newCargoRef, {
-          ...cargo,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      });
-      await batch.commit();
-      toast({
-        title: "Cargos por Defecto Creados",
-        description: "Se ha creado una lista de cargos inicial para su empresa.",
-      });
-      return true;
-    } catch (error) {
-      console.error("Error initializing default cargos:", error);
-      toast({
-        variant: "destructive",
-        title: "Error al Inicializar Cargos",
-        description: "No se pudo crear la lista de cargos estándar.",
-      });
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [getCargosCollectionRef, toast]);
-
   const fetchCargos = React.useCallback(async () => {
     const collectionRef = getCargosCollectionRef();
     if (!collectionRef) {
@@ -115,16 +72,7 @@ export default function CargosPage() {
 
     setIsLoading(true);
     try {
-      let querySnapshot = await getDocs(query(collectionRef, orderBy("name", "asc")));
-
-      if (querySnapshot.empty && !initializationLock) {
-        initializationLock = true; 
-        const success = await initializeDefaultCargos();
-        if (success) {
-          querySnapshot = await getDocs(query(collectionRef, orderBy("name", "asc")));
-        }
-      }
-
+      const querySnapshot = await getDocs(query(collectionRef, orderBy("name", "asc")));
       const list = querySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as CargoDocument)
       );
@@ -137,7 +85,7 @@ export default function CargosPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, initializeDefaultCargos, getCargosCollectionRef, toast]);
+  }, [user, getCargosCollectionRef, toast]);
 
 
   React.useEffect(() => {
@@ -148,7 +96,6 @@ export default function CargosPage() {
       setIsLoading(false);
       setCargos([]);
     }
-     return () => { initializationLock = false; }
   }, [user, fetchCargos]);
 
 
@@ -163,10 +110,6 @@ export default function CargosPage() {
   };
 
   const openDeleteDialog = (cargo: CargoDocument) => {
-    if (!cargo.isDeletable) {
-      toast({ variant: "destructive", title: "Acción no permitida", description: "Este cargo por defecto no se puede eliminar." });
-      return;
-    }
     setCargoToDelete(cargo);
     setIsDeleteDialogOpen(true);
   };
@@ -201,7 +144,7 @@ export default function CargosPage() {
         await updateDoc(cargoRef, { name: data.name, updatedAt: serverTimestamp() });
         toast({ title: "Cargo Actualizado", description: `El cargo "${data.name}" ha sido actualizado.` });
       } else {
-        await addDoc(collectionRef, { name: data.name, isDeletable: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        await addDoc(collectionRef, { name: data.name, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
         toast({ title: "Cargo Agregado", description: `El cargo "${data.name}" ha sido agregado.` });
       }
       setIsFormOpen(false);
@@ -300,7 +243,7 @@ export default function CargosPage() {
                         className="hover:text-primary"
                         onClick={() => handleEditCargo(cargo)}
                         aria-label="Editar cargo"
-                        disabled={isSubmitting || !cargo.isDeletable}
+                        disabled={isSubmitting}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -310,7 +253,7 @@ export default function CargosPage() {
                         className="hover:text-destructive"
                         onClick={() => openDeleteDialog(cargo)}
                         aria-label="Eliminar cargo"
-                        disabled={isSubmitting || !cargo.isDeletable}
+                        disabled={isSubmitting}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
