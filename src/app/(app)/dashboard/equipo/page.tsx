@@ -28,8 +28,8 @@ import {
   orderBy,
 } from "firebase/firestore";
 import CollaboratorForm from "@/components/forms/CollaboratorForm";
-import type { CollaboratorFormData, CollaboratorDocument, Role, Permissions } from "@/schemas/equipo";
-import { ROLES } from "@/schemas/equipo";
+import type { CollaboratorFormData, CollaboratorDocument } from "@/schemas/equipo";
+import type { CargoDocument } from "@/schemas/cargo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +48,7 @@ export default function EquipoPage() {
   const { toast } = useToast();
   const { user, role } = useAuth();
   const [collaborators, setCollaborators] = React.useState<CollaboratorDocument[]>([]);
+  const [cargos, setCargos] = React.useState<CargoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -62,9 +63,16 @@ export default function EquipoPage() {
     return collection(db, "companyProfiles", user.uid, "collaborators");
   }, [user]);
 
-  const fetchCollaborators = React.useCallback(async () => {
-    const collectionRef = getCollaboratorsCollectionRef();
-    if (!collectionRef) {
+  const getCargosCollectionRef = React.useCallback(() => {
+    if (!user || !db) return null;
+    return collection(db, "companyProfiles", user.uid, "cargos");
+  }, [user]);
+
+
+  const fetchData = React.useCallback(async () => {
+    const collaboratorsCollectionRef = getCollaboratorsCollectionRef();
+    const cargosCollectionRef = getCargosCollectionRef();
+    if (!collaboratorsCollectionRef || !cargosCollectionRef) {
       if (user) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
@@ -74,35 +82,43 @@ export default function EquipoPage() {
 
     setIsLoading(true);
     try {
-      const q = query(collectionRef, orderBy("nombre", "asc"));
-      const querySnapshot = await getDocs(q);
-      const list = querySnapshot.docs.map(
+      // Fetch Cargos
+      const cargosQuery = query(cargosCollectionRef, orderBy("name", "asc"));
+      const cargosSnapshot = await getDocs(cargosQuery);
+      const cargosList = cargosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CargoDocument));
+      setCargos(cargosList);
+      
+      // Fetch Collaborators
+      const collabsQuery = query(collaboratorsCollectionRef, orderBy("nombre", "asc"));
+      const collabsSnapshot = await getDocs(collabsQuery);
+      const collabsList = collabsSnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as CollaboratorDocument)
       );
-      setCollaborators(list);
+      setCollaborators(collabsList);
+
     } catch (error) {
-      console.error("Error fetching collaborators:", error);
+      console.error("Error fetching data:", error);
       toast({
         variant: "destructive",
-        title: "Error al Cargar Equipo",
-        description: "No se pudieron cargar los miembros del equipo.",
+        title: "Error al Cargar Datos",
+        description: "No se pudieron cargar los colaboradores o cargos.",
       });
-      setCollaborators([]); 
     } finally {
       setIsLoading(false);
     }
-  }, [user, getCollaboratorsCollectionRef, toast]);
+  }, [user, getCollaboratorsCollectionRef, getCargosCollectionRef, toast]);
 
 
   React.useEffect(() => {
-    document.title = 'Gestión de Equipo | ZYCLE';
+    document.title = 'Gestión de Colaboradores | ZYCLE';
     if (user) {
-      fetchCollaborators();
+      fetchData();
     } else {
       setIsLoading(false);
       setCollaborators([]);
+      setCargos([]);
     }
-  }, [user, fetchCollaborators]);
+  }, [user, fetchData]);
 
   const handleAddCollaborator = () => {
     if (!user) {
@@ -144,7 +160,7 @@ export default function EquipoPage() {
         title: "Colaborador Eliminado",
         description: `El colaborador "${collaboratorToDelete.nombre}" ha sido eliminado.`,
       });
-      fetchCollaborators();
+      fetchData();
     } catch (error) {
       console.error("Error deleting collaborator:", error);
       toast({
@@ -171,7 +187,7 @@ export default function EquipoPage() {
       nombre: data.nombre,
       email: data.email,
       permissions: data.permissions,
-      rol: data.rol, // The role now comes directly from the form
+      rol: data.rol,
     };
 
     try {
@@ -198,7 +214,7 @@ export default function EquipoPage() {
       }
       setIsFormOpen(false);
       setEditingCollaborator(null);
-      fetchCollaborators();
+      fetchData();
     } catch (error) {
       console.error("Error saving collaborator:", error);
       toast({
@@ -234,7 +250,7 @@ export default function EquipoPage() {
             <div>
               <CardTitle className="text-2xl font-headline text-primary flex items-center">
                 <UserCog className="mr-3 h-7 w-7" />
-                Gestión de Equipo
+                Gestión de Colaboradores
               </CardTitle>
               <CardDescription>
                 Añada, edite y gestione los permisos de los colaboradores que tendrán acceso a la plataforma.
@@ -270,7 +286,7 @@ export default function EquipoPage() {
                     <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Rol Principal</TableHead>
+                    <TableHead>Cargo</TableHead>
                     <TableHead className="text-right w-[120px]">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -280,7 +296,7 @@ export default function EquipoPage() {
                         <TableCell className="font-medium">{collaborator.nombre}</TableCell>
                         <TableCell>{collaborator.email}</TableCell>
                         <TableCell>
-                            <Badge variant={collaborator.rol === 'admin' ? 'default' : 'secondary'}>{ROLES[collaborator.rol]}</Badge>
+                            <Badge variant="secondary">{collaborator.rol}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
                         <Button
@@ -329,6 +345,7 @@ export default function EquipoPage() {
         isOpen={isFormOpen}
         setIsOpen={setIsFormOpen}
         onSubmit={handleFormSubmit}
+        cargos={cargos}
         defaultValues={editingCollaborator}
         isLoading={isSubmitting}
         title={editingCollaborator ? "Editar Colaborador" : "Agregar Nuevo Colaborador"}

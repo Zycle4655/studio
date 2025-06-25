@@ -33,7 +33,8 @@ import {
   CalendarCheck, 
   Receipt,
   Truck,
-  HandCoins
+  HandCoins,
+  UserCog
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -88,7 +89,7 @@ export function AppSidebar() {
   const reportesTooltip = sidebarOpen ? undefined : "Reportes";
   const suiTooltip = sidebarOpen ? undefined : "SUI";
   const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
-  const equipoTooltip = sidebarOpen ? undefined : "Equipo";
+  const equipoTooltip = sidebarOpen ? undefined : "Gestión de Equipo";
 
   const canSeeGestionMaterial = role === 'admin' || role === 'bodeguero';
   const canSeeReportes = role === 'admin' || role === 'bodeguero';
@@ -389,8 +390,8 @@ export function AppSidebar() {
                 isActive={isModulePathActive('/dashboard/equipo')}
                 tooltip={equipoTooltip}
                 >
-                <Users />
-                <span>Equipo</span>
+                <UserCog />
+                <span>Gestión de Equipo</span>
                 <ChevronDown
                     className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
                     equipoOpen ? 'rotate-180' : ''
@@ -406,7 +407,18 @@ export function AppSidebar() {
                     >
                         <Link href="/dashboard/equipo">
                         <Users />
-                        <span>Gestionar Equipo</span>
+                        <span>Colaboradores</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/equipo/cargos')}
+                    >
+                        <Link href="/dashboard/equipo/cargos">
+                        <Briefcase />
+                        <span>Gestionar Cargos</span>
                         </Link>
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>

@@ -25,7 +25,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { ROLES, type Role } from "@/schemas/equipo";
+import { DEFAULT_ROLES, type DefaultRole } from "@/schemas/equipo";
 
 
 interface UserNavProps {
@@ -106,8 +106,8 @@ export function UserNav({ companyName, logoUrl }: UserNavProps) {
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={role} onValueChange={(value) => setRole(value as Role)}>
-                        {Object.entries(ROLES).map(([key, label]) => (
+                      <DropdownMenuRadioGroup value={role} onValueChange={(value) => setRole(value as DefaultRole)}>
+                        {Object.entries(DEFAULT_ROLES).map(([key, label]) => (
                             <DropdownMenuRadioItem key={key} value={key}>
                                 {label}
                             </DropdownMenuRadioItem>

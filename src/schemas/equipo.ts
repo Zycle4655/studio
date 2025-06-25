@@ -5,17 +5,15 @@ import * as z from "zod";
 import type { Timestamp } from "firebase/firestore";
 
 // Using a const object for roles allows us to easily get both keys and values.
-export const ROLES = {
+// This is now only used for the role simulator and default permissions.
+export const DEFAULT_ROLES = {
   admin: "Administrador",
   bodeguero: "Bodeguero",
-  recolector: "Recolector",
+  recolector: "Recolector", // Kept for future mobile app use
 } as const;
 
-export type Role = keyof typeof ROLES;
+export type DefaultRole = keyof typeof DEFAULT_ROLES;
 
-// Dynamically create a Zod enum from the ROLES keys
-const roleKeys = Object.keys(ROLES) as [Role, ...Role[]];
-export const RoleEnum = z.enum(roleKeys);
 
 export const permissionsSchema = z.object({
     gestionMaterial: z.boolean().default(false),
@@ -32,7 +30,7 @@ export type Permissions = z.infer<typeof permissionsSchema>;
 export const CollaboratorFormSchema = z.object({
   nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }).max(100),
   email: z.string().email({ message: "Debe ser un correo electrónico válido." }),
-  rol: RoleEnum,
+  rol: z.string().min(1, { message: "Debe seleccionar un cargo." }),
   permissions: permissionsSchema,
 });
 
@@ -45,7 +43,7 @@ export interface CollaboratorDocument {
   // This will be added when we implement the invitation/linking logic.
   nombre: string;
   email: string;
-  rol: Role; // Kept for current role-based logic
+  rol: string; // The "cargo" name
   permissions: Permissions; // New granular permissions for future use
   createdAt?: Timestamp;
   updatedAt?: Timestamp;

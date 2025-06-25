@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,14 +32,16 @@ import {
   DialogClose,
   DialogDescription as DialogDescriptionComponent,
 } from "@/components/ui/dialog";
-import { CollaboratorFormSchema, type CollaboratorFormData, type Role, type Permissions, ROLES } from "@/schemas/equipo";
-import { Save, XCircle, UserCog, Briefcase } from "lucide-react";
+import { CollaboratorFormSchema, type CollaboratorFormData, type Permissions } from "@/schemas/equipo";
+import type { CargoDocument } from "@/schemas/cargo";
+import { Save, XCircle, UserCog } from "lucide-react";
 import { Separator } from "../ui/separator";
 
 interface CollaboratorFormProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: CollaboratorFormData) => Promise<void>;
+  cargos: CargoDocument[];
   defaultValues?: Partial<CollaboratorFormData> | null;
   isLoading?: boolean;
   title?: string;
@@ -54,23 +57,11 @@ const permissionLabels: { [key in keyof Permissions]: string } = {
     equipo: "Gestión de Equipo (Admin)",
 };
 
-const getPermissionsFromRole = (role: Role): Permissions => {
-    switch (role) {
-        case 'admin':
-            return { gestionMaterial: true, transporte: true, reportes: true, sui: true, talentoHumano: true, equipo: true };
-        case 'bodeguero':
-            return { gestionMaterial: true, transporte: false, reportes: true, sui: false, talentoHumano: false, equipo: false };
-        case 'recolector':
-            return { gestionMaterial: false, transporte: false, reportes: false, sui: false, talentoHumano: false, equipo: false };
-        default:
-            return { gestionMaterial: false, transporte: false, reportes: false, sui: false, talentoHumano: false, equipo: false };
-    }
-};
-
 export default function CollaboratorForm({
   isOpen,
   setIsOpen,
   onSubmit,
+  cargos,
   defaultValues,
   isLoading = false,
   title = "Agregar Colaborador",
@@ -81,29 +72,32 @@ export default function CollaboratorForm({
     defaultValues: {
       nombre: "",
       email: "",
-      rol: 'recolector',
-      permissions: getPermissionsFromRole('recolector'),
+      rol: "",
+      permissions: {
+        gestionMaterial: false,
+        transporte: false,
+        reportes: false,
+        sui: false,
+        talentoHumano: false,
+        equipo: false,
+      },
     },
   });
 
-  const selectedRole = form.watch("rol");
-
-  React.useEffect(() => {
-    if (form.formState.isDirty) {
-        const newPermissions = getPermissionsFromRole(selectedRole);
-        form.setValue("permissions", newPermissions);
-    }
-  }, [selectedRole, form]);
-
   React.useEffect(() => {
     if (isOpen) {
-        const initialRole = defaultValues?.rol || 'recolector';
-        const initialPermissions = defaultValues?.permissions || getPermissionsFromRole(initialRole);
         form.reset({
             nombre: defaultValues?.nombre || "",
             email: defaultValues?.email || "",
-            rol: initialRole,
-            permissions: initialPermissions,
+            rol: defaultValues?.rol || "",
+            permissions: defaultValues?.permissions || {
+                gestionMaterial: false,
+                transporte: false,
+                reportes: false,
+                sui: false,
+                talentoHumano: false,
+                equipo: false,
+            },
         });
     }
   }, [defaultValues, isOpen, form]);
@@ -160,19 +154,22 @@ export default function CollaboratorForm({
               name="rol"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground/80">Rol del Colaborador</FormLabel>
+                  <FormLabel className="text-foreground/80">Cargo del Colaborador</FormLabel>
                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccione un rol..." />
+                          <SelectValue placeholder="Seleccione un cargo..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(ROLES).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                        {cargos.map((cargo) => (
+                            <SelectItem key={cargo.id} value={cargo.name}>{cargo.name}</SelectItem>
                         ))}
                       </SelectContent>
                    </Select>
+                   <FormDescription className="text-xs">
+                        Puede gestionar los cargos en la sección "Gestionar Cargos".
+                    </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -182,7 +179,7 @@ export default function CollaboratorForm({
             
             <div>
               <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma</FormLabel>
-              <p className="text-sm text-muted-foreground text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador. Se ajustan según el rol.</p>
+              <p className="text-sm text-muted-foreground text-xs mb-4">Seleccione los módulos a los que tendrá acceso este colaborador.</p>
               <div className="space-y-3 mt-3">
                 {Object.keys(permissionLabels).map((key) => (
                     <FormField
