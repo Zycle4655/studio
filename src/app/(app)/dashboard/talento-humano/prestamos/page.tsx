@@ -51,7 +51,7 @@ import AbonoForm from "@/components/forms/AbonoForm";
 
 export default function PrestamosPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [prestamos, setPrestamos] = React.useState<PrestamoDocument[]>([]);
   const [asociados, setAsociados] = React.useState<AsociadoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -130,8 +130,8 @@ export default function PrestamosPage() {
   }, [user, fetchData]);
 
   const handleOpenPrestamoForm = (prestamo?: PrestamoDocument) => {
-    if (!user) {
-        toast({ variant: "destructive", title: "Error", description: "Debe iniciar sesión." });
+    if (!user || role !== 'admin') {
+        toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para esta acción." });
         return;
     }
     setEditingPrestamo(prestamo || null);
@@ -139,14 +139,14 @@ export default function PrestamosPage() {
   };
   
   const handleOpenAbonoForm = (prestamo: PrestamoDocument) => {
-     if (!user || prestamo.estado === 'Pagado') return;
+     if (!user || prestamo.estado === 'Pagado' || role !== 'admin') return;
      setEditingPrestamo(prestamo);
      setIsAbonoFormOpen(true);
   };
 
   const openDeleteDialog = (prestamo: PrestamoDocument) => {
-    if (!user) {
-        toast({ variant: "destructive", title: "Error", description: "Debe iniciar sesión." });
+    if (!user || role !== 'admin') {
+        toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para eliminar préstamos." });
         return;
     }
     setPrestamoToDelete(prestamo);
@@ -412,11 +412,11 @@ export default function PrestamosPage() {
                             </Badge>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
-                          <Button variant="outline" size="sm" onClick={() => handleOpenAbonoForm(prestamo)} disabled={isSubmitting || prestamo.estado === 'Pagado'}>
+                          <Button variant="outline" size="sm" onClick={() => handleOpenAbonoForm(prestamo)} disabled={isSubmitting || prestamo.estado === 'Pagado' || role !== 'admin'}>
                             <Banknote className="h-4 w-4 mr-1"/> Abonar
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenPrestamoForm(prestamo)} disabled={isSubmitting}><Edit className="h-4 w-4"/></Button>
-                          <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => openDeleteDialog(prestamo)} disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenPrestamoForm(prestamo)} disabled={isSubmitting || role !== 'admin'}><Edit className="h-4 w-4"/></Button>
+                          <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => openDeleteDialog(prestamo)} disabled={isSubmitting || role !== 'admin'}><Trash2 className="h-4 w-4"/></Button>
                         </TableCell>
                     </TableRow>
                     ))}
@@ -427,15 +427,17 @@ export default function PrestamosPage() {
         </CardContent>
       </Card>
       
-      <Button
-        className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
-        size="icon"
-        onClick={() => handleOpenPrestamoForm()}
-        aria-label="Registrar nuevo préstamo"
-        disabled={!user || isLoading || isSubmitting || asociados.length === 0}
-      >
-        <Plus className="h-8 w-8" />
-      </Button>
+      {role === 'admin' && (
+        <Button
+            className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
+            size="icon"
+            onClick={() => handleOpenPrestamoForm()}
+            aria-label="Registrar nuevo préstamo"
+            disabled={!user || isLoading || isSubmitting || asociados.length === 0}
+        >
+            <Plus className="h-8 w-8" />
+        </Button>
+      )}
 
       {isPrestamoFormOpen && (
           <PrestamoForm

@@ -7,12 +7,15 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { CompanyProfileDocument } from "@/schemas/company";
+import type { Role } from "@/schemas/equipo";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   companyProfile: CompanyProfileDocument | null;
   refreshCompanyProfile: () => Promise<void>;
+  role: Role;
+  setRole: (role: Role) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +24,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileDocument | null>(null);
+  const [role, setRole] = useState<Role>('admin'); // Default role is admin
 
   const fetchCompanyProfile = useCallback(async (currentUser: User | null) => {
     if (currentUser && db) {
@@ -53,6 +57,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       setUser(currentUser);
       await fetchCompanyProfile(currentUser);
+      // For now, the logged in user is always admin. This can be expanded later.
+      setRole('admin'); 
       setLoading(false);
     });
 
@@ -64,7 +70,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loading,
     companyProfile,
     refreshCompanyProfile,
-  }), [user, loading, companyProfile, refreshCompanyProfile]);
+    role,
+    setRole,
+  }), [user, loading, companyProfile, refreshCompanyProfile, role]);
 
   return (
     <AuthContext.Provider value={value}>

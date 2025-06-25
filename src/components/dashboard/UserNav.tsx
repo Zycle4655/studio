@@ -11,14 +11,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, UserCircle, Settings } from "lucide-react";
+import { LogOut, UserCircle, Settings, Repeat } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { ROLES, type Role } from "@/schemas/equipo";
+
 
 interface UserNavProps {
   companyName?: string | null;
@@ -28,7 +36,7 @@ interface UserNavProps {
 export function UserNav({ companyName, logoUrl }: UserNavProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, role, setRole } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -80,12 +88,36 @@ export function UserNav({ companyName, logoUrl }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Configuración</span>
-            </Link>
-          </DropdownMenuItem>
+          {role === 'admin' && (
+             <DropdownMenuItem asChild>
+                <Link href="/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configuración</span>
+                </Link>
+              </DropdownMenuItem>
+          )}
+
+          {/* Role simulator - only for admin */}
+          {user && role === 'admin' && (
+             <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                    <Repeat className="mr-2 h-4 w-4" />
+                    <span>Simular Rol</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={role} onValueChange={(value) => setRole(value as Role)}>
+                        {Object.entries(ROLES).map(([key, label]) => (
+                            <DropdownMenuRadioItem key={key} value={key}>
+                                {label}
+                            </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+             </DropdownMenuSub>
+          )}
+
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

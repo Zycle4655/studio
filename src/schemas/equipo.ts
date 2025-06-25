@@ -5,6 +5,7 @@ import type { Timestamp } from "firebase/firestore";
 // Using a const object for roles allows us to easily get both keys and values.
 export const ROLES = {
   admin: "Administrador",
+  bodeguero: "Bodeguero",
   recolector: "Recolector",
 } as const;
 

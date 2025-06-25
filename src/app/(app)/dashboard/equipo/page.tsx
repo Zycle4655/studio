@@ -45,7 +45,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function EquipoPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [collaborators, setCollaborators] = React.useState<CollaboratorDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -281,7 +281,7 @@ export default function EquipoPage() {
                             className="hover:text-primary"
                             onClick={() => handleEditCollaborator(collaborator)}
                             aria-label="Editar colaborador"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || role !== 'admin'}
                         >
                             <Edit className="h-4 w-4" />
                         </Button>
@@ -291,7 +291,7 @@ export default function EquipoPage() {
                             className="hover:text-destructive"
                             onClick={() => openDeleteDialog(collaborator)}
                             aria-label="Eliminar colaborador"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || role !== 'admin'}
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
@@ -304,16 +304,18 @@ export default function EquipoPage() {
           )}
         </CardContent>
       </Card>
+      {role === 'admin' && (
+        <Button
+            className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
+            size="icon"
+            onClick={handleAddCollaborator}
+            aria-label="Agregar nuevo colaborador"
+            disabled={!user || isLoading || isSubmitting}
+        >
+            <Plus className="h-8 w-8" />
+        </Button>
+      )}
 
-      <Button
-        className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
-        size="icon"
-        onClick={handleAddCollaborator}
-        aria-label="Agregar nuevo colaborador"
-        disabled={!user || isLoading || isSubmitting}
-      >
-        <Plus className="h-8 w-8" />
-      </Button>
 
       <CollaboratorForm
         isOpen={isFormOpen}

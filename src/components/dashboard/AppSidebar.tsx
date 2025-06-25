@@ -37,10 +37,12 @@ import {
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { open: sidebarOpen } = useSidebar();
+  const { role } = useAuth(); // Get user role from context
 
   const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(
     isModulePathActive('/dashboard/gestion-material')
@@ -88,6 +90,10 @@ export function AppSidebar() {
   const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
   const equipoTooltip = sidebarOpen ? undefined : "Equipo";
 
+  const canSeeGestionMaterial = role === 'admin' || role === 'bodeguero';
+  const canSeeReportes = role === 'admin' || role === 'bodeguero';
+  const isAdmin = role === 'admin';
+
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -107,295 +113,307 @@ export function AppSidebar() {
           </SidebarMenuItem>
 
           {/* Gestión de Material Module */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setGestionMaterialOpen(!gestionMaterialOpen)}
-              isActive={isModulePathActive('/dashboard/gestion-material')}
-              tooltip={gestionMaterialTooltip}
-            >
-              <Package />
-              <span>Gestión de Material</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                  gestionMaterialOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {gestionMaterialOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/gestion-material/compras')}
-                  >
-                    <Link href="/dashboard/gestion-material/compras">
-                      <ShoppingCart />
-                      <span>Compra de Material</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/gestion-material/ventas')}
-                  >
-                     <Link href="/dashboard/gestion-material/ventas">
-                      <Store />
-                      <span>Venta de Material</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/gestion-material/materiales')}
-                  >
-                    <Link href="/dashboard/gestion-material/materiales">
-                      <Boxes />
-                      <span>Materiales</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/gestion-material/inventario')}
-                  >
-                    <Link href="/dashboard/gestion-material/inventario">
-                      <Warehouse />
-                      <span>Inventario</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/gestion-material/facturas-compra')}
-                  >
-                    <Link href="/dashboard/gestion-material/facturas-compra">
-                      <FileText />
-                      <span>Facturas Compra</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/gestion-material/facturas-venta')}
-                  >
-                    <Link href="/dashboard/gestion-material/facturas-venta">
-                      <FileText />
-                      <span>Facturas Venta</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
+          {canSeeGestionMaterial && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                onClick={() => setGestionMaterialOpen(!gestionMaterialOpen)}
+                isActive={isModulePathActive('/dashboard/gestion-material')}
+                tooltip={gestionMaterialTooltip}
+                >
+                <Package />
+                <span>Gestión de Material</span>
+                <ChevronDown
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    gestionMaterialOpen ? 'rotate-180' : ''
+                    }`}
+                />
+                </SidebarMenuButton>
+                {gestionMaterialOpen && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/compras')}
+                    >
+                        <Link href="/dashboard/gestion-material/compras">
+                        <ShoppingCart />
+                        <span>Compra de Material</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/ventas')}
+                    >
+                        <Link href="/dashboard/gestion-material/ventas">
+                        <Store />
+                        <span>Venta de Material</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/materiales')}
+                    >
+                        <Link href="/dashboard/gestion-material/materiales">
+                        <Boxes />
+                        <span>Materiales</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/inventario')}
+                    >
+                        <Link href="/dashboard/gestion-material/inventario">
+                        <Warehouse />
+                        <span>Inventario</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/facturas-compra')}
+                    >
+                        <Link href="/dashboard/gestion-material/facturas-compra">
+                        <FileText />
+                        <span>Facturas Compra</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/facturas-venta')}
+                    >
+                        <Link href="/dashboard/gestion-material/facturas-venta">
+                        <FileText />
+                        <span>Facturas Venta</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+                )}
+            </SidebarMenuItem>
+          )}
 
           {/* Transporte Module */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setTransporteOpen(!transporteOpen)}
-              isActive={isModulePathActive('/dashboard/transporte')}
-              tooltip={transporteTooltip}
-            >
-              <Truck />
-              <span>Transporte</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                  transporteOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {transporteOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/transporte/vehiculos')}
-                  >
-                    <Link href="/dashboard/transporte/vehiculos">
-                      <Truck />
-                      <span>Vehículos</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-
-          {/* Reportes Module */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setReportesOpen(!reportesOpen)}
-              isActive={isModulePathActive('/dashboard/reportes')}
-              tooltip={reportesTooltip}
-            >
-              <BarChart3 />
-              <span>Reportes</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                  reportesOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {reportesOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/reportes/toneladas-aprovechadas')}
-                  >
-                    <Link href="/dashboard/reportes/toneladas-aprovechadas">
-                      <Recycle />
-                      <span>Toneladas Aprovechadas</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/reportes/certificados')}
-                  >
-                     <Link href="/dashboard/reportes/certificados">
-                      <FileBadge />
-                      <span>Certificados</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-
-          {/* SUI Module */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setSuiOpen(!suiOpen)}
-              isActive={isModulePathActive('/dashboard/sui')}
-              tooltip={suiTooltip}
-            >
-              <Briefcase />
-              <span>SUI</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                  suiOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {suiOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/sui/asociados')}
-                  >
-                    <Link href="/dashboard/sui/asociados">
-                      <Users />
-                      <span>Asociados</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/sui/balance-masas')}
-                  >
-                     <Link href="/dashboard/sui/balance-masas">
-                      <Weight />
-                      <span>Balance de Masas</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
-
-          {/* Talento Humano Module */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setTalentoHumanoOpen(!talentoHumanoOpen)}
-              isActive={isModulePathActive('/dashboard/talento-humano')}
-              tooltip={talentoHumanoTooltip}
-            >
-              <UsersRound />
-              <span>Talento Humano</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                  talentoHumanoOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {talentoHumanoOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/talento-humano/prestamos')}
-                  >
-                    <Link href="/dashboard/talento-humano/prestamos">
-                      <HandCoins />
-                      <span>Préstamos</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/talento-humano/control-asistencia')}
-                  >
-                    <Link href="/dashboard/talento-humano/control-asistencia">
-                      <CalendarCheck />
-                      <span>Control Asistencia</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/talento-humano/desprendibles-pago')}
-                  >
-                     <Link href="/dashboard/talento-humano/desprendibles-pago">
-                      <Receipt />
-                      <span>Desprendibles de Pago</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
+          {isAdmin && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                onClick={() => setTransporteOpen(!transporteOpen)}
+                isActive={isModulePathActive('/dashboard/transporte')}
+                tooltip={transporteTooltip}
+                >
+                <Truck />
+                <span>Transporte</span>
+                <ChevronDown
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    transporteOpen ? 'rotate-180' : ''
+                    }`}
+                />
+                </SidebarMenuButton>
+                {transporteOpen && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/transporte/vehiculos')}
+                    >
+                        <Link href="/dashboard/transporte/vehiculos">
+                        <Truck />
+                        <span>Vehículos</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+                )}
+            </SidebarMenuItem>
+          )}
           
+          {/* Reportes Module */}
+          {canSeeReportes && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                onClick={() => setReportesOpen(!reportesOpen)}
+                isActive={isModulePathActive('/dashboard/reportes')}
+                tooltip={reportesTooltip}
+                >
+                <BarChart3 />
+                <span>Reportes</span>
+                <ChevronDown
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    reportesOpen ? 'rotate-180' : ''
+                    }`}
+                />
+                </SidebarMenuButton>
+                {reportesOpen && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/reportes/toneladas-aprovechadas')}
+                    >
+                        <Link href="/dashboard/reportes/toneladas-aprovechadas">
+                        <Recycle />
+                        <span>Toneladas Aprovechadas</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/reportes/certificados')}
+                    >
+                        <Link href="/dashboard/reportes/certificados">
+                        <FileBadge />
+                        <span>Certificados</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+                )}
+            </SidebarMenuItem>
+          )}
+          
+          {/* SUI Module */}
+          {isAdmin && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                onClick={() => setSuiOpen(!suiOpen)}
+                isActive={isModulePathActive('/dashboard/sui')}
+                tooltip={suiTooltip}
+                >
+                <Briefcase />
+                <span>SUI</span>
+                <ChevronDown
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    suiOpen ? 'rotate-180' : ''
+                    }`}
+                />
+                </SidebarMenuButton>
+                {suiOpen && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/sui/asociados')}
+                    >
+                        <Link href="/dashboard/sui/asociados">
+                        <Users />
+                        <span>Asociados</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/sui/balance-masas')}
+                    >
+                        <Link href="/dashboard/sui/balance-masas">
+                        <Weight />
+                        <span>Balance de Masas</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+                )}
+            </SidebarMenuItem>
+          )}
+          
+          {/* Talento Humano Module */}
+          {isAdmin && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                onClick={() => setTalentoHumanoOpen(!talentoHumanoOpen)}
+                isActive={isModulePathActive('/dashboard/talento-humano')}
+                tooltip={talentoHumanoTooltip}
+                >
+                <UsersRound />
+                <span>Talento Humano</span>
+                <ChevronDown
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    talentoHumanoOpen ? 'rotate-180' : ''
+                    }`}
+                />
+                </SidebarMenuButton>
+                {talentoHumanoOpen && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/talento-humano/prestamos')}
+                    >
+                        <Link href="/dashboard/talento-humano/prestamos">
+                        <HandCoins />
+                        <span>Préstamos</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/talento-humano/control-asistencia')}
+                    >
+                        <Link href="/dashboard/talento-humano/control-asistencia">
+                        <CalendarCheck />
+                        <span>Control Asistencia</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/talento-humano/desprendibles-pago')}
+                    >
+                        <Link href="/dashboard/talento-humano/desprendibles-pago">
+                        <Receipt />
+                        <span>Desprendibles de Pago</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+                )}
+            </SidebarMenuItem>
+          )}
+
           {/* Equipo Module */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => setEquipoOpen(!equipoOpen)}
-              isActive={isModulePathActive('/dashboard/equipo')}
-              tooltip={equipoTooltip}
-            >
-              <Users />
-              <span>Equipo</span>
-              <ChevronDown
-                className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                  equipoOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </SidebarMenuButton>
-            {equipoOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={isActive('/dashboard/equipo')}
-                  >
-                    <Link href="/dashboard/equipo">
-                      <Users />
-                      <span>Gestionar Equipo</span>
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenuItem>
+          {isAdmin && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                onClick={() => setEquipoOpen(!equipoOpen)}
+                isActive={isModulePathActive('/dashboard/equipo')}
+                tooltip={equipoTooltip}
+                >
+                <Users />
+                <span>Equipo</span>
+                <ChevronDown
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    equipoOpen ? 'rotate-180' : ''
+                    }`}
+                />
+                </SidebarMenuButton>
+                {equipoOpen && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/equipo')}
+                    >
+                        <Link href="/dashboard/equipo">
+                        <Users />
+                        <span>Gestionar Equipo</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+                )}
+            </SidebarMenuItem>
+          )}
 
         </SidebarMenu>
       </SidebarContent>
