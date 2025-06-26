@@ -26,6 +26,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  writeBatch,
 } from "firebase/firestore";
 import CargoForm from "@/components/forms/CargoForm";
 import type { CargoFormData, CargoDocument } from "@/schemas/cargo";
@@ -40,6 +41,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Lock to prevent multiple initializations in one session
+let initializationLock = false;
+
+// Default roles to be created for new users
+const DEFAULT_CARGOS = [
+  { name: "Auxiliar administrativo" },
+  { name: "Conductor" },
+  { name: "Gestor ambiental" },
+];
 
 
 export default function CargosPage() {
@@ -60,6 +71,41 @@ export default function CargosPage() {
     return collection(db, "companyProfiles", user.uid, "cargos");
   }, [user]);
 
+  const initializeDefaultCargos = React.useCallback(async () => {
+    const cargosCollectionRef = getCargosCollectionRef();
+    if (!cargosCollectionRef || !db) return false;
+
+    setIsSubmitting(true);
+    try {
+      const batch = writeBatch(db);
+      DEFAULT_CARGOS.forEach(cargo => {
+        const newCargoRef = doc(cargosCollectionRef);
+        batch.set(newCargoRef, {
+          ...cargo,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      });
+      await batch.commit();
+      toast({
+        title: "Lista de Cargos Creada",
+        description: "Se ha creado una lista de cargos por defecto para su empresa.",
+      });
+      return true;
+    } catch (error) {
+      console.error("Error initializing default cargos:", error);
+      toast({
+        variant: "destructive",
+        title: "Error al Inicializar Cargos",
+        description: "No se pudo crear la lista de cargos estándar para su empresa.",
+      });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [getCargosCollectionRef, toast]);
+
+
   const fetchCargos = React.useCallback(async () => {
     const collectionRef = getCargosCollectionRef();
     if (!collectionRef) {
@@ -72,7 +118,18 @@ export default function CargosPage() {
 
     setIsLoading(true);
     try {
-      const querySnapshot = await getDocs(query(collectionRef, orderBy("name", "asc")));
+      let querySnapshot = await getDocs(query(collectionRef, orderBy("name", "asc")));
+      
+      // Logic to initialize default roles for a new user
+      if (querySnapshot.empty && !initializationLock) {
+        initializationLock = true;
+        const success = await initializeDefaultCargos();
+        if (success) {
+          // Re-fetch cargos after successful initialization
+          querySnapshot = await getDocs(query(collectionRef, orderBy("name", "asc")));
+        }
+      }
+
       const list = querySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as CargoDocument)
       );
@@ -85,7 +142,7 @@ export default function CargosPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getCargosCollectionRef, toast]);
+  }, [user, getCargosCollectionRef, toast, initializeDefaultCargos]);
 
 
   React.useEffect(() => {
@@ -95,6 +152,10 @@ export default function CargosPage() {
     } else {
       setIsLoading(false);
       setCargos([]);
+    }
+    // Reset the lock when the user changes or logs out
+    return () => {
+        initializationLock = false;
     }
   }, [user, fetchCargos]);
 
