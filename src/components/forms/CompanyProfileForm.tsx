@@ -66,7 +66,7 @@ export default function CompanyProfileForm({
         email: propsDefaultValues?.email || "",
         logoUrl: propsDefaultValues?.logoUrl || null,
     });
-  }, [propsDefaultValues, form.reset]);
+  }, [propsDefaultValues, form]);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
