@@ -14,6 +14,29 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
+// Helper function to extract storage path from a Firebase download URL
+function getPathFromStorageUrl(url: string): string | null {
+  try {
+    const urlObject = new URL(url);
+    const pathName = urlObject.pathname;
+    
+    // Path looks like: /v0/b/your-bucket.appspot.com/o/path%2Fto%2Ffile.jpg
+    const objectPathStartIndex = pathName.indexOf('/o/');
+    if (objectPathStartIndex === -1) {
+      console.warn("Could not find object path marker '/o/' in URL pathname.");
+      return null;
+    }
+    
+    // The encoded path starts after '/o/'
+    const encodedPath = pathName.substring(objectPathStartIndex + 3);
+    return decodeURIComponent(encodedPath);
+
+  } catch(e) {
+    console.error("Could not parse storage URL to get path:", e);
+    return null;
+  }
+}
+
 async function uploadLogo(userId: string, file: File): Promise<string> {
   if (!storage) {
     throw new Error("Firebase Storage is not initialized.");
@@ -32,21 +55,28 @@ async function uploadLogo(userId: string, file: File): Promise<string> {
   return downloadURL;
 }
 
-async function deleteLogo(userId: string, currentLogoUrl: string | null | undefined): Promise<void> {
+async function deleteLogo(currentLogoUrl: string | null | undefined): Promise<void> {
   if (!storage || !currentLogoUrl) {
-    console.log("Storage not initialized or no logo URL to delete.");
+    return; // No storage or no URL to delete.
+  }
+  
+  const filePath = getPathFromStorageUrl(currentLogoUrl);
+  
+  if (!filePath) {
+    console.warn("Could not extract file path from URL, skipping deletion of old logo:", currentLogoUrl);
     return;
   }
+
   try {
-    const logoStorageRef = storageRef(storage, currentLogoUrl);
+    const logoStorageRef = storageRef(storage, filePath);
     await deleteObject(logoStorageRef);
-    console.log("Previous logo deleted from Storage.");
+    console.log("Previous logo deleted successfully from path:", filePath);
   } catch (error: any) {
     if (error.code === 'storage/object-not-found') {
-      console.warn("Previous logo not found in Storage, skipping deletion:", error.message);
+      console.warn("Previous logo file not found in Storage, skipping deletion:", error.message);
     } else {
+      // Log other errors but don't block the profile update process
       console.error("Error deleting previous logo from Storage:", error);
-      // No relanzar el error para no bloquear el guardado del perfil, pero sí loguearlo.
     }
   }
 }
@@ -155,7 +185,7 @@ export default function ProfileSetupPage() {
     if (logoFile) { // Si se subió un nuevo archivo
       try {
         if (existingLogoUrl) {
-            await deleteLogo(user.uid, existingLogoUrl);
+            await deleteLogo(existingLogoUrl);
         }
         finalLogoUrl = await uploadLogo(user.uid, logoFile);
         toast({ title: "Logo Subido", description: "El nuevo logo se ha subido con éxito." });
@@ -166,7 +196,7 @@ export default function ProfileSetupPage() {
         return;
       }
     } else if (data.logoUrl === null && existingLogoUrl !== null) { 
-      await deleteLogo(user.uid, existingLogoUrl);
+      await deleteLogo(existingLogoUrl);
       finalLogoUrl = null;
       toast({ title: "Logo Eliminado", description: "El logo ha sido eliminado." });
     }
