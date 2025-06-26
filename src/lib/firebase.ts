@@ -97,4 +97,4 @@ if (!allCoreConfigPresent) {
   }
 }
 
-export { app, auth, db, storage }; // Exportar storage
+export { app, auth, db, storage, firebaseConfig }; // Exportar storage y firebaseConfig

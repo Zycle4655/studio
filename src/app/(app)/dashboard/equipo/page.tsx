@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { db, auth } from "@/lib/firebase";
+import { db, auth, firebaseConfig } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   collection,
@@ -29,9 +29,10 @@ import {
   writeBatch,
   setDoc,
 } from "firebase/firestore";
+import { initializeApp, deleteApp } from "firebase/app";
 import {
+  getAuth,
   createUserWithEmailAndPassword,
-  signOut,
 } from "firebase/auth";
 import CollaboratorForm from "@/components/forms/CollaboratorForm";
 import type { CollaboratorFormData, CollaboratorDocument } from "@/schemas/equipo";
@@ -219,9 +220,28 @@ export default function EquipoPage() {
             return;
         }
 
-        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-        const newAuthUserId = userCredential.user.uid;
+        // --- User Creation with Temporary App ---
+        // This prevents the admin's auth state from being overwritten.
+        const tempAppName = `temp-user-creation-${Date.now()}`;
+        const tempApp = initializeApp(firebaseConfig, tempAppName);
+        const tempAuth = getAuth(tempApp);
+        let newAuthUserId = '';
 
+        try {
+            const userCredential = await createUserWithEmailAndPassword(tempAuth, data.email, data.password);
+            newAuthUserId = userCredential.user.uid;
+        } catch (creationError) {
+            // Re-throw the error to be caught by the outer catch block which has user-friendly messages
+            throw creationError;
+        } finally {
+            // IMPORTANT: Always clean up the temporary app instance
+            await deleteApp(tempApp);
+        }
+
+        if (!newAuthUserId) {
+            throw new Error("No se pudo obtener el UID del nuevo usuario.");
+        }
+        
         const batch = writeBatch(db);
 
         // 1. Create the collaborator document in the admin's subcollection
@@ -242,11 +262,10 @@ export default function EquipoPage() {
         
         toast({
           title: "Colaborador Creado",
-          description: `La cuenta para "${data.nombre}" se creó. Deberá volver a iniciar sesión.`,
+          description: `La cuenta para "${data.nombre}" ha sido creada exitosamente.`,
         });
         
-        await signOut(auth);
-        return;
+        fetchData(); // Refresh list with the new collaborator
       }
       
       setIsFormOpen(false);
