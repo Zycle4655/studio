@@ -60,7 +60,13 @@ export default function MarketingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="container flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-3xl font-bold text-primary">ZYCLE</span>
+            <Image 
+              src="https://placehold.co/140x35.png"
+              alt="Zycle Logo"
+              width={140}
+              height={35}
+              data-ai-hint="zycle logo"
+            />
           </Link>
           <div className="hidden md:flex items-center gap-6 text-lg">
             <Link href="#features" className="hover:text-primary transition-colors">Funcionalidades</Link>
@@ -179,7 +185,13 @@ export default function MarketingPage() {
       <footer className="bg-muted/50 border-t">
         <div className="container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
            <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-primary">ZYCLE</span>
+            <Image 
+              src="https://placehold.co/120x30.png"
+              alt="Zycle Logo"
+              width={120}
+              height={30}
+              data-ai-hint="zycle logo"
+            />
           </div>
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} ZYCLE. Todos los derechos reservados.
