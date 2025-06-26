@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -87,7 +88,7 @@ const DEFAULT_MATERIALS = [
 
 export default function MaterialesPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -99,9 +100,9 @@ export default function MaterialesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "materials");
+  }, [companyOwnerId]);
 
   const initializeDefaultMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -144,7 +145,7 @@ export default function MaterialesPage() {
   const fetchMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
-      if (user) {
+      if (companyOwnerId) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -181,12 +182,12 @@ export default function MaterialesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, initializeDefaultMaterials, getMaterialsCollectionRef, toast]);
+  }, [companyOwnerId, initializeDefaultMaterials, getMaterialsCollectionRef, toast]);
 
 
   React.useEffect(() => {
     document.title = 'Gestión de Materiales | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchMaterials();
     } else {
       setIsLoading(false);
@@ -196,7 +197,7 @@ export default function MaterialesPage() {
     return () => {
         initializationLock = false;
     }
-  }, [user, fetchMaterials]);
+  }, [companyOwnerId, fetchMaterials]);
 
 
   const handleAddMaterial = () => {

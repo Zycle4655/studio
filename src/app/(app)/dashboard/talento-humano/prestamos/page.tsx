@@ -51,7 +51,7 @@ import AbonoForm from "@/components/forms/AbonoForm";
 
 export default function PrestamosPage() {
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { user, companyOwnerId, role } = useAuth();
   const [prestamos, setPrestamos] = React.useState<PrestamoDocument[]>([]);
   const [asociados, setAsociados] = React.useState<AsociadoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -67,20 +67,20 @@ export default function PrestamosPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const getPrestamosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "prestamos");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "prestamos");
+  }, [companyOwnerId]);
   
   const getAsociadosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "asociados");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "asociados");
+  }, [companyOwnerId]);
 
   const fetchData = React.useCallback(async () => {
     const prestamosCollectionRef = getPrestamosCollectionRef();
     const asociadosCollectionRef = getAsociadosCollectionRef();
     if (!prestamosCollectionRef || !asociadosCollectionRef) {
-      if (user) {
+      if (companyOwnerId) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -115,19 +115,19 @@ export default function PrestamosPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getPrestamosCollectionRef, getAsociadosCollectionRef, toast]);
+  }, [companyOwnerId, getPrestamosCollectionRef, getAsociadosCollectionRef, toast]);
 
 
   React.useEffect(() => {
     document.title = 'Talento Humano: Préstamos | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchData();
     } else {
       setIsLoading(false);
       setAsociados([]);
       setPrestamos([]);
     }
-  }, [user, fetchData]);
+  }, [companyOwnerId, fetchData]);
 
   const handleOpenPrestamoForm = (prestamo?: PrestamoDocument) => {
     if (!user || role !== 'admin') {
@@ -384,7 +384,7 @@ export default function PrestamosPage() {
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Search className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
-                <p className="text-muted-foreground">Ningún préstamo coincide con "{searchTerm}".</p>
+                <p className="text-muted-foreground">Ningún préstamo coincide con "{searchTerm}".p>
             </div>
           ) : (
             <div className="overflow-x-auto">

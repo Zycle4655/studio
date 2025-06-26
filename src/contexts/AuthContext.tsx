@@ -13,6 +13,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   companyProfile: CompanyProfileDocument | null;
+  companyOwnerId: string | null;
   refreshCompanyProfile: () => Promise<void>;
   role: DefaultRole | null;
 }
@@ -24,6 +25,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileDocument | null>(null);
   const [role, setRole] = useState<DefaultRole | null>(null); 
+  const [companyOwnerId, setCompanyOwnerId] = useState<string | null>(null);
 
   const fetchInitialData = useCallback(async (currentUser: User) => {
     if (!db) return;
@@ -34,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (adminProfileSnap.exists()) {
       setCompanyProfile(adminProfileSnap.data() as CompanyProfileDocument);
+      setCompanyOwnerId(currentUser.uid);
       setRole('admin');
       return;
     }
@@ -44,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (userMappingSnap.exists()) {
       const { adminUid } = userMappingSnap.data();
+      setCompanyOwnerId(adminUid);
       
       // Fetch the admin's company profile
       const companyProfileRef = doc(db, "companyProfiles", adminUid);
@@ -83,6 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Path 3: User is not an admin and not a collaborator (e.g., new admin yet to create a profile)
     setCompanyProfile(null);
+    setCompanyOwnerId(null);
     setRole('admin'); // Assume new user is an admin for profile setup redirect
   }, []);
 
@@ -102,6 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await fetchInitialData(currentUser);
       } else {
         setCompanyProfile(null);
+        setCompanyOwnerId(null);
         setRole(null);
       }
       
@@ -115,9 +121,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     loading,
     companyProfile,
+    companyOwnerId,
     refreshCompanyProfile,
     role,
-  }), [user, loading, companyProfile, refreshCompanyProfile, role]);
+  }), [user, loading, companyProfile, companyOwnerId, refreshCompanyProfile, role]);
 
   return (
     <AuthContext.Provider value={value}>

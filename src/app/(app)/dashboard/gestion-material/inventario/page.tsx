@@ -42,7 +42,7 @@ const createInitialInventorySchema = (materials: MaterialDocument[]) => {
 
 export default function InventarioPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [showInitialInventoryForm, setShowInitialInventoryForm] = React.useState(false);
@@ -55,15 +55,15 @@ export default function InventarioPage() {
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "materials");
+  }, [companyOwnerId]);
 
 
   const fetchMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
-      if (user) {
+      if (companyOwnerId) {
         toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -100,17 +100,17 @@ export default function InventarioPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, user, toast, form]);
+  }, [getMaterialsCollectionRef, companyOwnerId, toast, form]);
 
   React.useEffect(() => {
     document.title = 'Inventario de Materiales | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchMaterials();
     } else {
       setIsLoading(false);
       setMaterials([]);
     }
-  }, [user, fetchMaterials]);
+  }, [companyOwnerId, fetchMaterials]);
   
   const formatStock = (stock: number | undefined) => {
     const value = stock || 0;

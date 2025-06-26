@@ -15,9 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import NextImage from 'next/image'; // Usar NextImage para optimización
 
 export default function SettingsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, companyProfile } = useAuth();
   const router = useRouter();
-  const [profile, setProfile] = useState<CompanyProfileDocument | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -27,34 +26,11 @@ export default function SettingsPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    async function fetchProfile() {
-      if (user && db) { 
-        setIsLoadingProfile(true);
-        try {
-          const profileRef = doc(db, "companyProfiles", user.uid);
-          const profileSnap = await getDoc(profileRef);
-          if (profileSnap.exists()) {
-            setProfile(profileSnap.data() as CompanyProfileDocument);
-          } else {
-            // Si no existe el perfil, podría redirigir a profile-setup o mostrar un mensaje.
-            // Por ahora, simplemente no se establece ningún perfil.
-            setProfile(null); 
-          }
-        } catch (error) {
-            console.error("Error fetching profile in SettingsPage:", error);
-        } finally {
-            setIsLoadingProfile(false);
-        }
-      } else if (!user && !authLoading) {
-        setIsLoadingProfile(false);
-      }
+    // The profile is now managed by the AuthContext, so we just check when it's done loading
+    if (!authLoading) {
+      setIsLoadingProfile(false);
     }
-    if (user) {
-      fetchProfile();
-    } else if (!authLoading) {
-        setIsLoadingProfile(false);
-    }
-  }, [user, authLoading]);
+  }, [authLoading]);
 
   if (authLoading || isLoadingProfile) {
     return (
@@ -108,16 +84,16 @@ export default function SettingsPage() {
           <CardDescription>Información registrada de su empresa y datos de su cuenta.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {profile ? (
+          {companyProfile ? (
             <>
-              {profile.logoUrl && (
+              {companyProfile.logoUrl && (
                 <div className="flex items-start space-x-3">
                   <ImageIcon className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                   <div>
                     <span className="font-medium text-foreground/80 block">Logo de la Empresa:</span>
                     <NextImage
-                      src={profile.logoUrl}
-                      alt={`Logo de ${profile.companyName}`}
+                      src={companyProfile.logoUrl}
+                      alt={`Logo de ${companyProfile.companyName}`}
                       width={80}
                       height={80}
                       className="rounded-md border object-contain mt-1"
@@ -130,28 +106,28 @@ export default function SettingsPage() {
                 <Building className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                 <div>
                     <span className="font-medium text-foreground/80 block">Nombre de la Empresa:</span>
-                    <span className="text-foreground">{profile.companyName}</span>
+                    <span className="text-foreground">{companyProfile.companyName}</span>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <Hash className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                  <div>
                     <span className="font-medium text-foreground/80 block">NIT:</span>
-                    <span className="text-foreground">{profile.nit}</span>
+                    <span className="text-foreground">{companyProfile.nit}</span>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <Phone className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                 <div>
                     <span className="font-medium text-foreground/80 block">Teléfono:</span>
-                    <span className="text-foreground">{profile.phone}</span>
+                    <span className="text-foreground">{companyProfile.phone}</span>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                 <div>
                     <span className="font-medium text-foreground/80 block">Dirección:</span>
-                    <span className="text-foreground">{profile.address}</span>
+                    <span className="text-foreground">{companyProfile.address}</span>
                 </div>
               </div>
             </>
@@ -164,7 +140,7 @@ export default function SettingsPage() {
             </p>
           )}
           
-          {(profile || user.email) && <div className="pt-2 border-t border-border"></div>}
+          {(companyProfile || user.email) && <div className="pt-2 border-t border-border"></div>}
           
           {user.email && (
             <div className="flex items-start space-x-3">
@@ -180,7 +156,7 @@ export default function SettingsPage() {
           <Button asChild variant="outline">
             <Link href="/profile-setup">
               <Edit className="mr-2 h-4 w-4" />
-              {profile ? "Editar Perfil y Cuenta" : "Completar Perfil de Empresa"}
+              {companyProfile ? "Editar Perfil y Cuenta" : "Completar Perfil de Empresa"}
             </Link>
           </Button>
         </CardFooter>

@@ -22,7 +22,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   
@@ -31,12 +31,12 @@ export default function DashboardPage() {
   };
 
   const fetchDashboardData = React.useCallback(async () => {
-    if (!user || !db) return;
+    if (!companyOwnerId || !db) return;
 
     setIsLoading(true);
     try {
       // Fetch Materials for inventory calculations
-      const materialsRef = collection(db, "companyProfiles", user.uid, "materials");
+      const materialsRef = collection(db, "companyProfiles", companyOwnerId, "materials");
       const materialsSnapshot = await getDocs(query(materialsRef, orderBy("stock", "desc")));
       const materialsList = materialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaterialDocument));
       const totalInventoryWeight = materialsList.reduce((sum, mat) => sum + (mat.stock || 0), 0);
@@ -52,14 +52,14 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [companyOwnerId]);
 
   React.useEffect(() => {
     document.title = 'Dashboard | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchDashboardData();
     }
-  }, [user, fetchDashboardData]);
+  }, [companyOwnerId, fetchDashboardData]);
 
   const chartData = data?.inventoryDetails.filter(d => (d.stock || 0) > 0).slice(0, 5) || [];
 

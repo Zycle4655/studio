@@ -52,7 +52,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function EquipoPage() {
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { user, companyOwnerId, role } = useAuth();
   const [collaborators, setCollaborators] = React.useState<CollaboratorDocument[]>([]);
   const [cargos, setCargos] = React.useState<CargoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -65,21 +65,21 @@ export default function EquipoPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const getCollaboratorsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "collaborators");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "collaborators");
+  }, [companyOwnerId]);
 
   const getCargosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "cargos");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "cargos");
+  }, [companyOwnerId]);
 
 
   const fetchData = React.useCallback(async () => {
     const collaboratorsCollectionRef = getCollaboratorsCollectionRef();
     const cargosCollectionRef = getCargosCollectionRef();
     if (!collaboratorsCollectionRef || !cargosCollectionRef) {
-      if (user) {
+      if (companyOwnerId) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -112,19 +112,19 @@ export default function EquipoPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getCollaboratorsCollectionRef, getCargosCollectionRef, toast]);
+  }, [companyOwnerId, getCollaboratorsCollectionRef, getCargosCollectionRef, toast]);
 
 
   React.useEffect(() => {
     document.title = 'Gestión de Colaboradores | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchData();
     } else {
       setIsLoading(false);
       setCollaborators([]);
       setCargos([]);
     }
-  }, [user, fetchData]);
+  }, [companyOwnerId, fetchData]);
 
   const handleAddCollaborator = () => {
     if (!user) {
@@ -182,7 +182,7 @@ export default function EquipoPage() {
   };
 
   const handleFormSubmit = async (data: CollaboratorFormData) => {
-    const adminUid = user?.uid;
+    const adminUid = companyOwnerId;
     if (!adminUid) {
         toast({ variant: "destructive", title: "Error", description: "No se pudo identificar al administrador. Por favor, recargue la página." });
         return;
@@ -377,7 +377,7 @@ export default function EquipoPage() {
             size="icon"
             onClick={handleAddCollaborator}
             aria-label="Agregar nuevo colaborador"
-            disabled={!user || isLoading || isSubmitting}
+            disabled={!companyOwnerId || isLoading || isSubmitting}
         >
             <Plus className="h-8 w-8" />
         </Button>

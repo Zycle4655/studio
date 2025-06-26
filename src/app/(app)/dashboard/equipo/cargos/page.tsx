@@ -55,7 +55,7 @@ const DEFAULT_CARGOS = [
 
 export default function CargosPage() {
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { companyOwnerId, role } = useAuth();
   const [cargos, setCargos] = React.useState<CargoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -67,9 +67,9 @@ export default function CargosPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   
   const getCargosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "cargos");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "cargos");
+  }, [companyOwnerId]);
 
   const initializeDefaultCargos = React.useCallback(async () => {
     const cargosCollectionRef = getCargosCollectionRef();
@@ -109,7 +109,7 @@ export default function CargosPage() {
   const fetchCargos = React.useCallback(async () => {
     const collectionRef = getCargosCollectionRef();
     if (!collectionRef) {
-      if (user) {
+      if (companyOwnerId) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -142,12 +142,12 @@ export default function CargosPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getCargosCollectionRef, toast, initializeDefaultCargos]);
+  }, [companyOwnerId, getCargosCollectionRef, toast, initializeDefaultCargos]);
 
 
   React.useEffect(() => {
     document.title = 'Gestionar Cargos | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchCargos();
     } else {
       setIsLoading(false);
@@ -157,7 +157,7 @@ export default function CargosPage() {
     return () => {
         initializationLock = false;
     }
-  }, [user, fetchCargos]);
+  }, [companyOwnerId, fetchCargos]);
 
 
   const handleAddCargo = () => {
@@ -219,7 +219,7 @@ export default function CargosPage() {
     }
   };
   
-  if (!user && !isLoading) {
+  if (!companyOwnerId && !isLoading) {
     return (
         <div className="container py-8 px-4 md:px-6">
             <Card className="shadow-lg">

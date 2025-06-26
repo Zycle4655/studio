@@ -46,7 +46,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function AsociadosPage() {
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { user, companyOwnerId, role } = useAuth();
   const [asociados, setAsociados] = React.useState<AsociadoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -60,14 +60,14 @@ export default function AsociadosPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const getAsociadosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "asociados");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "asociados");
+  }, [companyOwnerId]);
 
   const fetchAsociados = React.useCallback(async () => {
     const asociadosCollectionRef = getAsociadosCollectionRef();
     if (!asociadosCollectionRef) {
-      if (user) {
+      if (companyOwnerId) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -93,18 +93,18 @@ export default function AsociadosPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getAsociadosCollectionRef, toast]);
+  }, [companyOwnerId, getAsociadosCollectionRef, toast]);
 
 
   React.useEffect(() => {
     document.title = 'Gestión de Asociados | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchAsociados();
     } else {
       setIsLoading(false);
       setAsociados([]);
     }
-  }, [user, fetchAsociados]);
+  }, [companyOwnerId, fetchAsociados]);
 
   const handleAddAsociado = () => {
     if (!user || role !== 'admin') {
@@ -294,7 +294,7 @@ export default function AsociadosPage() {
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Search className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
-                <p className="text-muted-foreground">Ningún asociado coincide con "{searchTerm}".</p>
+                <p className="text-muted-foreground">Ningún asociado coincide con "{searchTerm}".p>
             </div>
           ) : (
             <div className="overflow-x-auto">

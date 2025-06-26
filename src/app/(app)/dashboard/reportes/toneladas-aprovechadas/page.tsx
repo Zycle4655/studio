@@ -41,7 +41,7 @@ interface ReportMaterial {
 type Period = "week" | "month" | "year" | "all";
 
 export default function ToneladasAprovechadasPage() {
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const { toast } = useToast();
   
   const [reportData, setReportData] = React.useState<ReportMaterial[]>([]);
@@ -50,13 +50,13 @@ export default function ToneladasAprovechadasPage() {
   const [selectedPeriod, setSelectedPeriod] = React.useState<Period>("month");
 
   const fetchPurchaseReportData = React.useCallback(async (period: Period) => {
-    if (!user) {
+    if (!companyOwnerId) {
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
-      const purchaseInvoicesRef = collection(db, "companyProfiles", user.uid, "purchaseInvoices");
+      const purchaseInvoicesRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
       
       const now = new Date();
       let startDate: Date;
@@ -115,12 +115,14 @@ export default function ToneladasAprovechadasPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [companyOwnerId, toast]);
 
   React.useEffect(() => {
     document.title = 'Reporte: Toneladas Aprovechadas | ZYCLE';
-    fetchPurchaseReportData(selectedPeriod);
-  }, [fetchPurchaseReportData, selectedPeriod]);
+    if(companyOwnerId) {
+        fetchPurchaseReportData(selectedPeriod);
+    }
+  }, [companyOwnerId, fetchPurchaseReportData, selectedPeriod]);
 
 
   const handleExportCSV = () => {
