@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -6,24 +5,6 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRightLeft, BarChart3, Route, ShieldCheck, Store, TrendingUp, Users, Warehouse } from 'lucide-react';
-
-const ZYCLE_ICON = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="h-10 w-10 text-primary"
-  >
-    <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.758 1.758 0 0 1-.16-1.79L4.11 8.505a1.83 1.83 0 0 1 2.22-.706" />
-    <path d="m10.53 12.075 4.49-.023" />
-    <path d="M14.249 16.142a1.83 1.83 0 0 1-2.963-.061L8.151 6.024a1.83 1.83 0 0 1 1.114-2.308l.21-.08a1.83 1.83 0 0 1 2.399 1.091z" />
-    <path d="M18.16 19h2.025a1.83 1.83 0 0 0 1.57-.881 1.758 1.758 0 0 0 .16-1.79l-1.025-8.824a1.83 1.83 0 0 0-2.22-.706" />
-  </svg>
-);
 
 
 export default function MarketingPage() {
@@ -79,7 +60,6 @@ export default function MarketingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="container flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <ZYCLE_ICON />
             <span className="text-3xl font-bold text-primary">ZYCLE</span>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-lg">
@@ -199,7 +179,6 @@ export default function MarketingPage() {
       <footer className="bg-muted/50 border-t">
         <div className="container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
            <div className="flex items-center gap-2">
-            <ZYCLE_ICON />
             <span className="text-xl font-bold text-primary">ZYCLE</span>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -214,4 +193,3 @@ export default function MarketingPage() {
     </div>
   );
 }
-
