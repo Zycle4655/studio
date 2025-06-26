@@ -26,6 +26,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  writeBatch,
+  setDoc,
 } from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
@@ -220,14 +222,23 @@ export default function EquipoPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         const newAuthUserId = userCredential.user.uid;
 
-        const collaboratorsCollectionRef = collection(db, "companyProfiles", adminUid, "collaborators");
+        const batch = writeBatch(db);
 
-        await addDoc(collaboratorsCollectionRef, {
+        // 1. Create the collaborator document in the admin's subcollection
+        const collaboratorsCollectionRef = collection(db, "companyProfiles", adminUid, "collaborators");
+        const newCollaboratorRef = doc(collaboratorsCollectionRef); // Auto-generate ID
+        batch.set(newCollaboratorRef, {
           ...collaboratorData,
           authUid: newAuthUserId,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+
+        // 2. Create the user mapping document for easy lookup
+        const userMappingRef = doc(db, "userMappings", newAuthUserId);
+        batch.set(userMappingRef, { adminUid });
+        
+        await batch.commit();
         
         toast({
           title: "Colaborador Creado",
