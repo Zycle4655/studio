@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 import type { CompanyProfileDocument } from "@/schemas/company";
-import type { CollaboratorDocument, DefaultRole, DEFAULT_ROLES } from "@/schemas/equipo";
+import type { CollaboratorDocument, Permissions } from "@/schemas/equipo";
 
 interface AuthContextType {
   user: User | null;
@@ -15,16 +15,26 @@ interface AuthContextType {
   companyProfile: CompanyProfileDocument | null;
   companyOwnerId: string | null;
   refreshCompanyProfile: () => Promise<void>;
-  role: DefaultRole | null;
+  permissions: Permissions | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const FULL_ADMIN_PERMISSIONS: Permissions = {
+  gestionMaterial: true,
+  transporte: true,
+  reportes: true,
+  sui: true,
+  talentoHumano: true,
+  equipo: true,
+};
+
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileDocument | null>(null);
-  const [role, setRole] = useState<DefaultRole | null>(null); 
+  const [permissions, setPermissions] = useState<Permissions | null>(null);
   const [companyOwnerId, setCompanyOwnerId] = useState<string | null>(null);
 
   const fetchInitialData = useCallback(async (currentUser: User) => {
@@ -37,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (adminProfileSnap.exists()) {
       setCompanyProfile(adminProfileSnap.data() as CompanyProfileDocument);
       setCompanyOwnerId(currentUser.uid);
-      setRole('admin');
+      setPermissions(FULL_ADMIN_PERMISSIONS);
       return;
     }
     
@@ -56,31 +66,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (companyProfileSnap.exists()) {
         setCompanyProfile(companyProfileSnap.data() as CompanyProfileDocument);
 
-        // Fetch collaborator's specific role from the admin's subcollection
+        // Fetch collaborator's specific permissions from the admin's subcollection
         const collaboratorsRef = collection(db, "companyProfiles", adminUid, "collaborators");
         const q = query(collaboratorsRef, where("authUid", "==", currentUser.uid), limit(1));
         const collaboratorQuerySnap = await getDocs(q);
 
         if (!collaboratorQuerySnap.empty) {
           const collaboratorData = collaboratorQuerySnap.docs[0].data() as CollaboratorDocument;
-           if (collaboratorData.permissions.equipo) {
-              setRole('admin');
-           } else if (collaboratorData.permissions.gestionMaterial) {
-              setRole('bodeguero');
-           } else if (collaboratorData.permissions.transporte) {
-              setRole('recolector');
-           } else {
-               setRole('bodeguero'); // Fallback default role for collaborator
-           }
+          setPermissions(collaboratorData.permissions);
         } else {
           console.error("Auth Error: User mapping exists but no corresponding collaborator document found.");
           setCompanyProfile(null);
-          setRole(null);
+          setPermissions(null);
         }
       } else {
         console.error("Auth Error: Collaborator's admin company profile not found.");
         setCompanyProfile(null);
-        setRole(null);
+        setPermissions(null);
       }
       return;
     }
@@ -88,7 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Path 3: User is not an admin and not a collaborator (e.g., new admin yet to create a profile)
     setCompanyProfile(null);
     setCompanyOwnerId(null);
-    setRole('admin'); // Assume new user is an admin for profile setup redirect
+    setPermissions(FULL_ADMIN_PERMISSIONS); // Assume new user is an admin for profile setup redirect
   }, []);
 
 
@@ -108,7 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setCompanyProfile(null);
         setCompanyOwnerId(null);
-        setRole(null);
+        setPermissions(null);
       }
       
       setLoading(false);
@@ -123,8 +125,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     companyProfile,
     companyOwnerId,
     refreshCompanyProfile,
-    role,
-  }), [user, loading, companyProfile, companyOwnerId, refreshCompanyProfile, role]);
+    permissions,
+  }), [user, loading, companyProfile, companyOwnerId, refreshCompanyProfile, permissions]);
 
   return (
     <AuthContext.Provider value={value}>

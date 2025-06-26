@@ -28,7 +28,7 @@ interface UserNavProps {
 export function UserNav({ companyName, logoUrl }: UserNavProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { user, permissions } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -80,7 +80,7 @@ export function UserNav({ companyName, logoUrl }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {role === 'admin' && (
+          {permissions?.equipo && (
              <DropdownMenuItem asChild>
                 <Link href="/settings">
                   <Settings className="mr-2 h-4 w-4" />

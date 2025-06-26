@@ -55,7 +55,7 @@ const DEFAULT_CARGOS = [
 
 export default function CargosPage() {
   const { toast } = useToast();
-  const { companyOwnerId, role } = useAuth();
+  const { companyOwnerId, permissions } = useAuth();
   const [cargos, setCargos] = React.useState<CargoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -232,8 +232,8 @@ export default function CargosPage() {
     );
   }
 
-  // Only admins can manage roles
-  if (role !== 'admin' && !isLoading) {
+  // Only users with 'equipo' permission can manage roles
+  if (!permissions?.equipo && !isLoading) {
       return (
         <div className="container py-8 px-4 md:px-6">
             <Card className="shadow-lg">

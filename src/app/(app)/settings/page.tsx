@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import NextImage from 'next/image'; // Usar NextImage para optimización
 
 export default function SettingsPage() {
-  const { user, loading: authLoading, companyProfile } = useAuth();
+  const { user, loading: authLoading, companyProfile, permissions } = useAuth();
   const router = useRouter();
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
@@ -29,8 +29,11 @@ export default function SettingsPage() {
     // The profile is now managed by the AuthContext, so we just check when it's done loading
     if (!authLoading) {
       setIsLoadingProfile(false);
+       if (!permissions?.equipo) {
+         router.replace('/dashboard');
+       }
     }
-  }, [authLoading]);
+  }, [authLoading, permissions, router]);
 
   if (authLoading || isLoadingProfile) {
     return (
@@ -69,7 +72,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (!user) return null; 
+  if (!user || !permissions?.equipo) return null; 
 
   return (
     <div className="container py-8 px-4 md:px-6">

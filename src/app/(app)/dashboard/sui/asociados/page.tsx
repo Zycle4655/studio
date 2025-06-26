@@ -46,7 +46,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function AsociadosPage() {
   const { toast } = useToast();
-  const { user, companyOwnerId, role } = useAuth();
+  const { user, companyOwnerId, permissions } = useAuth();
   const [asociados, setAsociados] = React.useState<AsociadoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -107,7 +107,7 @@ export default function AsociadosPage() {
   }, [companyOwnerId, fetchAsociados]);
 
   const handleAddAsociado = () => {
-    if (!user || role !== 'admin') {
+    if (!user || !permissions?.equipo) {
         toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para agregar asociados." });
         return;
     }
@@ -116,7 +116,7 @@ export default function AsociadosPage() {
   };
 
   const handleEditAsociado = (asociado: AsociadoDocument) => {
-     if (!user || role !== 'admin') {
+     if (!user || !permissions?.equipo) {
         toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para editar asociados." });
         return;
     }
@@ -125,7 +125,7 @@ export default function AsociadosPage() {
   };
 
   const openDeleteDialog = (asociado: AsociadoDocument) => {
-    if (!user || role !== 'admin') {
+    if (!user || !permissions?.equipo) {
         toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para eliminar asociados." });
         return;
     }
@@ -259,7 +259,7 @@ export default function AsociadosPage() {
                   className="pl-10 w-full sm:w-64"
                 />
               </div>
-              {role === 'admin' && (
+              {permissions?.equipo && (
                 <Button onClick={handleAddAsociado} disabled={isLoading || isSubmitting} className="flex-shrink-0">
                   <Plus className="mr-2 h-4 w-4" />
                   Agregar
@@ -324,7 +324,7 @@ export default function AsociadosPage() {
                             className="hover:text-primary"
                             onClick={() => handleEditAsociado(asociado)}
                             aria-label="Editar asociado"
-                            disabled={isSubmitting || role !== 'admin'}
+                            disabled={isSubmitting || !permissions?.equipo}
                         >
                             <Edit className="h-4 w-4" />
                         </Button>
@@ -334,7 +334,7 @@ export default function AsociadosPage() {
                             className="hover:text-destructive"
                             onClick={() => openDeleteDialog(asociado)}
                             aria-label="Eliminar asociado"
-                            disabled={isSubmitting || role !== 'admin'}
+                            disabled={isSubmitting || !permissions?.equipo}
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>

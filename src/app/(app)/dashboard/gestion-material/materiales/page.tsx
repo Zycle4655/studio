@@ -88,7 +88,7 @@ const DEFAULT_MATERIALS = [
 
 export default function MaterialesPage() {
   const { toast } = useToast();
-  const { user, companyOwnerId } = useAuth();
+  const { user, companyOwnerId, permissions } = useAuth();
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -201,8 +201,8 @@ export default function MaterialesPage() {
 
 
   const handleAddMaterial = () => {
-    if (!user) {
-        toast({ variant: "destructive", title: "Error", description: "Debe iniciar sesión para agregar materiales." });
+    if (!user || !permissions?.equipo) {
+        toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para agregar materiales." });
         return;
     }
     setEditingMaterial(null);
@@ -210,8 +210,8 @@ export default function MaterialesPage() {
   };
 
   const handleEditMaterial = (material: MaterialDocument) => {
-     if (!user) {
-        toast({ variant: "destructive", title: "Error", description: "Debe iniciar sesión para editar materiales." });
+     if (!user || !permissions?.equipo) {
+        toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para editar materiales." });
         return;
     }
     setEditingMaterial(material);
@@ -219,8 +219,8 @@ export default function MaterialesPage() {
   };
 
   const openDeleteDialog = (material: MaterialDocument) => {
-    if (!user) {
-        toast({ variant: "destructive", title: "Error", description: "Debe iniciar sesión para eliminar materiales." });
+    if (!user || !permissions?.equipo) {
+        toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para eliminar materiales." });
         return;
     }
     setMaterialToDelete(material);
@@ -394,7 +394,7 @@ export default function MaterialesPage() {
                         className="hover:text-primary"
                         onClick={() => handleEditMaterial(material)}
                         aria-label="Editar material"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !permissions?.equipo}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -404,7 +404,7 @@ export default function MaterialesPage() {
                         className="hover:text-destructive"
                         onClick={() => openDeleteDialog(material)}
                         aria-label="Eliminar material"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !permissions?.equipo}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -417,15 +417,17 @@ export default function MaterialesPage() {
         </CardContent>
       </Card>
 
-      <Button
-        className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
-        size="icon"
-        onClick={handleAddMaterial}
-        aria-label="Agregar nuevo material"
-        disabled={!user || isLoading || isSubmitting}
-      >
-        <Plus className="h-8 w-8" />
-      </Button>
+      {permissions?.equipo && (
+        <Button
+            className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
+            size="icon"
+            onClick={handleAddMaterial}
+            aria-label="Agregar nuevo material"
+            disabled={!user || isLoading || isSubmitting}
+        >
+            <Plus className="h-8 w-8" />
+        </Button>
+      )}
 
       <MaterialForm
         isOpen={isFormOpen}

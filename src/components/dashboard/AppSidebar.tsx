@@ -43,7 +43,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export function AppSidebar() {
   const pathname = usePathname();
   const { open: sidebarOpen } = useSidebar();
-  const { role } = useAuth(); // Get user role from context
+  const { permissions } = useAuth(); // Get user permissions from context
 
   const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(
     isModulePathActive('/dashboard/gestion-material')
@@ -91,11 +91,6 @@ export function AppSidebar() {
   const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
   const equipoTooltip = sidebarOpen ? undefined : "Gestión de Equipo";
 
-  const canSeeGestionMaterial = role === 'admin' || role === 'bodeguero';
-  const canSeeReportes = role === 'admin' || role === 'bodeguero';
-  const isAdmin = role === 'admin';
-
-
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent>
@@ -114,7 +109,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
 
           {/* Gestión de Material Module */}
-          {canSeeGestionMaterial && (
+          {permissions?.gestionMaterial && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setGestionMaterialOpen(!gestionMaterialOpen)}
@@ -203,7 +198,7 @@ export function AppSidebar() {
           )}
 
           {/* Transporte Module */}
-          {isAdmin && (
+          {permissions?.transporte && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setTransporteOpen(!transporteOpen)}
@@ -237,7 +232,7 @@ export function AppSidebar() {
           )}
           
           {/* Reportes Module */}
-          {canSeeReportes && (
+          {permissions?.reportes && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setReportesOpen(!reportesOpen)}
@@ -282,7 +277,7 @@ export function AppSidebar() {
           )}
           
           {/* SUI Module */}
-          {isAdmin && (
+          {permissions?.sui && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setSuiOpen(!suiOpen)}
@@ -327,7 +322,7 @@ export function AppSidebar() {
           )}
           
           {/* Talento Humano Module */}
-          {isAdmin && (
+          {permissions?.talentoHumano && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setTalentoHumanoOpen(!talentoHumanoOpen)}
@@ -383,7 +378,7 @@ export function AppSidebar() {
           )}
 
           {/* Equipo Module */}
-          {isAdmin && (
+          {permissions?.equipo && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setEquipoOpen(!equipoOpen)}

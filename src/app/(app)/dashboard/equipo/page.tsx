@@ -53,7 +53,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function EquipoPage() {
   const { toast } = useToast();
-  const { user, companyOwnerId, role } = useAuth();
+  const { user, companyOwnerId, permissions } = useAuth();
   const [collaborators, setCollaborators] = React.useState<CollaboratorDocument[]>([]);
   const [cargos, setCargos] = React.useState<CargoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -367,7 +367,7 @@ export default function EquipoPage() {
                             className="hover:text-primary"
                             onClick={() => handleEditCollaborator(collaborator)}
                             aria-label="Editar colaborador"
-                            disabled={isSubmitting || role !== 'admin'}
+                            disabled={isSubmitting || !permissions?.equipo}
                         >
                             <Edit className="h-4 w-4" />
                         </Button>
@@ -377,7 +377,7 @@ export default function EquipoPage() {
                             className="hover:text-destructive"
                             onClick={() => openDeleteDialog(collaborator)}
                             aria-label="Eliminar colaborador"
-                            disabled={isSubmitting || role !== 'admin'}
+                            disabled={isSubmitting || !permissions?.equipo}
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
@@ -390,7 +390,7 @@ export default function EquipoPage() {
           )}
         </CardContent>
       </Card>
-      {role === 'admin' && (
+      {permissions?.equipo && (
         <Button
             className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
             size="icon"
