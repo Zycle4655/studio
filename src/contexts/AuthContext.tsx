@@ -15,7 +15,6 @@ interface AuthContextType {
   companyProfile: CompanyProfileDocument | null;
   refreshCompanyProfile: () => Promise<void>;
   role: DefaultRole;
-  setRole: (role: DefaultRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,7 +57,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(currentUser);
       await fetchCompanyProfile(currentUser);
       // For now, the logged in user is always admin. This can be expanded later.
-      // This role is for UI simulation purposes.
+      // The role is currently hardcoded for UI purposes. A real implementation
+      // would check against the 'collaborators' collection.
       setRole('admin'); 
       setLoading(false);
     });
@@ -72,7 +72,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     companyProfile,
     refreshCompanyProfile,
     role,
-    setRole,
   }), [user, loading, companyProfile, refreshCompanyProfile, role]);
 
   return (

@@ -11,22 +11,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, UserCircle, Settings, Repeat } from "lucide-react";
+import { LogOut, UserCircle, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { DEFAULT_ROLES, type DefaultRole } from "@/schemas/equipo";
-
 
 interface UserNavProps {
   companyName?: string | null;
@@ -36,7 +28,7 @@ interface UserNavProps {
 export function UserNav({ companyName, logoUrl }: UserNavProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, role, setRole } = useAuth();
+  const { user, role } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -70,7 +62,7 @@ export function UserNav({ companyName, logoUrl }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border-2 border-primary">
-            {logoUrl && <AvatarImage src={logoUrl} alt={companyName ? `Logo de ${companyName}` : "Logo de la empresa"} />}
+            {logoUrl && <AvatarImage src={logoUrl} alt={companyName ? `Logo de ${companyName}` : "Logo de la empresa"} data-ai-hint="logo company" />}
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
               {user ? getInitials(user.email) : <UserCircle size={20} />}
             </AvatarFallback>
@@ -96,28 +88,6 @@ export function UserNav({ companyName, logoUrl }: UserNavProps) {
                 </Link>
               </DropdownMenuItem>
           )}
-
-          {/* Role simulator - only for admin */}
-          {user && role === 'admin' && (
-             <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                    <Repeat className="mr-2 h-4 w-4" />
-                    <span>Simular Rol</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={role} onValueChange={(value) => setRole(value as DefaultRole)}>
-                        {Object.entries(DEFAULT_ROLES).map(([key, label]) => (
-                            <DropdownMenuRadioItem key={key} value={key}>
-                                {label}
-                            </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-             </DropdownMenuSub>
-          )}
-
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
