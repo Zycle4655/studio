@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   collection,
@@ -27,6 +27,10 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
+import {
+  createUserWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
 import CollaboratorForm from "@/components/forms/CollaboratorForm";
 import type { CollaboratorFormData, CollaboratorDocument } from "@/schemas/equipo";
 import type { CargoDocument } from "@/schemas/cargo";
@@ -176,14 +180,14 @@ export default function EquipoPage() {
   };
 
   const handleFormSubmit = async (data: CollaboratorFormData) => {
-    const collectionRef = getCollaboratorsCollectionRef();
-    if (!collectionRef) {
-      toast({ variant: "destructive", title: "Error", description: "La base de datos no está disponible." });
-      return;
+    const adminUid = user?.uid;
+    if (!adminUid) {
+        toast({ variant: "destructive", title: "Error", description: "No se pudo identificar al administrador. Por favor, recargue la página." });
+        return;
     }
+
     setIsSubmitting(true);
 
-    // Prepare the data for Firestore, excluding password fields.
     const collaboratorData = {
       nombre: data.nombre,
       email: data.email,
@@ -193,7 +197,9 @@ export default function EquipoPage() {
 
     try {
       if (editingCollaborator) {
-        // Editing existing collaborator
+        const collectionRef = getCollaboratorsCollectionRef();
+        if (!collectionRef) throw new Error("Database collection not available");
+
         const collaboratorRef = doc(collectionRef, editingCollaborator.id);
         await updateDoc(collaboratorRef, {
           ...collaboratorData,
@@ -203,41 +209,50 @@ export default function EquipoPage() {
           title: "Colaborador Actualizado",
           description: `Los datos de "${data.nombre}" han sido actualizados.`,
         });
+        fetchData();
       } else {
-        // Creating a new collaborator
-        // TODO: Implement Firebase Auth user creation here using data.email and data.password.
-        // This is the next logical step. For now, we are just creating the profile in Firestore.
-        // Example of future logic:
-        // try {
-        //   const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password!);
-        //   const newAuthUserId = userCredential.user.uid;
-        //   // Then, save the collaborator profile with this newAuthUserId to link them.
-        // } catch (authError) {
-        //   console.error("Firebase Auth user creation failed:", authError);
-        //   toast({ variant: "destructive", title: "Error de Autenticación", description: "No se pudo crear la cuenta para el colaborador." });
-        //   setIsSubmitting(false);
-        //   return;
-        // }
+        if (!data.password) {
+            toast({ variant: "destructive", title: "Error", description: "La contraseña es obligatoria para nuevos colaboradores." });
+            setIsSubmitting(false);
+            return;
+        }
 
-        await addDoc(collectionRef, {
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+        const newAuthUserId = userCredential.user.uid;
+
+        const collaboratorsCollectionRef = collection(db, "companyProfiles", adminUid, "collaborators");
+
+        await addDoc(collaboratorsCollectionRef, {
           ...collaboratorData,
+          authUid: newAuthUserId,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+        
         toast({
-          title: "Colaborador Agregado",
-          description: `"${data.nombre}" ha sido agregado al equipo.`,
+          title: "Colaborador Creado",
+          description: `La cuenta para "${data.nombre}" se creó. Deberá volver a iniciar sesión.`,
         });
+        
+        await signOut(auth);
+        return;
       }
+      
       setIsFormOpen(false);
       setEditingCollaborator(null);
-      fetchData();
-    } catch (error) {
+
+    } catch (error: any) {
       console.error("Error saving collaborator:", error);
+      let errorMessage = "No se pudo guardar el colaborador.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "El correo electrónico ya está en uso por otra cuenta.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "La contraseña es demasiado débil. Debe tener al menos 6 caracteres.";
+      }
       toast({
         variant: "destructive",
         title: "Error al Guardar",
-        description: "No se pudo guardar el colaborador.",
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);

@@ -60,7 +60,7 @@ export type CollaboratorFormData = z.infer<typeof CollaboratorFormSchema>;
 // The interface for the document stored in Firestore.
 export interface CollaboratorDocument {
   id: string; // Firestore document ID
-  // authUid?: string; // To be linked to a Firebase Auth user in the future
+  authUid?: string; // Linked to a Firebase Auth user
   nombre: string;
   email: string;
   rol: string; // The "cargo" name
