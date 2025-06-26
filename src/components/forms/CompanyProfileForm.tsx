@@ -75,13 +75,13 @@ export default function CompanyProfileForm({
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
+        const dataUrl = reader.result as string;
+        setLogoPreview(dataUrl);
+        // Usamos la data URL para la validación, ya que es un formato de URL válido.
+        form.setValue("logoUrl", dataUrl, { shouldValidate: true });
       };
       reader.readAsDataURL(file);
-      form.setValue("logoUrl", "file_selected"); // Placeholder para que Zod no falle si es requerido, la URL real se establecerá al subir
     } else {
-      // Si no se selecciona archivo, y antes había un propsDefaultValues.logoUrl, volvemos a ese.
-      // Si no, lo dejamos como null.
       setSelectedFile(null);
       setLogoPreview(propsDefaultValues?.logoUrl || null);
       form.setValue("logoUrl", propsDefaultValues?.logoUrl || null);
