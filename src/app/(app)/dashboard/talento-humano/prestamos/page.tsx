@@ -52,7 +52,7 @@ import AbonoForm from "@/components/forms/AbonoForm";
 
 export default function PrestamosPage() {
   const { toast } = useToast();
-  const { user, companyOwnerId, permissions } = useAuth();
+  const { user, companyOwnerId, permissions, collaboratorId } = useAuth();
   const [prestamos, setPrestamos] = React.useState<PrestamoDocument[]>([]);
   const [asociados, setAsociados] = React.useState<AsociadoDocument[]>([]);
   const [colaboradores, setColaboradores] = React.useState<CollaboratorDocument[]>([]);
@@ -316,13 +316,26 @@ export default function PrestamosPage() {
     return new Date(timestamp.seconds * 1000).toLocaleDateString('es-CO');
   };
   
-  const filteredPrestamos = prestamos.filter(p => p.beneficiarioNombre.toLowerCase().includes(searchTerm.toLowerCase()));
+  const userLoans = React.useMemo(() => {
+    if (permissions?.equipo) {
+      return prestamos; // Admin sees all loans
+    }
+    // Collaborator sees only their loans
+    return prestamos.filter(p => p.tipoBeneficiario === 'colaborador' && p.beneficiarioId === collaboratorId);
+  }, [prestamos, permissions, collaboratorId]);
+
+  const filteredPrestamos = React.useMemo(() => {
+    if (!searchTerm) {
+      return userLoans;
+    }
+    return userLoans.filter(p => p.beneficiarioNombre.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [userLoans, searchTerm]);
   
   const summary = React.useMemo(() => {
-    const totalPrestado = prestamos.reduce((sum, p) => sum + p.monto, 0);
-    const saldoTotal = prestamos.reduce((sum, p) => sum + p.saldoPendiente, 0);
+    const totalPrestado = userLoans.reduce((sum, p) => sum + p.monto, 0);
+    const saldoTotal = userLoans.reduce((sum, p) => sum + p.saldoPendiente, 0);
     return { totalPrestado, saldoTotal };
-  }, [prestamos]);
+  }, [userLoans]);
 
 
   if (!user && !isLoading) {
@@ -340,17 +353,21 @@ export default function PrestamosPage() {
         <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight text-primary mb-2 font-headline flex items-center">
                 <HandCoins className="mr-3 h-8 w-8"/>
-                Gestión de Préstamos
+                {permissions?.equipo ? "Gestión de Préstamos" : "Mis Préstamos"}
             </h1>
             <p className="text-lg text-muted-foreground">
-                Registre y controle los préstamos a sus asociados y empleados.
+                 {permissions?.equipo 
+                    ? "Registre y controle los préstamos a sus asociados y empleados."
+                    : "Consulte el estado y los abonos de sus préstamos."}
             </p>
         </div>
         
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Prestado</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                        {permissions?.equipo ? "Total Prestado" : "Monto Total de Mis Préstamos"}
+                    </CardTitle>
                     <DollarSign className="h-4 w-4 text-muted-foreground"/>
                 </CardHeader>
                 <CardContent>
@@ -359,7 +376,9 @@ export default function PrestamosPage() {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Saldo Pendiente Total</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                        {permissions?.equipo ? "Saldo Pendiente Total" : "Mi Saldo Pendiente"}
+                    </CardTitle>
                     <Scale className="h-4 w-4 text-muted-foreground"/>
                 </CardHeader>
                 <CardContent>
@@ -375,17 +394,23 @@ export default function PrestamosPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>Historial de Préstamos</CardTitle>
-              <CardDescription>Consulte, edite y gestione todos los préstamos registrados.</CardDescription>
+              <CardDescription>
+                  {permissions?.equipo 
+                    ? "Consulte, edite y gestione todos los préstamos registrados."
+                    : "Aquí puede ver el historial de sus préstamos y abonos."}
+              </CardDescription>
             </div>
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
-                />
+             {permissions?.equipo && (
+              <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                  />
               </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -398,11 +423,15 @@ export default function PrestamosPage() {
                 </div>
               ))}
             </div>
-          ) : prestamos.length === 0 ? (
+          ) : userLoans.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <HandCoins className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay préstamos registrados</h3>
-                <p className="text-muted-foreground mb-6">Utilice el botón "+" para registrar el primero.</p>
+                <p className="text-muted-foreground mb-6">
+                     {permissions?.equipo 
+                        ? 'Utilice el botón "+" para registrar el primero.'
+                        : "No tiene préstamos registrados en este momento."}
+                </p>
             </div>
           ) : filteredPrestamos.length === 0 ? (
              <div className="flex flex-col items-center justify-center py-12 text-center">
