@@ -93,8 +93,9 @@ export default function BalanceMasasPage() {
       );
 
       const invoicesSnap = await getDocs(q);
-      const invoices = invoicesSnap.docs.map(doc => doc.data() as FacturaCompraDocument);
-      const associatedInvoices = invoices.filter(invoice => invoice.tipoProveedor === 'asociado');
+      const allInvoicesInMonth = invoicesSnap.docs.map(doc => doc.data() as FacturaCompraDocument);
+      const associatedInvoices = allInvoicesInMonth.filter(invoice => invoice.tipoProveedor === 'asociado');
+
 
       if (associatedInvoices.length === 0) {
         toast({ title: "Sin Datos", description: "No se encontraron facturas de compra a asociados en el período seleccionado." });
@@ -181,8 +182,8 @@ export default function BalanceMasasPage() {
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
 
     // Apply styles
-    const headerStyle = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
-    const centerStyle = { alignment: { horizontal: "center", vertical: "center" } };
+    const headerStyle = { font: { name: "Arial", sz: 12, bold: true }, alignment: { horizontal: "center", vertical: "center" } };
+    const centerStyle = { font: { name: "Arial", sz: 12 }, alignment: { horizontal: "center", vertical: "center" } };
 
     const range = XLSX.utils.decode_range(worksheet['!ref']!);
 
