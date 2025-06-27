@@ -16,6 +16,8 @@ interface AuthContextType {
   companyOwnerId: string | null;
   refreshCompanyProfile: () => Promise<void>;
   permissions: Permissions | null;
+  collaboratorId: string | null; // ID del documento del colaborador
+  collaboratorName: string | null; // Nombre del colaborador
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,9 +38,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileDocument | null>(null);
   const [permissions, setPermissions] = useState<Permissions | null>(null);
   const [companyOwnerId, setCompanyOwnerId] = useState<string | null>(null);
+  const [collaboratorId, setCollaboratorId] = useState<string | null>(null);
+  const [collaboratorName, setCollaboratorName] = useState<string | null>(null);
+
 
   const fetchInitialData = useCallback(async (currentUser: User) => {
     if (!db) return;
+
+    // Reset collaborator-specific state
+    setCollaboratorId(null);
+    setCollaboratorName(null);
 
     // Path 1: Check if the user is an admin (has a direct company profile)
     const adminProfileRef = doc(db, "companyProfiles", currentUser.uid);
@@ -72,8 +81,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const collaboratorQuerySnap = await getDocs(q);
 
         if (!collaboratorQuerySnap.empty) {
-          const collaboratorData = collaboratorQuerySnap.docs[0].data() as CollaboratorDocument;
+          const collaboratorDoc = collaboratorQuerySnap.docs[0];
+          const collaboratorData = collaboratorDoc.data() as CollaboratorDocument;
           setPermissions(collaboratorData.permissions);
+          setCollaboratorId(collaboratorDoc.id); // Set collaborator's document ID
+          setCollaboratorName(collaboratorData.nombre); // Set collaborator's name
         } else {
           console.error("Auth Error: User mapping exists but no corresponding collaborator document found.");
           setCompanyProfile(null);
@@ -111,6 +123,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setCompanyProfile(null);
         setCompanyOwnerId(null);
         setPermissions(null);
+        setCollaboratorId(null);
+        setCollaboratorName(null);
       }
       
       setLoading(false);
@@ -126,7 +140,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     companyOwnerId,
     refreshCompanyProfile,
     permissions,
-  }), [user, loading, companyProfile, companyOwnerId, refreshCompanyProfile, permissions]);
+    collaboratorId,
+    collaboratorName,
+  }), [user, loading, companyProfile, companyOwnerId, refreshCompanyProfile, permissions, collaboratorId, collaboratorName]);
 
   return (
     <AuthContext.Provider value={value}>
