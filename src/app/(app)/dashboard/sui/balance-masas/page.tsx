@@ -92,16 +92,19 @@ export default function BalanceMasasPage() {
         asociadosMap.set(doc.id, { id: doc.id, ...doc.data() } as AsociadoDocument);
       });
 
-      // 2. Obtener las facturas de compra de asociados en el rango de fechas
+      // 2. Obtener las facturas de compra en el rango de fechas
       const invoicesRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
       const q = query(
         invoicesRef,
-        where("tipoProveedor", "==", "asociado"),
         where("fecha", ">=", startDate),
         where("fecha", "<=", endDate)
       );
       const invoicesSnap = await getDocs(q);
-      const invoices = invoicesSnap.docs.map(doc => doc.data() as FacturaCompraDocument);
+      
+      // 3. Filtrar por asociados en el cliente
+      const invoices = invoicesSnap.docs
+        .map(doc => doc.data() as FacturaCompraDocument)
+        .filter(invoice => invoice.tipoProveedor === 'asociado');
 
       if (invoices.length === 0) {
         toast({ title: "Sin Datos", description: "No se encontraron facturas de compra a asociados en el período seleccionado." });
@@ -110,7 +113,7 @@ export default function BalanceMasasPage() {
         return;
       }
       
-      // 3. Procesar y agregar los datos
+      // 4. Procesar y agregar los datos
       const aggregatedData = new Map<string, ReportRow>();
 
       for (const invoice of invoices) {
