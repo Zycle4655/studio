@@ -86,14 +86,13 @@ export default function BalanceMasasPage() {
       const endDate = Timestamp.fromDate(endOfMonth(selectedDate));
 
       const invoicesRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
-      const q = query(
+       const q = query(
         invoicesRef,
         where("fecha", ">=", startDate),
         where("fecha", "<=", endDate)
       );
 
       const invoicesSnap = await getDocs(q);
-
       const invoices = invoicesSnap.docs.map(doc => doc.data() as FacturaCompraDocument);
       const associatedInvoices = invoices.filter(invoice => invoice.tipoProveedor === 'asociado');
 
@@ -161,28 +160,67 @@ export default function BalanceMasasPage() {
       return;
     }
 
-    const dataForSheet = reportData.map(row => ({
-      'Número de la Semana': row.semana,
-      'Tipo de Identificación': row.tipoId,
-      'Número de Identificación': row.numeroId,
-      'Placa del Vehículo': row.placaVehiculo,
-      'Cantidad de Material Entrante (Ton)': parseFloat(row.cantidadEntrante.toFixed(6)),
-      'Tipo de Material Entrante (Código)': row.codigoMaterial,
-    }));
-    
-    const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Balance de Masas");
+    const headers = [
+      'Número de semana',
+      'Tipo de identificación del reciclador u operario.',
+      'Número de identificación del reciclador u operario.',
+      'Placa del vehículo que ingresa el material.',
+      'Cantidad de material entrante',
+      'Tipo de material entrante'
+    ];
 
+    const dataRows = reportData.map(row => ([
+        row.semana,
+        row.tipoId,
+        row.numeroId,
+        row.placaVehiculo,
+        parseFloat(row.cantidadEntrante.toFixed(6)), // Keep as number for Excel formatting
+        row.codigoMaterial,
+    ]));
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+
+    // Apply styles
+    const headerStyle = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
+    const centerStyle = { alignment: { horizontal: "center", vertical: "center" } };
+
+    const range = XLSX.utils.decode_range(worksheet['!ref']!);
+
+    // Style Headers (Row 1)
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        const address = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (worksheet[address]) {
+            worksheet[address].s = headerStyle;
+        }
+    }
+
+    // Style Data Rows (Row 2 onwards) and set number format
+    for (let R = 1; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const address = XLSX.utils.encode_cell({ r: R, c: C });
+            if (worksheet[address]) {
+                worksheet[address].s = centerStyle;
+                // Specifically format the quantity column (index 4) as a number with 6 decimal places
+                if (C === 4 && worksheet[address].t === 'n') {
+                    worksheet[address].z = '0.000000';
+                }
+            }
+        }
+    }
+    
+    // Adjust column widths for new headers
     const cols = [
-        { wch: 20 }, // Número de la Semana
-        { wch: 25 }, // Tipo de Identificación
-        { wch: 25 }, // Número de Identificación
-        { wch: 20 }, // Placa del Vehículo
-        { wch: 35 }, // Cantidad de Material Entrante (Ton)
-        { wch: 35 }, // Tipo de Material Entrante (Código)
+        { wch: 15 }, // Número de semana
+        { wch: 45 }, // Tipo de identificación...
+        { wch: 45 }, // Número de identificación...
+        { wch: 40 }, // Placa del vehículo...
+        { wch: 25 }, // Cantidad de material entrante
+        { wch: 25 }, // Tipo de material entrante
     ];
     worksheet['!cols'] = cols;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Balance de Masas");
 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
