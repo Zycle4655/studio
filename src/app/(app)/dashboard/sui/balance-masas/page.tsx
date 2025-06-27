@@ -4,8 +4,7 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -14,10 +13,9 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import type { FacturaCompraDocument } from "@/schemas/compra";
 import type { AsociadoDocument } from "@/schemas/sui";
-import { Weight, Calendar as CalendarIcon, FileDown, Search, ArrowLeft } from "lucide-react";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { Weight, FileDown, Search, ArrowLeft, Calendar } from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
-import type { DateRange } from "react-day-picker";
 import { saveAs } from "file-saver";
 
 interface ReportRow {
@@ -37,15 +35,29 @@ const getWeekOfMonth = (date: Date): number => {
   return Math.ceil(adjustedDate / 7);
 };
 
+// Helper para generar una lista de los últimos 12 meses
+const getMonthOptions = () => {
+  const options = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const date = subMonths(now, i);
+    const value = format(date, "yyyy-MM"); // "2024-05"
+    const label = format(date, "MMMM yyyy", { locale: es }); // "mayo 2024"
+    options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+  }
+  return options;
+};
 
 export default function BalanceMasasPage() {
   const { companyOwnerId } = useAuth();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = React.useState(false);
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
+  const [selectedMonth, setSelectedMonth] = React.useState<string>("");
   const [reportData, setReportData] = React.useState<ReportRow[]>([]);
   const [isReportGenerated, setIsReportGenerated] = React.useState(false);
+
+  const monthOptions = React.useMemo(() => getMonthOptions(), []);
 
   React.useEffect(() => {
     document.title = 'SUI: Balance de Masas | ZYCLE';
@@ -56,8 +68,8 @@ export default function BalanceMasasPage() {
       toast({ variant: "destructive", title: "Error", description: "No se pudo identificar la empresa." });
       return;
     }
-    if (!dateRange || !dateRange.from || !dateRange.to) {
-      toast({ variant: "destructive", title: "Fechas requeridas", description: "Por favor, seleccione un rango de fechas." });
+    if (!selectedMonth) {
+      toast({ variant: "destructive", title: "Mes requerido", description: "Por favor, seleccione un mes." });
       return;
     }
 
@@ -66,8 +78,11 @@ export default function BalanceMasasPage() {
     setReportData([]);
 
     try {
-      const startDate = Timestamp.fromDate(startOfDay(dateRange.from));
-      const endDate = Timestamp.fromDate(endOfDay(dateRange.to));
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const selectedDate = new Date(year, month - 1, 1);
+      
+      const startDate = Timestamp.fromDate(startOfMonth(selectedDate));
+      const endDate = Timestamp.fromDate(endOfMonth(selectedDate));
 
       // 1. Obtener todos los asociados y ponerlos en un mapa para búsqueda rápida
       const asociadosRef = collection(db, "companyProfiles", companyOwnerId, "asociados");
@@ -172,7 +187,7 @@ export default function BalanceMasasPage() {
     const csvString = csvRows.join("\r\n");
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     
-    const fileName = `balance_masas_${format(dateRange?.from || new Date(), 'yyyy-MM-dd')}_a_${format(dateRange?.to || new Date(), 'yyyy-MM-dd')}.csv`;
+    const fileName = `balance_masas_${selectedMonth}.csv`;
     saveAs(blob, fileName);
   };
   
@@ -186,7 +201,7 @@ export default function BalanceMasasPage() {
             Balance de Masas
           </CardTitle>
           <CardDescription>
-            Genere y exporte el reporte de balance de masas seleccionando un rango de fechas.
+            Genere y exporte el reporte de balance de masas seleccionando un mes.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -198,41 +213,22 @@ export default function BalanceMasasPage() {
              </div>
           ) : !isReportGenerated ? (
             <div className="flex flex-col items-center justify-center space-y-4 py-12">
-                <Popover>
-                    <PopoverTrigger asChild>
-                    <Button
-                        id="date"
-                        variant={"outline"}
-                        className="w-[300px] justify-start text-left font-normal"
-                    >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (
-                        dateRange.to ? (
-                            <>
-                            {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                            {format(dateRange.to, "LLL dd, y", { locale: es })}
-                            </>
-                        ) : (
-                            format(dateRange.from, "LLL dd, y", { locale: es })
-                        )
-                        ) : (
-                        <span>Seleccione un rango de fechas</span>
-                        )}
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="center">
-                    <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={dateRange?.from}
-                        selected={dateRange}
-                        onSelect={setDateRange}
-                        numberOfMonths={2}
-                        locale={es}
-                    />
-                    </PopoverContent>
-                </Popover>
-                <Button onClick={handleGenerateReport} disabled={!dateRange?.from || !dateRange?.to}>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-[300px]">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Seleccione un mes" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleGenerateReport} disabled={!selectedMonth || isLoading}>
                     <Search className="mr-2 h-4 w-4" /> Generar Reporte
                 </Button>
             </div>
@@ -286,5 +282,3 @@ export default function BalanceMasasPage() {
     </div>
   );
 }
-
-    
