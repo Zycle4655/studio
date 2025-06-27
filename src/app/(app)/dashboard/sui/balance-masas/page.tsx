@@ -17,6 +17,7 @@ import { Weight, FileDown, Search, ArrowLeft, Calendar } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
 
 interface ReportRow {
   semana: number;
@@ -84,39 +85,35 @@ export default function BalanceMasasPage() {
       const startDate = Timestamp.fromDate(startOfMonth(selectedDate));
       const endDate = Timestamp.fromDate(endOfMonth(selectedDate));
 
-      // 1. Obtener todos los asociados y ponerlos en un mapa para búsqueda rápida
-      const asociadosRef = collection(db, "companyProfiles", companyOwnerId, "asociados");
-      const asociadosSnap = await getDocs(asociadosRef);
-      const asociadosMap = new Map<string, AsociadoDocument>();
-      asociadosSnap.forEach(doc => {
-        asociadosMap.set(doc.id, { id: doc.id, ...doc.data() } as AsociadoDocument);
-      });
-
-      // 2. Obtener las facturas de compra en el rango de fechas
       const invoicesRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
       const q = query(
         invoicesRef,
         where("fecha", ">=", startDate),
         where("fecha", "<=", endDate)
       );
-      const invoicesSnap = await getDocs(q);
-      
-      // 3. Filtrar por asociados en el cliente
-      const invoices = invoicesSnap.docs
-        .map(doc => doc.data() as FacturaCompraDocument)
-        .filter(invoice => invoice.tipoProveedor === 'asociado');
 
-      if (invoices.length === 0) {
+      const invoicesSnap = await getDocs(q);
+
+      const invoices = invoicesSnap.docs.map(doc => doc.data() as FacturaCompraDocument);
+      const associatedInvoices = invoices.filter(invoice => invoice.tipoProveedor === 'asociado');
+
+      if (associatedInvoices.length === 0) {
         toast({ title: "Sin Datos", description: "No se encontraron facturas de compra a asociados en el período seleccionado." });
         setIsReportGenerated(true);
         setIsLoading(false);
         return;
       }
+
+      const asociadosRef = collection(db, "companyProfiles", companyOwnerId, "asociados");
+      const asociadosSnap = await getDocs(asociadosRef);
+      const asociadosMap = new Map<string, AsociadoDocument>();
+      asociadosSnap.forEach(doc => {
+        asociadosMap.set(doc.id, { id: doc.id, ...doc.data() } as AsociadoDocument);
+      });
       
-      // 4. Procesar y agregar los datos
       const aggregatedData = new Map<string, ReportRow>();
 
-      for (const invoice of invoices) {
+      for (const invoice of associatedInvoices) {
         if (!invoice.proveedorId) continue;
         
         const asociado = asociadosMap.get(invoice.proveedorId);
@@ -158,39 +155,39 @@ export default function BalanceMasasPage() {
     }
   };
 
-  const downloadCSV = () => {
+  const downloadExcel = () => {
     if (reportData.length === 0) {
       toast({ variant: "destructive", title: "Sin datos", description: "No hay datos para exportar." });
       return;
     }
 
-    const headers = [
-      "numero de la semana",
-      "tipo de identificacion",
-      "numero de identificacion",
-      "placa del vehiculo que ingresa el material",
-      "cantidad de material entrante",
-      "tipo de material entrante",
-    ];
-
-    const csvRows = [
-      headers.join(","),
-      ...reportData.map(row => 
-        [
-          row.semana,
-          row.tipoId,
-          `"${row.numeroId}"`, // Encerrar en comillas por si tiene caracteres especiales
-          row.placaVehiculo,
-          row.cantidadEntrante.toFixed(6), // Toneladas con 6 decimales
-          row.codigoMaterial
-        ].join(",")
-      )
-    ];
-
-    const csvString = csvRows.join("\r\n");
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const dataForSheet = reportData.map(row => ({
+      'Número de la Semana': row.semana,
+      'Tipo de Identificación': row.tipoId,
+      'Número de Identificación': row.numeroId,
+      'Placa del Vehículo': row.placaVehiculo,
+      'Cantidad de Material Entrante (Ton)': parseFloat(row.cantidadEntrante.toFixed(6)),
+      'Tipo de Material Entrante (Código)': row.codigoMaterial,
+    }));
     
-    const fileName = `balance_masas_${selectedMonth}.csv`;
+    const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Balance de Masas");
+
+    const cols = [
+        { wch: 20 }, // Número de la Semana
+        { wch: 25 }, // Tipo de Identificación
+        { wch: 25 }, // Número de Identificación
+        { wch: 20 }, // Placa del Vehículo
+        { wch: 35 }, // Cantidad de Material Entrante (Ton)
+        { wch: 35 }, // Tipo de Material Entrante (Código)
+    ];
+    worksheet['!cols'] = cols;
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    
+    const fileName = `balance_masas_${selectedMonth}.xlsx`;
     saveAs(blob, fileName);
   };
   
@@ -241,8 +238,8 @@ export default function BalanceMasasPage() {
                     <Button onClick={() => setIsReportGenerated(false)} variant="outline">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Volver
                     </Button>
-                    <Button onClick={downloadCSV} disabled={reportData.length === 0}>
-                        <FileDown className="mr-2 h-4 w-4" /> Descargar CSV
+                    <Button onClick={downloadExcel} disabled={reportData.length === 0}>
+                        <FileDown className="mr-2 h-4 w-4" /> Descargar Excel
                     </Button>
                 </div>
 
