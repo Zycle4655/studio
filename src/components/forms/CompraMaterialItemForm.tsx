@@ -43,10 +43,10 @@ import { cn } from "@/lib/utils";
 interface CompraMaterialItemFormProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onSubmit: (data: CompraMaterialItemFormData) => void; // Ya es síncrono desde el padre
+  onSubmit: (data: CompraMaterialItemFormData) => void; 
   materials: MaterialDocument[];
   defaultValues?: Partial<CompraMaterialItemFormData>;
-  isLoading?: boolean; // Este isLoading es el del formulario padre (isSavingInvoice)
+  isLoading?: boolean;
   title?: string;
   isEditingInvoiceItem?: boolean;
 }
@@ -57,6 +57,7 @@ export default function CompraMaterialItemForm({
   onSubmit,
   materials,
   defaultValues,
+  isLoading = false,
   title = "Agregar Ítem",
   isEditingInvoiceItem = false,
 }: CompraMaterialItemFormProps) {
@@ -91,7 +92,7 @@ export default function CompraMaterialItemForm({
       } else {
         setSelectedMaterialBasePrice(null);
       }
-       setIsSubmittingItem(false); // Reset submitting state when dialog opens/resets
+       setIsSubmittingItem(false); 
     }
   }, [defaultValues, isOpen, form, materials]);
 
@@ -129,7 +130,7 @@ export default function CompraMaterialItemForm({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {if (!isSubmittingItem) setIsOpen(open)}}>
+    <Dialog open={isOpen} onOpenChange={(open) => {if (!isLoading && !isSubmittingItem) setIsOpen(open)}}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
@@ -156,7 +157,7 @@ export default function CompraMaterialItemForm({
                             "w-full justify-between",
                             !field.value && "text-muted-foreground"
                           )}
-                          disabled={isSubmittingItem || materials.length === 0 || (isEditingInvoiceItem && !!defaultValues?.materialId)}
+                          disabled={isLoading || isSubmittingItem || materials.length === 0 || (isEditingInvoiceItem && !!defaultValues?.materialId)}
                         >
                           {field.value
                             ? materials.find(
@@ -222,7 +223,7 @@ export default function CompraMaterialItemForm({
                         {...field}
                         className="pl-10"
                         value={String(field.value ?? "")}
-                        disabled={isSubmittingItem}
+                        disabled={isLoading || isSubmittingItem}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === "") {
@@ -256,7 +257,7 @@ export default function CompraMaterialItemForm({
                             {...field}
                             className="pl-10"
                             value={String(field.value ?? "")}
-                            disabled={isSubmittingItem}
+                            disabled={isLoading || isSubmittingItem}
                             onChange={(e) => {
                                 const val = e.target.value;
                                 if (val === "") {
@@ -282,16 +283,16 @@ export default function CompraMaterialItemForm({
 
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isSubmittingItem}>
+                <Button type="button" variant="outline" disabled={isLoading || isSubmittingItem}>
                   <XCircle className="mr-2 h-4 w-4" />
                   Cancelar
                 </Button>
               </DialogClose>
               <Button
                 type="submit"
-                disabled={isSubmittingItem || materials.length === 0}
+                disabled={isLoading || isSubmittingItem || materials.length === 0}
               >
-                {isSubmittingItem ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> {defaultValues?.materialId ? "Actualizar Ítem" : "Agregar Ítem"}</>}
+                {isLoading || isSubmittingItem ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> {defaultValues?.materialId ? "Actualizar Ítem" : "Agregar Ítem"}</>}
               </Button>
             </DialogFooter>
           </form>
