@@ -162,7 +162,7 @@ export default function FacturaCompraForm({
   
   React.useEffect(() => {
     if (tipoProveedor === 'asociado' && selectedProveedorId) {
-        const loan = pendingLoans.find(p => p.asociadoId === selectedProveedorId);
+        const loan = pendingLoans.find(p => p.beneficiarioId === selectedProveedorId && p.tipoBeneficiario === 'asociado');
         setCurrentLoan(loan || null);
         form.setValue('prestamoIdAbonado', loan?.id || null);
     } else {

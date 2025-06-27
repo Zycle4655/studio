@@ -101,7 +101,7 @@ export default function AbonoForm({
             Registrar Abono a Préstamo
           </DialogTitle>
           <DialogDescription>
-            Abono para {prestamo.asociadoNombre}. Saldo actual: <span className="font-bold text-destructive">{formatCurrency(prestamo.saldoPendiente)}</span>
+            Abono para {prestamo.beneficiarioNombre}. Saldo actual: <span className="font-bold text-destructive">{formatCurrency(prestamo.saldoPendiente)}</span>
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
