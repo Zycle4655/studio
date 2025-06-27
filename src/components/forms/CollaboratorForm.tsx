@@ -24,6 +24,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -33,18 +38,24 @@ import {
   DialogDescription as DialogDescriptionComponent,
 } from "@/components/ui/dialog";
 import { CollaboratorFormSchema, type CollaboratorFormData, type Permissions, DEFAULT_ROLES } from "@/schemas/equipo";
+import { TIPO_ID_LABELS, type TipoIdentificacionKey } from "@/schemas/sui";
 import type { CargoDocument } from "@/schemas/cargo";
-import { Save, XCircle, UserCog, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
+import { Save, XCircle, UserCog, Lock, Eye, EyeOff, Sparkles, CalendarIcon } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Calendar } from "../ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import type { Timestamp } from "firebase/firestore";
 
 interface CollaboratorFormProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: CollaboratorFormData) => Promise<void>;
   cargos: CargoDocument[];
-  defaultValues?: Partial<CollaboratorFormData> | null;
+  defaultValues?: Partial<CollaboratorFormData> & { fechaNacimiento?: Timestamp | null };
   isLoading?: boolean;
   title?: string;
   description?: string;
@@ -96,6 +107,16 @@ export default function CollaboratorForm({
         talentoHumano: false,
         equipo: false,
       },
+      tipoIdentificacion: null,
+      numeroIdentificacion: null,
+      fechaNacimiento: null,
+      telefono: null,
+      direccion: null,
+      eps: null,
+      afp: null,
+      arl: null,
+      contactoEmergenciaNombre: null,
+      contactoEmergenciaTelefono: null,
     },
   });
 
@@ -115,6 +136,16 @@ export default function CollaboratorForm({
                 talentoHumano: false,
                 equipo: false,
             },
+            tipoIdentificacion: defaultValues?.tipoIdentificacion || null,
+            numeroIdentificacion: defaultValues?.numeroIdentificacion || null,
+            fechaNacimiento: defaultValues?.fechaNacimiento?.toDate() || null,
+            telefono: defaultValues?.telefono || null,
+            direccion: defaultValues?.direccion || null,
+            eps: defaultValues?.eps || null,
+            afp: defaultValues?.afp || null,
+            arl: defaultValues?.arl || null,
+            contactoEmergenciaNombre: defaultValues?.contactoEmergenciaNombre || null,
+            contactoEmergenciaTelefono: defaultValues?.contactoEmergenciaTelefono || null,
         });
     }
   }, [defaultValues, isOpen, form]);
@@ -122,14 +153,13 @@ export default function CollaboratorForm({
   const handleRoleChange = (roleKey: string) => {
     form.setValue("rol", roleKey);
     const selectedCargo = cargos.find(c => c.name === roleKey);
-    // Find role key from DEFAULT_ROLES
     const roleNameKey = Object.keys(DEFAULT_ROLES).find(
       key => DEFAULT_ROLES[key as keyof typeof DEFAULT_ROLES] === selectedCargo?.name
     ) || 'bodeguero';
     
     const permissions = defaultPermissionsByRole[roleNameKey] || {};
     form.setValue("permissions", {
-        gestionMaterial: false, // Reset all to false first
+        gestionMaterial: false,
         transporte: false,
         reportes: false,
         sui: false,
@@ -171,7 +201,7 @@ export default function CollaboratorForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!isLoading) setIsOpen(open); }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <UserCog className="mr-2 h-5 w-5 text-primary" />
@@ -181,50 +211,52 @@ export default function CollaboratorForm({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 py-4" autoComplete="off">
-            <FormField
-              control={form.control}
-              name="nombre"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-foreground/80">Nombre Completo</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nombre del colaborador" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex justify-between items-center">
-                    <FormLabel className="text-foreground/80">Correo Electrónico de Acceso</FormLabel>
-                     {!isEditing && (
-                        <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={generateEmail}
-                        disabled={isLoading || !form.watch("nombre")}
-                        >
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generar
-                        </Button>
-                    )}
-                  </div>
-                  <FormControl>
-                    <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading || isEditing} />
-                  </FormControl>
-                   {isEditing && <FormDescription className="text-xs">El correo no se puede cambiar al editar.</FormDescription>}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="nombre"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground/80">Nombre Completo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nombre del colaborador" {...field} disabled={isLoading} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex justify-between items-center">
+                      <FormLabel className="text-foreground/80">Correo Electrónico de Acceso</FormLabel>
+                      {!isEditing && (
+                          <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={generateEmail}
+                          disabled={isLoading || !form.watch("nombre")}
+                          >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Generar
+                          </Button>
+                      )}
+                    </div>
+                    <FormControl>
+                      <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading || isEditing} />
+                    </FormControl>
+                    {isEditing && <FormDescription className="text-xs">El correo no se puede cambiar al editar.</FormDescription>}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {!isEditing && (
-              <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="password"
@@ -280,36 +312,133 @@ export default function CollaboratorForm({
                     </FormItem>
                   )}
                 />
-              </>
+              </div>
             )}
             
+            <Separator className="my-6" />
+            <h4 className="text-base font-semibold text-foreground">Información Personal</h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="tipoIdentificacion"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Tipo de Documento</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ""} disabled={isLoading}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {Object.entries(TIPO_ID_LABELS).map(([key, label]) => (
+                                <SelectItem key={key} value={key}>{`${key}: ${label}`}</SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="numeroIdentificacion"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Número de Documento</FormLabel>
+                            <FormControl><Input placeholder="Número" {...field} value={field.value || ""} disabled={isLoading} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="fechaNacimiento"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Fecha de Nacimiento</FormLabel>
+                            <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                                >
+                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione una fecha</span>}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                mode="single"
+                                selected={field.value || undefined}
+                                onSelect={field.onChange}
+                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                initialFocus
+                                locale={es}
+                                />
+                            </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="telefono"
+                    render={({ field }) => (
+                        <FormItem><FormLabel>Teléfono</FormLabel>
+                        <FormControl><Input type="tel" placeholder="Número de contacto" {...field} value={field.value || ""} disabled={isLoading} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="direccion"
+                    render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                        <FormLabel>Dirección</FormLabel>
+                        <FormControl><Input placeholder="Dirección de residencia" {...field} value={field.value || ""} disabled={isLoading} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+
+            <Separator className="my-6" />
+            <h4 className="text-base font-semibold text-foreground">Información de Afiliación (Opcional)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField control={form.control} name="eps" render={({ field }) => (<FormItem><FormLabel>EPS</FormLabel><FormControl><Input {...field} value={field.value || ""} disabled={isLoading} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="afp" render={({ field }) => (<FormItem><FormLabel>AFP</FormLabel><FormControl><Input {...field} value={field.value || ""} disabled={isLoading} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="arl" render={({ field }) => (<FormItem><FormLabel>ARL</FormLabel><FormControl><Input {...field} value={field.value || ""} disabled={isLoading} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+
+            <Separator className="my-6" />
+            <h4 className="text-base font-semibold text-foreground">Contacto de Emergencia (Opcional)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="contactoEmergenciaNombre" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} value={field.value || ""} disabled={isLoading} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="contactoEmergenciaTelefono" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" {...field} value={field.value || ""} disabled={isLoading} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            
+            <Separator className="my-6" />
+            <h4 className="text-base font-semibold text-foreground">Información Laboral y Permisos</h4>
+
             <FormField
               control={form.control}
               name="rol"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground/80">Cargo del Colaborador</FormLabel>
+                  <FormLabel>Cargo del Colaborador</FormLabel>
                    <Select onValueChange={handleRoleChange} value={field.value} disabled={isLoading}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione un cargo..." />
-                        </SelectTrigger>
-                      </FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un cargo..." /></SelectTrigger></FormControl>
                       <SelectContent>
-                        {cargos.map((cargo) => (
-                            <SelectItem key={cargo.id} value={cargo.name}>{cargo.name}</SelectItem>
-                        ))}
+                        {cargos.map((cargo) => (<SelectItem key={cargo.id} value={cargo.name}>{cargo.name}</SelectItem>))}
                       </SelectContent>
                    </Select>
-                   <FormDescription className="text-xs">
-                        Puede gestionar los cargos en la sección "Gestionar Cargos".
-                    </FormDescription>
+                   <FormDescription className="text-xs">Puede gestionar los cargos en la sección "Gestionar Cargos".</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <Separator />
             
             <div>
               <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma</FormLabel>
@@ -323,16 +452,10 @@ export default function CollaboratorForm({
                         render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 shadow-sm">
                                 <FormControl>
-                                    <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        disabled={isLoading}
-                                    />
+                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isLoading}/>
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
-                                    <FormLabel className="font-normal">
-                                        {permissionLabels[key as keyof Permissions]}
-                                    </FormLabel>
+                                    <FormLabel className="font-normal">{permissionLabels[key as keyof Permissions]}</FormLabel>
                                 </div>
                             </FormItem>
                         )}
@@ -342,15 +465,8 @@ export default function CollaboratorForm({
             </div>
             
             <DialogFooter className="pt-4">
-              <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isLoading}>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Cancelar
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Colaborador</>}
-              </Button>
+              <DialogClose asChild><Button type="button" variant="outline" disabled={isLoading}><XCircle className="mr-2 h-4 w-4" />Cancelar</Button></DialogClose>
+              <Button type="submit" disabled={isLoading}>{isLoading ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Colaborador</>}</Button>
             </DialogFooter>
           </form>
         </Form>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -26,7 +27,7 @@ import {
   query,
   orderBy,
   writeBatch,
-  setDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { initializeApp, deleteApp } from "firebase/app";
 import {
@@ -36,6 +37,7 @@ import {
 import CollaboratorForm from "@/components/forms/CollaboratorForm";
 import type { CollaboratorFormData, CollaboratorDocument } from "@/schemas/equipo";
 import type { CargoDocument } from "@/schemas/cargo";
+import { TIPOS_IDENTIFICACION, type TipoIdentificacionKey } from "@/schemas/sui";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +59,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from "@/components/ui/badge";
 import QRCode from "react-qr-code";
+import { Input } from "@/components/ui/input";
 
 export default function EquipoPage() {
   const { toast } = useToast();
@@ -65,6 +68,7 @@ export default function EquipoPage() {
   const [cargos, setCargos] = React.useState<CargoDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingCollaborator, setEditingCollaborator] = React.useState<CollaboratorDocument | null>(null);
@@ -207,8 +211,21 @@ export default function EquipoPage() {
     const collaboratorData = {
       nombre: data.nombre,
       email: data.email,
-      permissions: data.permissions,
       rol: data.rol,
+      permissions: data.permissions,
+      // Personal Info
+      tipoIdentificacion: data.tipoIdentificacion || null,
+      numeroIdentificacion: data.numeroIdentificacion || null,
+      fechaNacimiento: data.fechaNacimiento ? Timestamp.fromDate(data.fechaNacimiento) : null,
+      telefono: data.telefono || null,
+      direccion: data.direccion || null,
+      // Affiliation Info
+      eps: data.eps || null,
+      afp: data.afp || null,
+      arl: data.arl || null,
+      // Emergency Contact
+      contactoEmergenciaNombre: data.contactoEmergenciaNombre || null,
+      contactoEmergenciaTelefono: data.contactoEmergenciaTelefono || null,
     };
 
     try {
@@ -234,7 +251,6 @@ export default function EquipoPage() {
         }
 
         // --- User Creation with Temporary App ---
-        // This prevents the admin's auth state from being overwritten.
         const tempAppName = `temp-user-creation-${Date.now()}`;
         const tempApp = initializeApp(firebaseConfig, tempAppName);
         const tempAuth = getAuth(tempApp);
@@ -244,10 +260,8 @@ export default function EquipoPage() {
             const userCredential = await createUserWithEmailAndPassword(tempAuth, data.email, data.password);
             newAuthUserId = userCredential.user.uid;
         } catch (creationError) {
-            // Re-throw the error to be caught by the outer catch block which has user-friendly messages
             throw creationError;
         } finally {
-            // IMPORTANT: Always clean up the temporary app instance
             await deleteApp(tempApp);
         }
 
@@ -256,10 +270,8 @@ export default function EquipoPage() {
         }
         
         const batch = writeBatch(db);
-
-        // 1. Create the collaborator document in the admin's subcollection
         const collaboratorsCollectionRef = collection(db, "companyProfiles", adminUid, "collaborators");
-        const newCollaboratorRef = doc(collaboratorsCollectionRef); // Auto-generate ID
+        const newCollaboratorRef = doc(collaboratorsCollectionRef); 
         batch.set(newCollaboratorRef, {
           ...collaboratorData,
           authUid: newAuthUserId,
@@ -267,7 +279,6 @@ export default function EquipoPage() {
           updatedAt: serverTimestamp(),
         });
 
-        // 2. Create the user mapping document for easy lookup
         const userMappingRef = doc(db, "userMappings", newAuthUserId);
         batch.set(userMappingRef, { adminUid });
         
@@ -278,7 +289,7 @@ export default function EquipoPage() {
           description: `La cuenta para "${data.nombre}" ha sido creada exitosamente.`,
         });
         
-        fetchData(); // Refresh list with the new collaborator
+        fetchData(); 
       }
       
       setIsFormOpen(false);
@@ -301,6 +312,19 @@ export default function EquipoPage() {
       setIsSubmitting(false);
     }
   };
+  
+  const filteredCollaborators = React.useMemo(() => {
+    if (!searchTerm) {
+        return collaborators;
+    }
+    const term = searchTerm.toLowerCase();
+    return collaborators.filter(c => 
+        c.nombre.toLowerCase().includes(term) ||
+        c.email.toLowerCase().includes(term) ||
+        (c.numeroIdentificacion && c.numeroIdentificacion.includes(term))
+    );
+  }, [collaborators, searchTerm]);
+
 
   if (!user && !isLoading) {
     return (
@@ -322,14 +346,25 @@ export default function EquipoPage() {
     <div className="container py-8 px-4 md:px-6">
       <Card className="shadow-lg">
         <CardHeader>
-            <div>
-              <CardTitle className="text-2xl font-headline text-primary flex items-center">
-                <UserCog className="mr-3 h-7 w-7" />
-                Gestión de Colaboradores
-              </CardTitle>
-              <CardDescription>
-                Añada, edite y gestione los permisos de los colaboradores que tendrán acceso a la plataforma.
-              </CardDescription>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-2xl font-headline text-primary flex items-center">
+                  <UserCog className="mr-3 h-7 w-7" />
+                  Gestión de Colaboradores
+                </CardTitle>
+                <CardDescription>
+                  Añada, edite y gestione los permisos de los colaboradores que tendrán acceso a la plataforma.
+                </CardDescription>
+              </div>
+              <div className="relative w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre, ID, email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full sm:w-64"
+                />
+              </div>
             </div>
         </CardHeader>
         <CardContent>
@@ -340,6 +375,7 @@ export default function EquipoPage() {
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-40" />
                     <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
                   </div>
                   <div className="flex space-x-2">
                     <Skeleton className="h-9 w-9 rounded-md" />
@@ -360,15 +396,24 @@ export default function EquipoPage() {
                 <TableHeader>
                     <TableRow>
                     <TableHead>Nombre</TableHead>
+                    <TableHead>Identificación</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Cargo</TableHead>
                     <TableHead className="text-right w-[150px]">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {collaborators.map((collaborator) => (
+                    {filteredCollaborators.map((collaborator) => (
                     <TableRow key={collaborator.id}>
                         <TableCell className="font-medium">{collaborator.nombre}</TableCell>
+                        <TableCell>
+                            {collaborator.tipoIdentificacion && collaborator.numeroIdentificacion ? (
+                                <Badge variant="secondary">{TIPOS_IDENTIFICACION[collaborator.tipoIdentificacion as TipoIdentificacionKey]}</Badge>
+                            ) : (
+                                <span className="text-muted-foreground italic text-xs">N/A</span>
+                            )}
+                            <span className="ml-2">{collaborator.numeroIdentificacion}</span>
+                        </TableCell>
                         <TableCell>{collaborator.email}</TableCell>
                         <TableCell>
                             <Badge variant="secondary">{collaborator.rol}</Badge>

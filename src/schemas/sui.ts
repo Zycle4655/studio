@@ -1,3 +1,4 @@
+
 import * as z from "zod";
 import type { Timestamp } from "firebase/firestore";
 
@@ -16,6 +17,14 @@ export type TipoIdentificacionKey = keyof typeof TIPOS_IDENTIFICACION;
 export const TipoIdentificacionEnum = z.enum(Object.keys(TIPOS_IDENTIFICACION) as [TipoIdentificacionKey, ...TipoIdentificacionKey[]], {
     errorMap: () => ({ message: "Debe seleccionar un tipo de identificación válido." }),
 });
+
+// Full labels for better user experience in dropdowns
+export const TIPO_ID_LABELS: Record<TipoIdentificacionKey, string> = {
+  "1": "Cédula de Ciudadanía (CC)",
+  "2": "Cédula de Extranjería (CE)",
+  "3": "Pasaporte",
+  "4": "NIT",
+};
 
 export const AsociadoFormSchema = z.object({
   nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }).max(100),

@@ -30,7 +30,7 @@ import {
   DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { AsociadoFormSchema, type AsociadoFormData, type TipoIdentificacionKey } from "@/schemas/sui";
+import { AsociadoFormSchema, type AsociadoFormData, type TipoIdentificacionKey, TIPO_ID_LABELS } from "@/schemas/sui";
 import { Save, XCircle, User } from "lucide-react";
 
 interface AsociadoFormProps {
@@ -42,15 +42,6 @@ interface AsociadoFormProps {
   title?: string;
   description?: string;
 }
-
-// Full labels for better user experience in the dropdown
-const TIPO_ID_LABELS: Record<TipoIdentificacionKey, string> = {
-  "1": "Cédula de Ciudadanía (CC)",
-  "2": "Cédula de Extranjería (CE)",
-  "3": "Pasaporte",
-  "4": "NIT",
-};
-
 
 export default function AsociadoForm({
   isOpen,

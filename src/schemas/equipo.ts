@@ -3,6 +3,7 @@
 
 import * as z from "zod";
 import type { Timestamp } from "firebase/firestore";
+import { TipoIdentificacionEnum } from "./sui";
 
 // Using a const object for roles allows us to easily get both keys and values.
 export const DEFAULT_ROLES = {
@@ -30,6 +31,22 @@ export const CollaboratorFormSchema = z.object({
   nombre: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }).max(100),
   email: z.string().email({ message: "Debe ser un correo electrónico válido." }),
   rol: z.string().min(1, { message: "Debe seleccionar un cargo." }),
+
+  // --- New Optional Fields ---
+  tipoIdentificacion: TipoIdentificacionEnum.optional().nullable(),
+  numeroIdentificacion: z.string().optional().nullable(),
+  fechaNacimiento: z.date().optional().nullable(),
+  telefono: z.string().optional().nullable(),
+  direccion: z.string().optional().nullable(),
+  
+  eps: z.string().optional().nullable(),
+  afp: z.string().optional().nullable(),
+  arl: z.string().optional().nullable(),
+
+  contactoEmergenciaNombre: z.string().optional().nullable(),
+  contactoEmergenciaTelefono: z.string().optional().nullable(),
+  // --- End New Fields ---
+
   permissions: permissionsSchema,
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
@@ -65,6 +82,19 @@ export interface CollaboratorDocument {
   email: string;
   rol: string; // The "cargo" name
   permissions: Permissions;
+
+  // New Optional Fields
+  tipoIdentificacion?: string | null;
+  numeroIdentificacion?: string | null;
+  fechaNacimiento?: Timestamp | null;
+  telefono?: string | null;
+  direccion?: string | null;
+  eps?: string | null;
+  afp?: string | null;
+  arl?: string | null;
+  contactoEmergenciaNombre?: string | null;
+  contactoEmergenciaTelefono?: string | null;
+
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
