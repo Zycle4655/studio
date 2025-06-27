@@ -344,10 +344,15 @@ export default function PrestamosPage() {
   }, [userLoans, searchTerm]);
   
   const summary = React.useMemo(() => {
-    const totalPrestado = userLoans.reduce((sum, p) => sum + p.monto, 0);
-    const saldoTotal = userLoans.reduce((sum, p) => sum + p.saldoPendiente, 0);
+    const loansToSummarize = filteredPrestamos;
+    const totalPrestado = loansToSummarize.reduce((sum, p) => sum + p.monto, 0);
+    const saldoTotal = loansToSummarize.reduce((sum, p) => sum + p.saldoPendiente, 0);
     return { totalPrestado, saldoTotal };
-  }, [userLoans]);
+  }, [filteredPrestamos]);
+
+  const allFilteredFromSamePerson = React.useMemo(() => {
+    return filteredPrestamos.length > 0 && filteredPrestamos.every(p => p.beneficiarioId === filteredPrestamos[0].beneficiarioId);
+  }, [filteredPrestamos]);
 
 
   if (!user && !isLoading) {
@@ -384,6 +389,11 @@ export default function PrestamosPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <Skeleton className="h-8 w-3/4"/> : <div className="text-2xl font-bold">{formatCurrency(summary.totalPrestado)}</div>}
+                     {searchTerm && allFilteredFromSamePerson && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Corresponde a {filteredPrestamos[0].beneficiarioNombre}
+                        </p>
+                    )}
                 </CardContent>
             </Card>
             <Card>
@@ -395,6 +405,11 @@ export default function PrestamosPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <Skeleton className="h-8 w-3/4"/> : <div className="text-2xl font-bold text-destructive">{formatCurrency(summary.saldoTotal)}</div>}
+                    {searchTerm && allFilteredFromSamePerson && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Corresponde a {filteredPrestamos[0].beneficiarioNombre}
+                        </p>
+                    )}
                 </CardContent>
             </Card>
         </div>
