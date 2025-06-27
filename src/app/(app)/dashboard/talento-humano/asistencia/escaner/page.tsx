@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { collection, addDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
-import { Scanner } from "@yudiel/react-qr-scanner";
+import { QrScanner } from "@yudiel/react-qr-scanner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import type { CollaboratorDocument } from "@/schemas/equipo";
@@ -153,7 +153,7 @@ export default function EscanerAsistenciaPage() {
           </div>
 
           <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
-            <Scanner
+            <QrScanner
               onDecode={(result) => handleScanResult(result)}
               onError={(error) => console.error(error?.message)}
               options={{
