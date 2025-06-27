@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { Plus, Edit, Trash2, Users, Search, UserCog } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Search, UserCog, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -47,9 +46,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription as DialogDescriptionComponent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from "@/components/ui/badge";
-
+import QRCode from "react-qr-code";
 
 export default function EquipoPage() {
   const { toast } = useToast();
@@ -64,6 +71,8 @@ export default function EquipoPage() {
 
   const [collaboratorToDelete, setCollaboratorToDelete] = React.useState<CollaboratorDocument | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  
+  const [qrCollaborator, setQrCollaborator] = React.useState<CollaboratorDocument | null>(null);
 
   const getCollaboratorsCollectionRef = React.useCallback(() => {
     if (!companyOwnerId || !db) return null;
@@ -152,6 +161,10 @@ export default function EquipoPage() {
     }
     setCollaboratorToDelete(collaborator);
     setIsDeleteDialogOpen(true);
+  };
+  
+  const handleShowQr = (collaborator: CollaboratorDocument) => {
+    setQrCollaborator(collaborator);
   };
 
   const handleDeleteCollaborator = async () => {
@@ -349,7 +362,7 @@ export default function EquipoPage() {
                     <TableHead>Nombre</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Cargo</TableHead>
-                    <TableHead className="text-right w-[120px]">Acciones</TableHead>
+                    <TableHead className="text-right w-[150px]">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -361,6 +374,16 @@ export default function EquipoPage() {
                             <Badge variant="secondary">{collaborator.rol}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:text-green-600"
+                            onClick={() => handleShowQr(collaborator)}
+                            aria-label="Ver código QR"
+                            disabled={isSubmitting}
+                        >
+                            <QrCode className="h-4 w-4" />
+                        </Button>
                         <Button
                             variant="ghost"
                             size="icon"
@@ -434,6 +457,28 @@ export default function EquipoPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!qrCollaborator} onOpenChange={(isOpen) => !isOpen && setQrCollaborator(null)}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Código QR de Asistencia</DialogTitle>
+                <DialogDescriptionComponent>
+                    Muestre este código en la terminal de escaneo. Este código es personal e intransferible.
+                </DialogDescriptionComponent>
+            </DialogHeader>
+            {qrCollaborator && (
+                <div className="flex flex-col items-center justify-center p-4 gap-4">
+                    <div className="bg-white p-4 rounded-lg border">
+                        <QRCode value={qrCollaborator.id} size={256} />
+                    </div>
+                    <p className="text-lg font-semibold">{qrCollaborator.nombre}</p>
+                </div>
+            )}
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setQrCollaborator(null)}>Cerrar</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
