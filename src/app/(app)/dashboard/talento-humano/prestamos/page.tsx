@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Edit, Trash2, Search, HandCoins, DollarSign, Scale, Banknote } from "lucide-react";
+import { Plus, Edit, Trash2, Search, HandCoins, DollarSign, Scale, Banknote, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -48,6 +48,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import PrestamoForm from "@/components/forms/PrestamoForm";
 import AbonoForm from "@/components/forms/AbonoForm";
+import { cn } from "@/lib/utils";
 
 
 export default function PrestamosPage() {
@@ -67,6 +68,7 @@ export default function PrestamosPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
 
   const getPrestamosCollectionRef = React.useCallback(() => {
     if (!companyOwnerId || !db) return null;
@@ -165,6 +167,16 @@ export default function PrestamosPage() {
     }
     setPrestamoToDelete(prestamo);
     setIsDeleteDialogOpen(true);
+  };
+  
+  const toggleRow = (id: string) => {
+    const newExpandedRows = new Set(expandedRows);
+    if (newExpandedRows.has(id)) {
+      newExpandedRows.delete(id);
+    } else {
+      newExpandedRows.add(id);
+    }
+    setExpandedRows(newExpandedRows);
   };
 
   const handleDeletePrestamo = async () => {
@@ -444,6 +456,7 @@ export default function PrestamosPage() {
                 <Table>
                 <TableHeader>
                     <TableRow>
+                    <TableHead className="w-[60px]"></TableHead>
                     <TableHead>Beneficiario</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="text-right">Monto</TableHead>
@@ -454,24 +467,64 @@ export default function PrestamosPage() {
                 </TableHeader>
                 <TableBody>
                     {filteredPrestamos.map((prestamo) => (
-                    <TableRow key={prestamo.id}>
-                        <TableCell className="font-medium">{prestamo.beneficiarioNombre}</TableCell>
-                        <TableCell>{formatDate(prestamo.fecha)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(prestamo.monto)}</TableCell>
-                        <TableCell className="text-right font-semibold text-destructive">{formatCurrency(prestamo.saldoPendiente)}</TableCell>
-                        <TableCell className="text-center">
-                            <Badge variant={prestamo.estado === 'Pagado' ? 'default' : 'secondary'} className={prestamo.estado === 'Pagado' ? 'bg-green-600' : 'bg-amber-500'}>
-                                {prestamo.estado}
-                            </Badge>
-                        </TableCell>
-                        <TableCell className="text-right space-x-1">
-                          <Button variant="outline" size="sm" onClick={() => handleOpenAbonoForm(prestamo)} disabled={isSubmitting || prestamo.estado === 'Pagado' || !permissions?.equipo}>
-                            <Banknote className="h-4 w-4 mr-1"/> Abonar
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenPrestamoForm(prestamo)} disabled={isSubmitting || !permissions?.equipo}><Edit className="h-4 w-4"/></Button>
-                          <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => openDeleteDialog(prestamo)} disabled={isSubmitting || !permissions?.equipo}><Trash2 className="h-4 w-4"/></Button>
-                        </TableCell>
-                    </TableRow>
+                      <React.Fragment key={prestamo.id}>
+                        <TableRow>
+                            <TableCell>
+                                {prestamo.abonos && prestamo.abonos.length > 0 && permissions?.equipo && (
+                                <Button variant="ghost" size="icon" onClick={() => toggleRow(prestamo.id!)} className="h-8 w-8">
+                                    <ChevronRight className={cn("h-4 w-4 transition-transform", expandedRows.has(prestamo.id!) && "rotate-90")} />
+                                </Button>
+                                )}
+                            </TableCell>
+                            <TableCell className="font-medium">{prestamo.beneficiarioNombre}</TableCell>
+                            <TableCell>{formatDate(prestamo.fecha)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(prestamo.monto)}</TableCell>
+                            <TableCell className="text-right font-semibold text-destructive">{formatCurrency(prestamo.saldoPendiente)}</TableCell>
+                            <TableCell className="text-center">
+                                <Badge variant={prestamo.estado === 'Pagado' ? 'default' : 'secondary'} className={prestamo.estado === 'Pagado' ? 'bg-green-600' : 'bg-amber-500'}>
+                                    {prestamo.estado}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right space-x-1">
+                              <Button variant="outline" size="sm" onClick={() => handleOpenAbonoForm(prestamo)} disabled={isSubmitting || prestamo.estado === 'Pagado' || !permissions?.equipo}>
+                                <Banknote className="h-4 w-4 mr-1"/> Abonar
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenPrestamoForm(prestamo)} disabled={isSubmitting || !permissions?.equipo}><Edit className="h-4 w-4"/></Button>
+                              <Button variant="ghost" size="icon" className="hover:text-destructive" onClick={() => openDeleteDialog(prestamo)} disabled={isSubmitting || !permissions?.equipo}><Trash2 className="h-4 w-4"/></Button>
+                            </TableCell>
+                        </TableRow>
+                        {expandedRows.has(prestamo.id!) && permissions?.equipo && (
+                            <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                <TableCell colSpan={7}>
+                                    <div className="p-4">
+                                        <h4 className="font-semibold mb-2 text-primary">Historial de Abonos</h4>
+                                        {prestamo.abonos && prestamo.abonos.length > 0 ? (
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Fecha</TableHead>
+                                                        <TableHead>Observación</TableHead>
+                                                        <TableHead className="text-right">Monto Abonado</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {prestamo.abonos.slice().sort((a,b) => b.fecha.seconds - a.fecha.seconds).map(abono => (
+                                                        <TableRow key={abono.id}>
+                                                            <TableCell>{formatDate(abono.fecha)}</TableCell>
+                                                            <TableCell>{abono.observacion || 'N/A'}</TableCell>
+                                                            <TableCell className="text-right font-medium">{formatCurrency(abono.monto)}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">No se han registrado abonos para este préstamo.</p>
+                                        )}
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                      </React.Fragment>
                     ))}
                 </TableBody>
                 </Table>
