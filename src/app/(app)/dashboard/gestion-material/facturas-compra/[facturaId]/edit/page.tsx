@@ -50,7 +50,7 @@ export default function EditFacturaCompraPage() {
   const router = useRouter();
   const params = useParams();
   const facturaId = params.facturaId as string;
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const { toast } = useToast();
 
   const [invoice, setInvoice] = React.useState<FacturaCompraDocument | null>(null);
@@ -97,20 +97,20 @@ export default function EditFacturaCompraPage() {
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "materials");
+  }, [companyOwnerId]);
   
   const getAsociadosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "asociados");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "asociados");
+  }, [companyOwnerId]);
 
 
   React.useEffect(() => {
-    if (!user || !facturaId) {
+    if (!companyOwnerId || !facturaId) {
       setIsLoadingPage(false);
-      if (!user) router.replace("/login");
+      if (!companyOwnerId) router.replace("/login");
       return;
     }
 
@@ -118,7 +118,7 @@ export default function EditFacturaCompraPage() {
       setIsLoadingPage(true);
       setIsFetchingData(true);
       try {
-        const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
+        const invoiceRef = doc(db, "companyProfiles", companyOwnerId, "purchaseInvoices", facturaId);
         const invoiceSnap = await getDoc(invoiceRef);
 
         if (invoiceSnap.exists()) {
@@ -139,12 +139,14 @@ export default function EditFacturaCompraPage() {
           router.replace("/dashboard/gestion-material/facturas-compra");
         }
 
-        const profileRef = doc(db, "companyProfiles", user.uid);
+        const profileRef = doc(db, "companyProfiles", companyOwnerId);
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
           setCompanyProfile(profileSnap.data() as CompanyProfileDocument);
         }
-        setUserEmail(user.email);
+        if (user) {
+          setUserEmail(user.email);
+        }
         
         // Fetch materials and aociados
         const materialsCollectionRef = getMaterialsCollectionRef();
@@ -176,7 +178,7 @@ export default function EditFacturaCompraPage() {
     };
 
     fetchInvoiceData();
-  }, [user, facturaId, router, toast, form, getMaterialsCollectionRef, getAsociadosCollectionRef]);
+  }, [companyOwnerId, user, facturaId, router, toast, form, getMaterialsCollectionRef, getAsociadosCollectionRef]);
 
   const calculateTotal = React.useCallback((items: CompraMaterialItem[]) => {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -261,7 +263,7 @@ export default function EditFacturaCompraPage() {
 
 
   const handleUpdateInvoice = async (formData: FacturaCompraFormData) => {
-    if (!user || !invoice || !facturaId || !db) return;
+    if (!companyOwnerId || !invoice || !facturaId || !db) return;
     setIsSavingInvoice(true);
     
     const materialsRef = getMaterialsCollectionRef();
@@ -272,7 +274,7 @@ export default function EditFacturaCompraPage() {
     }
 
     try {
-      const invoiceRef = doc(db, "companyProfiles", user.uid, "purchaseInvoices", facturaId);
+      const invoiceRef = doc(db, "companyProfiles", companyOwnerId, "purchaseInvoices", facturaId);
       const finalTotalFactura = calculateTotal(editableItems);
 
       for (const item of editableItems) {

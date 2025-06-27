@@ -55,7 +55,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CompraMaterialPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const [isLoading, setIsLoading] = React.useState(true); 
   const [isSubmitting, setIsSubmitting] = React.useState(false); 
   const [isFetchingCompanyProfile, setIsFetchingCompanyProfile] = React.useState(false);
@@ -81,29 +81,29 @@ export default function CompraMaterialPage() {
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "materials");
+  }, [companyOwnerId]);
 
   const getAsociadosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "asociados");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "asociados");
+  }, [companyOwnerId]);
 
   const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "purchaseInvoices");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
+  }, [companyOwnerId]);
 
   const getPrestamosCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "prestamos");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "prestamos");
+  }, [companyOwnerId]);
   
   const getCompanyProfileRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return doc(db, "companyProfiles", user.uid);
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return doc(db, "companyProfiles", companyOwnerId);
+  }, [companyOwnerId]);
 
 
   const fetchInitialData = React.useCallback(async () => {
@@ -111,7 +111,7 @@ export default function CompraMaterialPage() {
     const asociadosCollectionRef = getAsociadosCollectionRef();
 
     if (!materialsCollectionRef || !asociadosCollectionRef) {
-      if (user) {
+      if (companyOwnerId) {
         toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -143,11 +143,11 @@ export default function CompraMaterialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getMaterialsCollectionRef, getAsociadosCollectionRef, user, toast]);
+  }, [getMaterialsCollectionRef, getAsociadosCollectionRef, companyOwnerId, toast]);
 
   React.useEffect(() => {
     document.title = 'Compra de Materiales | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchInitialData();
     } else {
       setIsLoading(false);
@@ -156,7 +156,7 @@ export default function CompraMaterialPage() {
       setCurrentPurchaseItems([]);
       setCompanyProfileData(null);
     }
-  }, [user, fetchInitialData]);
+  }, [companyOwnerId, fetchInitialData]);
 
   const handleOpenAddItemForm = (item?: CompraMaterialItem, index?: number) => {
     if (!user) {

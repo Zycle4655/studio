@@ -45,7 +45,7 @@ import { useRouter } from "next/navigation";
 
 export default function FacturasVentaPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const router = useRouter(); 
   const [invoices, setInvoices] = React.useState<FacturaVentaDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -57,18 +57,18 @@ export default function FacturasVentaPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const getSaleInvoicesCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "saleInvoices");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
+  }, [companyOwnerId]);
 
   const getCompanyProfileRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return doc(db, "companyProfiles", user.uid);
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return doc(db, "companyProfiles", companyOwnerId);
+  }, [companyOwnerId]);
 
 
   const fetchInvoicesAndProfile = React.useCallback(async () => {
-    if (!user) {
+    if (!companyOwnerId) {
       setIsLoading(false);
       return;
     }
@@ -89,7 +89,9 @@ export default function FacturasVentaPage() {
           setCompanyProfile(profileSnap.data() as CompanyProfileDocument);
         }
       }
-      setUserEmail(user.email);
+      if (user) {
+        setUserEmail(user.email);
+      }
 
     } catch (error) {
       console.error("Error fetching invoices or profile:", error);
@@ -97,11 +99,11 @@ export default function FacturasVentaPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getSaleInvoicesCollectionRef, getCompanyProfileRef, toast]);
+  }, [companyOwnerId, user, getSaleInvoicesCollectionRef, getCompanyProfileRef, toast]);
 
   React.useEffect(() => {
     document.title = 'Facturas de Venta | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchInvoicesAndProfile();
     } else {
       setInvoices([]);
@@ -109,7 +111,7 @@ export default function FacturasVentaPage() {
       setUserEmail(null);
       setIsLoading(false);
     }
-  }, [user, fetchInvoicesAndProfile]);
+  }, [companyOwnerId, fetchInvoicesAndProfile]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);

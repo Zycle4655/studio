@@ -47,7 +47,7 @@ export default function EditFacturaVentaPage() {
   const router = useRouter();
   const params = useParams();
   const facturaId = params.facturaId as string;
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const { toast } = useToast();
 
   const [invoice, setInvoice] = React.useState<FacturaVentaDocument | null>(null);
@@ -79,9 +79,9 @@ export default function EditFacturaVentaPage() {
   });
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "materials");
+  }, [companyOwnerId]);
 
   const fetchAvailableMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -110,16 +110,16 @@ export default function EditFacturaVentaPage() {
 
 
   React.useEffect(() => {
-    if (!user || !facturaId) {
+    if (!companyOwnerId || !facturaId) {
       setIsLoadingPage(false);
-      if (!user) router.replace("/login");
+      if (!companyOwnerId) router.replace("/login");
       return;
     }
 
     const fetchInvoiceData = async () => {
       setIsLoadingPage(true);
       try {
-        const invoiceRef = doc(db, "companyProfiles", user.uid, "saleInvoices", facturaId);
+        const invoiceRef = doc(db, "companyProfiles", companyOwnerId, "saleInvoices", facturaId);
         const invoiceSnap = await getDoc(invoiceRef);
 
         if (invoiceSnap.exists()) {
@@ -138,12 +138,14 @@ export default function EditFacturaVentaPage() {
           router.replace("/dashboard/gestion-material/facturas-venta");
         }
 
-        const profileRef = doc(db, "companyProfiles", user.uid);
+        const profileRef = doc(db, "companyProfiles", companyOwnerId);
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
           setCompanyProfile(profileSnap.data() as CompanyProfileDocument);
         }
-        setUserEmail(user.email);
+        if (user) {
+          setUserEmail(user.email);
+        }
         
         await fetchAvailableMaterials();
 
@@ -156,7 +158,7 @@ export default function EditFacturaVentaPage() {
     };
 
     fetchInvoiceData();
-  }, [user, facturaId, router, toast, form, fetchAvailableMaterials]);
+  }, [companyOwnerId, user, facturaId, router, toast, form, fetchAvailableMaterials]);
 
   const calculateTotal = React.useCallback((items: VentaMaterialItem[]) => {
     return items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -250,7 +252,7 @@ export default function EditFacturaVentaPage() {
 
 
   const handleUpdateInvoice = async (formData: FacturaVentaFormData) => {
-    if (!user || !invoice || !facturaId || !db) return;
+    if (!companyOwnerId || !invoice || !facturaId || !db) return;
     setIsSavingInvoice(true);
     
     const materialsRef = getMaterialsCollectionRef();
@@ -261,7 +263,7 @@ export default function EditFacturaVentaPage() {
     }
 
     try {
-      const invoiceRef = doc(db, "companyProfiles", user.uid, "saleInvoices", facturaId);
+      const invoiceRef = doc(db, "companyProfiles", companyOwnerId, "saleInvoices", facturaId);
       const finalTotalFactura = calculateTotal(editableItems);
 
       // Validate items before proceeding

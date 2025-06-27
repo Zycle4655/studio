@@ -45,7 +45,7 @@ import { useRouter } from "next/navigation";
 
 export default function FacturasCompraPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const router = useRouter(); 
   const [invoices, setInvoices] = React.useState<FacturaCompraDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -57,18 +57,18 @@ export default function FacturasCompraPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const getPurchaseInvoicesCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "purchaseInvoices");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
+  }, [companyOwnerId]);
 
   const getCompanyProfileRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return doc(db, "companyProfiles", user.uid);
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return doc(db, "companyProfiles", companyOwnerId);
+  }, [companyOwnerId]);
 
 
   const fetchInvoicesAndProfile = React.useCallback(async () => {
-    if (!user) {
+    if (!companyOwnerId) {
       setIsLoading(false);
       return;
     }
@@ -89,7 +89,10 @@ export default function FacturasCompraPage() {
           setCompanyProfile(profileSnap.data() as CompanyProfileDocument);
         }
       }
-      setUserEmail(user.email);
+      // Use the email of the currently logged-in user, not necessarily the company owner
+      if (user) {
+        setUserEmail(user.email);
+      }
 
     } catch (error) {
       console.error("Error fetching invoices or profile:", error);
@@ -97,11 +100,11 @@ export default function FacturasCompraPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getPurchaseInvoicesCollectionRef, getCompanyProfileRef, toast]);
+  }, [companyOwnerId, user, getPurchaseInvoicesCollectionRef, getCompanyProfileRef, toast]);
 
   React.useEffect(() => {
     document.title = 'Facturas de Compra | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchInvoicesAndProfile();
     } else {
       setInvoices([]);
@@ -109,7 +112,7 @@ export default function FacturasCompraPage() {
       setUserEmail(null);
       setIsLoading(false);
     }
-  }, [user, fetchInvoicesAndProfile]);
+  }, [companyOwnerId, fetchInvoicesAndProfile]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);

@@ -48,7 +48,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function VentaMaterialPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, companyOwnerId } = useAuth();
   const [isLoading, setIsLoading] = React.useState(true); 
   const [isSubmitting, setIsSubmitting] = React.useState(false); 
   const [isFetchingCompanyProfile, setIsFetchingCompanyProfile] = React.useState(false);
@@ -70,19 +70,19 @@ export default function VentaMaterialPage() {
 
 
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "materials");
+  }, [companyOwnerId]);
 
   const getSaleInvoicesCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "saleInvoices");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
+  }, [companyOwnerId]);
   
   const getCompanyProfileRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return doc(db, "companyProfiles", user.uid);
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return doc(db, "companyProfiles", companyOwnerId);
+  }, [companyOwnerId]);
 
 
   const fetchAvailableMaterials = React.useCallback(async () => {
@@ -112,7 +112,7 @@ export default function VentaMaterialPage() {
 
   React.useEffect(() => {
     document.title = 'Venta de Materiales | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchAvailableMaterials();
     } else {
       setIsLoading(false);
@@ -120,7 +120,7 @@ export default function VentaMaterialPage() {
       setCurrentSaleItems([]);
       setCompanyProfileData(null);
     }
-  }, [user, fetchAvailableMaterials]);
+  }, [companyOwnerId, fetchAvailableMaterials]);
 
   const handleOpenAddItemForm = (item?: VentaMaterialItem, index?: number) => {
     if (!user) {
