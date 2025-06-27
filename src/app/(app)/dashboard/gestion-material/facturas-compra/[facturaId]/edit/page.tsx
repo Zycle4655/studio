@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, getDocs, query, orderBy, writeBatch, increment } from "firebase/firestore";
@@ -46,8 +46,10 @@ import CompraMaterialItemForm from "@/components/forms/CompraMaterialItemForm";
 import type { CompraMaterialItemFormData } from "@/schemas/compra";
 
 
-export default function EditFacturaCompraPage({ params: { facturaId } }: { params: { facturaId: string } }) {
+export default function EditFacturaCompraPage() {
   const router = useRouter();
+  const params = useParams();
+  const facturaId = params.facturaId as string;
   const { user } = useAuth();
   const { toast } = useToast();
 

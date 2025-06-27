@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, getDocs, query, orderBy, writeBatch, increment } from "firebase/firestore";
@@ -43,8 +43,10 @@ import VentaMaterialItemForm from "@/components/forms/VentaMaterialItemForm";
 import type { VentaMaterialItemFormData } from "@/schemas/venta";
 
 
-export default function EditFacturaVentaPage({ params: { facturaId } }: { params: { facturaId: string } }) {
+export default function EditFacturaVentaPage() {
   const router = useRouter();
+  const params = useParams();
+  const facturaId = params.facturaId as string;
   const { user } = useAuth();
   const { toast } = useToast();
 
