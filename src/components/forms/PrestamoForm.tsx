@@ -37,12 +37,14 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { es } from "date-fns/locale";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 import { PrestamoFormSchema, type PrestamoFormData } from "@/schemas/prestamo";
 import type { AsociadoDocument } from "@/schemas/sui";
+import type { CollaboratorDocument } from "@/schemas/equipo";
 import { Save, XCircle, DollarSign, HandCoins, ChevronsUpDown, Check, CalendarIcon, MessageSquare } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 
@@ -50,9 +52,10 @@ interface PrestamoFormProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSubmit: (data: PrestamoFormData) => Promise<void>;
-  defaultValues?: PrestamoFormData;
+  defaultValues?: Partial<PrestamoFormData>;
   isLoading: boolean;
   asociados: AsociadoDocument[];
+  colaboradores: CollaboratorDocument[];
   title: string;
 }
 
@@ -63,6 +66,7 @@ export default function PrestamoForm({
   defaultValues,
   isLoading,
   asociados,
+  colaboradores,
   title,
 }: PrestamoFormProps) {
   const [isComboboxOpen, setIsComboboxOpen] = React.useState(false);
@@ -70,17 +74,21 @@ export default function PrestamoForm({
   const form = useForm<PrestamoFormData>({
     resolver: zodResolver(PrestamoFormSchema),
     defaultValues: {
-      asociadoId: defaultValues?.asociadoId || "",
+      tipoBeneficiario: defaultValues?.tipoBeneficiario || 'asociado',
+      beneficiarioId: defaultValues?.beneficiarioId || "",
       monto: defaultValues?.monto || undefined,
       fecha: defaultValues?.fecha || new Date(),
       observaciones: defaultValues?.observaciones || "",
     },
   });
 
+  const tipoBeneficiario = form.watch("tipoBeneficiario");
+
   React.useEffect(() => {
     if (isOpen) {
       form.reset({
-        asociadoId: defaultValues?.asociadoId || "",
+        tipoBeneficiario: defaultValues?.tipoBeneficiario || 'asociado',
+        beneficiarioId: defaultValues?.beneficiarioId || "",
         monto: defaultValues?.monto || undefined,
         fecha: defaultValues?.fecha instanceof Date ? defaultValues.fecha : new Date(),
         observaciones: defaultValues?.observaciones || "",
@@ -88,12 +96,27 @@ export default function PrestamoForm({
     }
   }, [defaultValues, isOpen, form]);
 
+  React.useEffect(() => {
+    // When tipoBeneficiario changes, reset the beneficiarioId field if user is interacting with form
+    if (form.formState.isDirty) {
+      form.setValue("beneficiarioId", "");
+    }
+  }, [tipoBeneficiario, form]);
+
+
   const handleFormSubmit = async (data: PrestamoFormData) => {
     await onSubmit(data);
   };
 
   if (!isOpen) {
     return null;
+  }
+  
+  const getBeneficiaryName = (id: string) => {
+    if (tipoBeneficiario === 'asociado') {
+      return asociados.find(a => a.id === id)?.nombre;
+    }
+    return colaboradores.find(c => c.id === id)?.nombre;
   }
 
   return (
@@ -113,10 +136,38 @@ export default function PrestamoForm({
             
             <FormField
               control={form.control}
-              name="asociadoId"
+              name="tipoBeneficiario"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-foreground/80">Tipo de Beneficiario</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex items-center space-x-4"
+                      disabled={isLoading}
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="asociado" /></FormControl>
+                        <FormLabel className="font-normal">Asociado</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl><RadioGroupItem value="colaborador" /></FormControl>
+                        <FormLabel className="font-normal">Colaborador</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="beneficiarioId"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-foreground/80">Asociado</FormLabel>
+                  <FormLabel className="text-foreground/80">Beneficiario</FormLabel>
                   <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -127,31 +178,47 @@ export default function PrestamoForm({
                           disabled={isLoading}
                         >
                           {field.value
-                            ? asociados.find(asociado => asociado.id === field.value)?.nombre
-                            : "Seleccione un asociado"}
+                            ? getBeneficiaryName(field.value)
+                            : "Seleccione un beneficiario"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                       <Command>
-                        <CommandInput placeholder="Buscar asociado..." />
+                        <CommandInput placeholder="Buscar beneficiario..." />
                         <CommandList>
-                          <CommandEmpty>No se encontró el asociado.</CommandEmpty>
+                          <CommandEmpty>No se encontró el beneficiario.</CommandEmpty>
                           <CommandGroup>
-                            {asociados.map(asociado => (
-                              <CommandItem
-                                value={asociado.nombre}
-                                key={asociado.id}
-                                onSelect={() => {
-                                  form.setValue("asociadoId", asociado.id);
-                                  setIsComboboxOpen(false);
-                                }}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", asociado.id === field.value ? "opacity-100" : "opacity-0")} />
-                                {asociado.nombre}
-                              </CommandItem>
-                            ))}
+                            {tipoBeneficiario === 'asociado' ? (
+                                asociados.map(asociado => (
+                                <CommandItem
+                                    value={asociado.nombre}
+                                    key={asociado.id}
+                                    onSelect={() => {
+                                    form.setValue("beneficiarioId", asociado.id);
+                                    setIsComboboxOpen(false);
+                                    }}
+                                >
+                                    <Check className={cn("mr-2 h-4 w-4", asociado.id === field.value ? "opacity-100" : "opacity-0")} />
+                                    {asociado.nombre}
+                                </CommandItem>
+                                ))
+                            ) : (
+                                colaboradores.map(colaborador => (
+                                <CommandItem
+                                    value={colaborador.nombre}
+                                    key={colaborador.id}
+                                    onSelect={() => {
+                                    form.setValue("beneficiarioId", colaborador.id);
+                                    setIsComboboxOpen(false);
+                                    }}
+                                >
+                                    <Check className={cn("mr-2 h-4 w-4", colaborador.id === field.value ? "opacity-100" : "opacity-0")} />
+                                    {colaborador.nombre}
+                                </CommandItem>
+                                ))
+                            )}
                           </CommandGroup>
                         </CommandList>
                       </Command>
@@ -262,4 +329,3 @@ export default function PrestamoForm({
     </Dialog>
   );
 }
-

@@ -34,6 +34,7 @@ import {
 } from "firebase/firestore";
 import type { PrestamoDocument, PrestamoFormData, Abono, AbonoFormData } from "@/schemas/prestamo";
 import type { AsociadoDocument } from "@/schemas/sui";
+import type { CollaboratorDocument } from "@/schemas/equipo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,7 @@ export default function PrestamosPage() {
   const { user, companyOwnerId, permissions } = useAuth();
   const [prestamos, setPrestamos] = React.useState<PrestamoDocument[]>([]);
   const [asociados, setAsociados] = React.useState<AsociadoDocument[]>([]);
+  const [colaboradores, setColaboradores] = React.useState<CollaboratorDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -76,10 +78,17 @@ export default function PrestamosPage() {
     return collection(db, "companyProfiles", companyOwnerId, "asociados");
   }, [companyOwnerId]);
 
+  const getColaboradoresCollectionRef = React.useCallback(() => {
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "collaborators");
+  }, [companyOwnerId]);
+
+
   const fetchData = React.useCallback(async () => {
     const prestamosCollectionRef = getPrestamosCollectionRef();
     const asociadosCollectionRef = getAsociadosCollectionRef();
-    if (!prestamosCollectionRef || !asociadosCollectionRef) {
+    const colaboradoresCollectionRef = getColaboradoresCollectionRef();
+    if (!prestamosCollectionRef || !asociadosCollectionRef || !colaboradoresCollectionRef) {
       if (companyOwnerId) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
@@ -95,6 +104,12 @@ export default function PrestamosPage() {
       const asociadosList = asocSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AsociadoDocument));
       setAsociados(asociadosList);
       
+      // Fetch Colaboradores
+      const collabQuery = query(colaboradoresCollectionRef, orderBy("nombre", "asc"));
+      const collabSnapshot = await getDocs(collabQuery);
+      const colaboradoresList = collabSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CollaboratorDocument));
+      setColaboradores(colaboradoresList);
+
       // Fetch Prestamos
       const q = query(prestamosCollectionRef, orderBy("fecha", "desc"));
       const querySnapshot = await getDocs(q);
@@ -108,14 +123,12 @@ export default function PrestamosPage() {
       toast({
         variant: "destructive",
         title: "Error al Cargar Datos",
-        description: "No se pudieron cargar los préstamos o asociados.",
+        description: "No se pudieron cargar los préstamos, asociados o colaboradores.",
       });
-      setAsociados([]);
-      setPrestamos([]);
     } finally {
       setIsLoading(false);
     }
-  }, [companyOwnerId, getPrestamosCollectionRef, getAsociadosCollectionRef, toast]);
+  }, [companyOwnerId, getPrestamosCollectionRef, getAsociadosCollectionRef, getColaboradoresCollectionRef, toast]);
 
 
   React.useEffect(() => {
@@ -126,6 +139,7 @@ export default function PrestamosPage() {
       setIsLoading(false);
       setAsociados([]);
       setPrestamos([]);
+      setColaboradores([]);
     }
   }, [companyOwnerId, fetchData]);
 
@@ -164,7 +178,7 @@ export default function PrestamosPage() {
       await deleteDoc(doc(prestamosCollectionRef, prestamoToDelete.id));
       toast({
         title: "Préstamo Eliminado",
-        description: `El préstamo de "${prestamoToDelete.asociadoNombre}" ha sido eliminado.`,
+        description: `El préstamo de "${prestamoToDelete.beneficiarioNombre}" ha sido eliminado.`,
       });
       fetchData();
     } catch (error) {
@@ -189,9 +203,17 @@ export default function PrestamosPage() {
     }
     setIsSubmitting(true);
     
-    const asociado = asociados.find(a => a.id === data.asociadoId);
-    if (!asociado) {
-       toast({ variant: "destructive", title: "Error", description: "Asociado no encontrado." });
+    let beneficiarioNombre = "";
+    if (data.tipoBeneficiario === 'asociado') {
+        const asociado = asociados.find(a => a.id === data.beneficiarioId);
+        beneficiarioNombre = asociado?.nombre || "";
+    } else {
+        const colaborador = colaboradores.find(c => c.id === data.beneficiarioId);
+        beneficiarioNombre = colaborador?.nombre || "";
+    }
+
+    if (!beneficiarioNombre) {
+       toast({ variant: "destructive", title: "Error", description: "Beneficiario no encontrado." });
        setIsSubmitting(false);
        return;
     }
@@ -203,21 +225,23 @@ export default function PrestamosPage() {
         const updatedData = {
             monto: data.monto,
             fecha: Timestamp.fromDate(data.fecha),
-            asociadoId: data.asociadoId,
-            asociadoNombre: asociado.nombre,
+            tipoBeneficiario: data.tipoBeneficiario,
+            beneficiarioId: data.beneficiarioId,
+            beneficiarioNombre: beneficiarioNombre,
             observaciones: data.observaciones || null,
             updatedAt: serverTimestamp(),
             // Recalculate balance if amount changes
             saldoPendiente: data.monto - (editingPrestamo.monto - editingPrestamo.saldoPendiente)
         };
         await updateDoc(prestamoRef, updatedData);
-        toast({ title: "Préstamo Actualizado", description: `El préstamo de "${asociado.nombre}" ha sido actualizado.` });
+        toast({ title: "Préstamo Actualizado", description: `El préstamo de "${beneficiarioNombre}" ha sido actualizado.` });
       } else {
         // Create logic
         const prestamoData: Omit<PrestamoDocument, 'id'> = {
           userId: user.uid,
-          asociadoId: data.asociadoId,
-          asociadoNombre: asociado.nombre,
+          tipoBeneficiario: data.tipoBeneficiario,
+          beneficiarioId: data.beneficiarioId,
+          beneficiarioNombre: beneficiarioNombre,
           monto: data.monto,
           fecha: Timestamp.fromDate(data.fecha),
           estado: 'Pendiente',
@@ -228,7 +252,7 @@ export default function PrestamosPage() {
           updatedAt: serverTimestamp() as Timestamp,
         };
         await addDoc(prestamosCollectionRef, prestamoData);
-        toast({ title: "Préstamo Registrado", description: `Se ha creado el préstamo para "${asociado.nombre}".` });
+        toast({ title: "Préstamo Registrado", description: `Se ha creado el préstamo para "${beneficiarioNombre}".` });
       }
       setIsPrestamoFormOpen(false);
       setEditingPrestamo(null);
@@ -270,7 +294,7 @@ export default function PrestamosPage() {
         updatedAt: serverTimestamp(),
       });
       
-      toast({ title: "Abono Registrado", description: `Se registró el abono al préstamo de ${editingPrestamo.asociadoNombre}.` });
+      toast({ title: "Abono Registrado", description: `Se registró el abono al préstamo de ${editingPrestamo.beneficiarioNombre}.` });
       setIsAbonoFormOpen(false);
       setEditingPrestamo(null);
       fetchData();
@@ -292,7 +316,7 @@ export default function PrestamosPage() {
     return new Date(timestamp.seconds * 1000).toLocaleDateString('es-CO');
   };
   
-  const filteredPrestamos = prestamos.filter(p => p.asociadoNombre.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredPrestamos = prestamos.filter(p => p.beneficiarioNombre.toLowerCase().includes(searchTerm.toLowerCase()));
   
   const summary = React.useMemo(() => {
     const totalPrestado = prestamos.reduce((sum, p) => sum + p.monto, 0);
@@ -391,7 +415,7 @@ export default function PrestamosPage() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Asociado</TableHead>
+                    <TableHead>Beneficiario</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="text-right">Monto</TableHead>
                     <TableHead className="text-right">Saldo Pendiente</TableHead>
@@ -402,7 +426,7 @@ export default function PrestamosPage() {
                 <TableBody>
                     {filteredPrestamos.map((prestamo) => (
                     <TableRow key={prestamo.id}>
-                        <TableCell className="font-medium">{prestamo.asociadoNombre}</TableCell>
+                        <TableCell className="font-medium">{prestamo.beneficiarioNombre}</TableCell>
                         <TableCell>{formatDate(prestamo.fecha)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(prestamo.monto)}</TableCell>
                         <TableCell className="text-right font-semibold text-destructive">{formatCurrency(prestamo.saldoPendiente)}</TableCell>
@@ -433,7 +457,7 @@ export default function PrestamosPage() {
             size="icon"
             onClick={() => handleOpenPrestamoForm()}
             aria-label="Registrar nuevo préstamo"
-            disabled={!user || isLoading || isSubmitting || asociados.length === 0}
+            disabled={!user || isLoading || isSubmitting || (asociados.length === 0 && colaboradores.length === 0)}
         >
             <Plus className="h-8 w-8" />
         </Button>
@@ -447,6 +471,7 @@ export default function PrestamosPage() {
             defaultValues={editingPrestamo || undefined}
             isLoading={isSubmitting}
             asociados={asociados}
+            colaboradores={colaboradores}
             title={editingPrestamo ? "Editar Préstamo" : "Registrar Nuevo Préstamo"}
           />
       )}
@@ -466,7 +491,7 @@ export default function PrestamosPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro de eliminar este préstamo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El préstamo de "{prestamoToDelete?.asociadoNombre}" por un monto de {formatCurrency(prestamoToDelete?.monto || 0)} será eliminado permanentemente.
+              Esta acción no se puede deshacer. El préstamo de "{prestamoToDelete?.beneficiarioNombre}" por un monto de {formatCurrency(prestamoToDelete?.monto || 0)} será eliminado permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

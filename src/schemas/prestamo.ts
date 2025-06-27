@@ -13,7 +13,10 @@ export type AbonoFormData = z.infer<typeof AbonoFormSchema>;
 
 // Schema for the main loan form
 export const PrestamoFormSchema = z.object({
-  asociadoId: z.string().min(1, { message: "Debe seleccionar un asociado." }),
+  tipoBeneficiario: z.enum(['asociado', 'colaborador'], {
+    required_error: "Debe seleccionar un tipo de beneficiario.",
+  }),
+  beneficiarioId: z.string().min(1, { message: "Debe seleccionar un beneficiario." }),
   monto: z.coerce
     .number({ invalid_type_error: "El monto debe ser un número." })
     .positive({ message: "El monto debe ser positivo." })
@@ -35,8 +38,11 @@ export interface Abono {
 export interface PrestamoDocument {
   id?: string; // Firestore document ID
   userId: string;
-  asociadoId: string;
-  asociadoNombre: string;
+  
+  tipoBeneficiario: 'asociado' | 'colaborador';
+  beneficiarioId: string;
+  beneficiarioNombre: string;
+
   monto: number;
   fecha: Timestamp;
   estado: 'Pendiente' | 'Pagado';
