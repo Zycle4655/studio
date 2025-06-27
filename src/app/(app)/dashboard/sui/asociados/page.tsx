@@ -294,7 +294,7 @@ export default function AsociadosPage() {
              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Search className="w-16 h-16 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
-                <p className="text-muted-foreground">Ningún asociado coincide con "{searchTerm}".p>
+                <p className="text-muted-foreground">Ningún asociado coincide con "{searchTerm}".</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
