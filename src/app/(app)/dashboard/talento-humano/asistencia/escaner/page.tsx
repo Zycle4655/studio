@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { QrCode, LogIn, LogOut } from "lucide-react";
+import { QrCode, LogIn, LogOut, VideoOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ export default function EscanerAsistenciaPage() {
   const [registrationType, setRegistrationType] = React.useState<RegistrationType | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [lastScanResult, setLastScanResult] = React.useState<{ status: "success" | "error"; message: string } | null>(null);
+  const [cameraError, setCameraError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     document.title = "Terminal de Escáner | ZYCLE";
@@ -91,6 +92,19 @@ export default function EscanerAsistenciaPage() {
     }
   };
 
+  const handleCameraError = (error: Error) => {
+    console.error("Camera Error:", error);
+    setLastScanResult(null);
+    if (error.name === "NotAllowedError") {
+        setCameraError("Permiso de cámara denegado. Por favor, permita el acceso a la cámara en la configuración de su navegador y refresque la página.");
+    } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError" || error.message.includes("Requested device not found")) {
+        setCameraError("No se encontró ninguna cámara. Por favor, conecte una cámara y vuelva a intentarlo.");
+    } else {
+        setCameraError("Ocurrió un error al acceder a la cámara. Intente de nuevo o revise la configuración de su dispositivo.");
+    }
+  };
+
+
   if (permissions === null) {
       return ( // Loading state for permissions
            <div className="container py-8 px-4 md:px-6 text-center">
@@ -152,21 +166,31 @@ export default function EscanerAsistenciaPage() {
             </Button>
           </div>
 
-          <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
-            <QrScanner
-              onDecode={(result) => handleScanResult(result)}
-              onError={(error) => console.error(error?.message)}
-              options={{
-                  delay: 500,
-              }}
-              styles={{
-                  container: { width: '100%', height: '100%' },
-              }}
-            />
-            {!registrationType && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <p className="text-white text-lg font-semibold">Seleccione un modo para activar el escáner</p>
-                </div>
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted flex items-center justify-center">
+            {cameraError ? (
+                <Alert variant="destructive" className="w-auto m-4 text-center">
+                    <VideoOff className="h-5 w-5 mx-auto mb-2"/>
+                    <AlertTitle>Error de Cámara</AlertTitle>
+                    <AlertDescription>{cameraError}</AlertDescription>
+                </Alert>
+            ) : (
+                <>
+                    <QrScanner
+                      onDecode={(result) => handleScanResult(result)}
+                      onError={handleCameraError}
+                      options={{
+                          delay: 500,
+                      }}
+                      styles={{
+                          container: { width: '100%', height: '100%' },
+                      }}
+                    />
+                    {!registrationType && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <p className="text-white text-lg font-semibold text-center p-4">Seleccione un modo para activar el escáner</p>
+                        </div>
+                    )}
+                </>
             )}
           </div>
           
