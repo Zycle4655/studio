@@ -193,6 +193,21 @@ export default function CollaboratorForm({
     form.setValue("email", finalEmail, { shouldValidate: true });
     toast({ title: "Correo Generado", description: `Se ha sugerido el correo: ${finalEmail}` });
   };
+  
+  const generatePassword = () => {
+    const numeroIdentificacion = form.getValues("numeroIdentificacion");
+
+    if (!numeroIdentificacion) {
+      toast({ variant: "destructive", title: "Número de Documento Requerido", description: "Por favor, ingrese el número de documento para generar una contraseña." });
+      return;
+    }
+
+    const generatedPassword = numeroIdentificacion;
+    form.setValue("password", generatedPassword, { shouldValidate: true });
+    form.setValue("confirmPassword", generatedPassword, { shouldValidate: true });
+
+    toast({ title: "Contraseña Generada", description: `Se ha establecido la contraseña inicial como el número de documento.` });
+  };
 
 
   if (!isOpen) {
@@ -211,6 +226,8 @@ export default function CollaboratorForm({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto px-1 py-4" autoComplete="off">
+            
+            <h4 className="text-base font-semibold text-foreground">Información General</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -226,97 +243,30 @@ export default function CollaboratorForm({
                 )}
               />
               <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex justify-between items-center">
-                      <FormLabel className="text-foreground/80">Correo Electrónico de Acceso</FormLabel>
-                      {!isEditing && (
-                          <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={generateEmail}
-                          disabled={isLoading || !form.watch("nombre")}
-                          >
-                          <Sparkles className="mr-2 h-4 w-4" />
-                          Generar
-                          </Button>
-                      )}
-                    </div>
-                    <FormControl>
-                      <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading || isEditing} />
-                    </FormControl>
-                    {isEditing && <FormDescription className="text-xs">El correo no se puede cambiar al editar.</FormDescription>}
-                    <FormMessage />
-                  </FormItem>
-                )}
+                  control={form.control}
+                  name="telefono"
+                  render={({ field }) => (
+                      <FormItem><FormLabel>Teléfono</FormLabel>
+                      <FormControl><Input type="tel" placeholder="Número de contacto" {...field} value={field.value || ""} disabled={isLoading} /></FormControl>
+                      <FormMessage />
+                      </FormItem>
+                  )}
               />
+               <FormField
+                    control={form.control}
+                    name="direccion"
+                    render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                        <FormLabel>Dirección</FormLabel>
+                        <FormControl><Input placeholder="Dirección de residencia" {...field} value={field.value || ""} disabled={isLoading} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </div>
-
-            {!isEditing && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground/80">Contraseña Inicial</FormLabel>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <FormControl>
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="••••••••" 
-                            {...field} 
-                            className="pl-10 pr-10"
-                            autoComplete="new-password"
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                          tabIndex={-1}
-                        >
-                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground/80">Confirmar Contraseña</FormLabel>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <FormControl>
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="••••••••" 
-                            {...field} 
-                            className="pl-10 pr-10"
-                            autoComplete="new-password"
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
             
             <Separator className="my-6" />
-            <h4 className="text-base font-semibold text-foreground">Información Personal</h4>
+            <h4 className="text-base font-semibold text-foreground">Información de Identificación</h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -381,27 +331,6 @@ export default function CollaboratorForm({
                         </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="telefono"
-                    render={({ field }) => (
-                        <FormItem><FormLabel>Teléfono</FormLabel>
-                        <FormControl><Input type="tel" placeholder="Número de contacto" {...field} value={field.value || ""} disabled={isLoading} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="direccion"
-                    render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                        <FormLabel>Dirección</FormLabel>
-                        <FormControl><Input placeholder="Dirección de residencia" {...field} value={field.value || ""} disabled={isLoading} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
             </div>
 
             <Separator className="my-6" />
@@ -420,7 +349,7 @@ export default function CollaboratorForm({
             </div>
             
             <Separator className="my-6" />
-            <h4 className="text-base font-semibold text-foreground">Información Laboral y Permisos</h4>
+            <h4 className="text-base font-semibold text-foreground">Información Laboral y de Acceso</h4>
 
             <FormField
               control={form.control}
@@ -439,6 +368,109 @@ export default function CollaboratorForm({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex justify-between items-center">
+                      <FormLabel className="text-foreground/80">Correo Electrónico de Acceso</FormLabel>
+                      {!isEditing && (
+                          <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={generateEmail}
+                          disabled={isLoading || !form.watch("nombre")}
+                          >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Generar
+                          </Button>
+                      )}
+                    </div>
+                    <FormControl>
+                      <Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={isLoading || isEditing} />
+                    </FormControl>
+                    {isEditing && <FormDescription className="text-xs">El correo no se puede cambiar al editar.</FormDescription>}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+               {!isEditing && (
+                 <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                           <div className="flex justify-between items-center">
+                            <FormLabel className="text-foreground/80">Contraseña Inicial</FormLabel>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={generatePassword}
+                                disabled={isLoading || !form.watch("numeroIdentificacion")}
+                            >
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Generar
+                            </Button>
+                           </div>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <FormControl>
+                              <Input 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="••••••••" 
+                                {...field} 
+                                className="pl-10 pr-10"
+                                autoComplete="new-password"
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                              tabIndex={-1}
+                            >
+                              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground/80 sr-only">Confirmar Contraseña</FormLabel>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <FormControl>
+                              <Input 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="Confirme la contraseña" 
+                                {...field} 
+                                className="pl-10 pr-10"
+                                autoComplete="new-password"
+                              />
+                            </FormControl>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                 </div>
+               )}
+            </div>
             
             <div>
               <FormLabel className="text-base font-medium text-foreground/90">Permisos de Plataforma</FormLabel>
