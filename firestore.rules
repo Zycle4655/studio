@@ -3,24 +3,32 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Rules for companyProfiles collection
+    match /companyProfiles/{userId} {
+      // The owner of the profile can read and write their own document.
+      allow read, write: if request.auth != null && request.auth.uid == userId;
 
-    // Rules for user-specific data and company profiles
-    match /companyProfiles/{companyId} {
-      // The owner of the company profile can read and write to it.
-      allow read, write: if request.auth.uid == companyId;
-
-      // The owner can also read and write to all subcollections.
-      // This recursive wildcard is crucial for accessing invoices, materials, etc.
-      match /{subcollection}/{docId=**} {
-        allow read, write: if request.auth.uid == companyId;
+      // The owner can also read and write to ANY document in ANY subcollection.
+      // This covers 'materials', 'cajaDiaria', 'fuentes', 'collaborators', etc.
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
     
-    // Rules for user mappings, to link collaborators to admins
-    match /userMappings/{userId} {
-      // Any authenticated user can read mappings (to find their admin).
-      // An authenticated user (the admin) can create a mapping for a new collaborator.
-      allow read, write: if request.auth != null;
+    // Rules for the user-to-company mapping
+    match /userMappings/{authUid} {
+      // The user themselves can read their mapping to find their admin.
+      allow get: if request.auth != null && request.auth.uid == authUid;
+      
+      // An admin can create a mapping for a new collaborator.
+      // We check if the 'adminUid' being written in the mapping document
+      // matches the person making the request. This prevents a random user
+      // from assigning a new collaborator to an admin.
+      allow create: if request.auth != null && request.resource.data.adminUid == request.auth.uid;
+      
+      // No one should update or delete mappings for now to keep it simple.
+      allow update, delete: if false;
     }
   }
 }
