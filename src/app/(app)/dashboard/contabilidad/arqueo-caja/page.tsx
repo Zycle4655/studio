@@ -31,17 +31,17 @@ const getTodayDateId = () => {
 };
 
 export default function ArqueoCajaPage() {
-  const { user, companyOwnerId, permissions } = useAuth();
+  const { user, companyOwnerId, permissions, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const isOwner = user?.uid === companyOwnerId;
 
   const [cajaDiaria, setCajaDiaria] = React.useState<CajaDiariaDocument | null>(null);
   const [totalCompras, setTotalCompras] = React.useState(0);
   const [totalVentas, setTotalVentas] = React.useState(0);
   const [saldoEsperado, setSaldoEsperado] = React.useState(0);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isPageLoading, setIsPageLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const isOwner = !authLoading && user?.uid === companyOwnerId;
   const todayId = getTodayDateId();
   
   const abrirCajaForm = useForm<AbrirCajaFormData>({
@@ -54,69 +54,69 @@ export default function ArqueoCajaPage() {
     defaultValues: { saldoReal: 0, observaciones: "" },
   });
 
-
-  const fetchData = React.useCallback(async () => {
-    // Definitive security check right before any database operation.
-    if (!companyOwnerId || !user || user.uid !== companyOwnerId) {
-      if (user && companyOwnerId && user.uid !== companyOwnerId) {
-        setIsLoading(false);
-      }
-      return;
-    }
-    setIsLoading(true);
-
-    try {
-      const cajaRef = doc(db, "companyProfiles", companyOwnerId, "cajaDiaria", todayId);
-      const cajaSnap = await getDoc(cajaRef);
-      const cajaData = cajaSnap.exists() ? (cajaSnap.data() as CajaDiariaDocument) : null;
-      setCajaDiaria(cajaData);
-
-      if (cajaData && cajaData.estado === 'Abierta') {
-        const todayString = new Date().toDateString();
-
-        // Fetch all purchase invoices and filter on the client
-        const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
-        const comprasSnap = await getDocs(comprasRef);
-        const totalComprasSum = comprasSnap.docs
-            .map(doc => doc.data() as FacturaCompraDocument)
-            .filter(docData => {
-                const docDate = docData.fecha.toDate();
-                return docDate.toDateString() === todayString && docData.formaDePago === 'efectivo';
-            })
-            .reduce((sum, docData) => sum + docData.netoPagado, 0);
-        setTotalCompras(totalComprasSum);
-        
-        // Fetch all sale invoices and filter on the client
-        const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
-        const ventasSnap = await getDocs(ventasRef);
-        const totalVentasSum = ventasSnap.docs
-            .map(doc => doc.data() as FacturaVentaDocument)
-            .filter(docData => {
-                 const docDate = docData.fecha.toDate();
-                 return docDate.toDateString() === todayString && docData.formaDePago === 'efectivo';
-            })
-            .reduce((sum, docData) => sum + docData.totalFactura, 0);
-        setTotalVentas(totalVentasSum);
-
-        setSaldoEsperado(cajaData.baseInicial - totalComprasSum + totalVentasSum);
-      }
-    } catch (error) {
-      console.error("Error fetching caja data:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos de la caja." });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [companyOwnerId, user, todayId, toast]);
-
   React.useEffect(() => {
     document.title = 'Arqueo de Caja | ZYCLE';
-    if (companyOwnerId && user) {
-      fetchData();
+
+    if (authLoading) {
+      return; // Wait until auth context is ready
     }
-  }, [companyOwnerId, user, fetchData]);
+
+    if (!isOwner) {
+      setIsPageLoading(false); // Not the owner, stop loading and show restricted access
+      return;
+    }
+    
+    const fetchDataForOwner = async () => {
+      setIsPageLoading(true);
+      try {
+        const cajaRef = doc(db, "companyProfiles", companyOwnerId!, "cajaDiaria", todayId);
+        const cajaSnap = await getDoc(cajaRef);
+        const cajaData = cajaSnap.exists() ? (cajaSnap.data() as CajaDiariaDocument) : null;
+        setCajaDiaria(cajaData);
+
+        if (cajaData && cajaData.estado === 'Abierta') {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+
+          // Fetch all purchase invoices and filter on the client
+          const comprasRef = collection(db, "companyProfiles", companyOwnerId!, "purchaseInvoices");
+          const comprasSnap = await getDocs(comprasRef);
+          const totalComprasSum = comprasSnap.docs
+              .map(doc => doc.data() as FacturaCompraDocument)
+              .filter(docData => {
+                  const docDate = docData.fecha.toDate();
+                  return docDate >= todayStart && docData.formaDePago === 'efectivo';
+              })
+              .reduce((sum, docData) => sum + docData.netoPagado, 0);
+          setTotalCompras(totalComprasSum);
+          
+          // Fetch all sale invoices and filter on the client
+          const ventasRef = collection(db, "companyProfiles", companyOwnerId!, "saleInvoices");
+          const ventasSnap = await getDocs(ventasRef);
+          const totalVentasSum = ventasSnap.docs
+              .map(doc => doc.data() as FacturaVentaDocument)
+              .filter(docData => {
+                   const docDate = docData.fecha.toDate();
+                   return docDate >= todayStart && docData.formaDePago === 'efectivo';
+              })
+              .reduce((sum, docData) => sum + docData.totalFactura, 0);
+          setTotalVentas(totalVentasSum);
+
+          setSaldoEsperado(cajaData.baseInicial - totalComprasSum + totalVentasSum);
+        }
+      } catch (error) {
+        console.error("Error fetching caja data:", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos de la caja." });
+      } finally {
+        setIsPageLoading(false);
+      }
+    };
+
+    fetchDataForOwner();
+  }, [authLoading, isOwner, companyOwnerId, todayId, toast]);
   
   const handleAbrirCaja = async (data: AbrirCajaFormData) => {
-      if (!companyOwnerId || !user || !user.email) return;
+      if (!isOwner || !user?.email || !companyOwnerId) return;
       setIsSubmitting(true);
       try {
         const cajaRef = doc(db, "companyProfiles", companyOwnerId, "cajaDiaria", todayId);
@@ -136,7 +136,13 @@ export default function ArqueoCajaPage() {
         };
         await setDoc(cajaRef, nuevaCaja);
         toast({ title: "Caja Abierta", description: `La caja para hoy se abrió con una base de ${formatCurrency(data.baseInicial)}.` });
-        fetchData(); // Refresh data
+        
+        // Refetch data after opening
+        setCajaDiaria(nuevaCaja);
+        setTotalCompras(0);
+        setTotalVentas(0);
+        setSaldoEsperado(nuevaCaja.baseInicial);
+
       } catch (error) {
         console.error("Error opening caja:", error);
         toast({ variant: "destructive", title: "Error", description: "No se pudo abrir la caja." });
@@ -146,27 +152,29 @@ export default function ArqueoCajaPage() {
   };
   
   const handleCerrarCaja = async (data: CerrarCajaFormData) => {
-    if (!companyOwnerId || !user || !user.email || !cajaDiaria) return;
+    if (!isOwner || !user?.email || !cajaDiaria || !companyOwnerId) return;
     setIsSubmitting(true);
     try {
         const cajaRef = doc(db, "companyProfiles", companyOwnerId, "cajaDiaria", todayId);
         const diferencia = data.saldoReal - saldoEsperado;
 
-        await setDoc(cajaRef, {
+        const updatedCaja: CajaDiariaDocument = {
             ...cajaDiaria,
             estado: 'Cerrada',
             saldoReal: data.saldoReal,
             diferencia: diferencia,
-            observaciones: data.observaciones || null,
+            observaciones: data.observaciones || undefined,
             totalComprasEfectivo: totalCompras,
             totalVentasEfectivo: totalVentas,
             saldoEsperado: saldoEsperado,
             cerradoPor: { uid: user.uid, email: user.email },
-            updatedAt: serverTimestamp(),
-        }, { merge: true });
+            updatedAt: serverTimestamp() as Timestamp,
+        };
+        
+        await setDoc(cajaRef, updatedCaja, { merge: true });
 
         toast({ title: "Caja Cerrada", description: `El arqueo de caja se ha completado. Diferencia: ${formatCurrency(diferencia)}` });
-        fetchData(); // Refresh data
+        setCajaDiaria(updatedCaja); // Update state to reflect closed status
     } catch(error) {
          console.error("Error closing caja:", error);
         toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar la caja." });
@@ -192,7 +200,7 @@ export default function ArqueoCajaPage() {
     </div>
   );
 
-  if (isLoading) {
+  if (authLoading || isPageLoading) {
     return (
       <div className="container py-8 px-4 md:px-6">
         <CardHeader className="px-0">
@@ -344,3 +352,5 @@ export default function ArqueoCajaPage() {
     </div>
   );
 }
+
+    
