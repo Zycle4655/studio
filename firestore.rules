@@ -1,39 +1,44 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check if the requesting user is a collaborator of a given company owner.
-    function isCollaboratorOf(ownerId) {
-      // It checks if a mapping document exists for the current user 
-      // and if that mapping points to the ownerId they are trying to access.
-      return exists(/databases/$(database)/documents/userMappings/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/userMappings/$(request.auth.uid)).data.adminUid == ownerId;
+    
+    // -- Funciones de ayuda --
+    
+    // Verifica si el usuario que hace la solicitud es el propietario de la empresa.
+    function isOwner(ownerId) {
+      return request.auth.uid == ownerId;
+    }
+    
+    // Verifica si el usuario que hace la solicitud es un colaborador registrado
+    // de la empresa, consultando el documento de mapeo de usuario.
+    function isCollaborator(ownerId) {
+      return get(/databases/$(database)/documents/userMappings/$(request.auth.uid)).data.adminUid == ownerId;
     }
 
-    // Allow authenticated users to read their own mapping document.
-    // This is crucial for a collaborator to find out which company they belong to.
+    // -- Reglas de Acceso --
+    
+    // Regla para el documento de mapeo de usuarios.
+    // Permite a un usuario autenticado leer su propio documento de mapeo
+    // para saber a qué empresa pertenece.
     match /userMappings/{userId} {
       allow read: if request.auth.uid != null && request.auth.uid == userId;
-      // Write access is complex and should ideally be handled by a secure backend function.
-      // For now, we'll rely on the subcollection rules under the admin's profile
-      // which allows the admin to create these mappings via batch writes in the app.
     }
 
-    // Rules for company data.
+    // Reglas principales para los datos de una empresa.
     match /companyProfiles/{ownerId} {
-      // The owner can do anything with their main profile document.
-      // A collaborator can read the main profile document (e.g., to get company name/logo).
-      allow write: if request.auth.uid == ownerId;
-      allow read: if request.auth.uid == ownerId || isCollaboratorOf(ownerId);
       
-      // Rules for ALL subcollections under a company profile (materials, fuentes, recolecciones, etc.).
-      match /{subcollection}/{docId=**} {
-        // The owner can do anything.
-        // A collaborator of this company can also read and write to any subcollection.
-        // The application's UI is responsible for finer-grained control (e.g., only allowing writes if a user has a specific permission).
-        allow read, write: if request.auth.uid == ownerId || isCollaboratorOf(ownerId);
+      // El propietario puede leer y escribir en su propio perfil.
+      // Un colaborador de esa empresa también puede leer el perfil (para obtener el nombre de la empresa, etc.).
+      allow read: if isOwner(ownerId) || isCollaborator(ownerId);
+      allow write: if isOwner(ownerId);
+      
+      // Regla recursiva para todas las subcolecciones (fuentes, materiales, etc.).
+      // Permite leer y escribir al propietario de la empresa Y a los colaboradores de esa empresa.
+      // La lógica de permisos de la aplicación (quién puede hacer qué) se encarga del control fino.
+      // Firestore solo se asegura de que solo personas de la misma empresa accedan a los datos.
+      match /{subcollection}/{doc=**} {
+        allow read, write: if isOwner(ownerId) || isCollaborator(ownerId);
       }
     }
   }
