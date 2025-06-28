@@ -1,21 +1,25 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow a user full read/write access to their own company profile
-    // and all documents in all subcollections within it (e.g., materials, collaborators, fuentes, etc.).
-    // The {documents=**} is a recursive wildcard.
-    match /companyProfiles/{userId}/{documents=**} {
-      allow read, write: if request.auth.uid == userId;
+    
+    // Reglas para perfiles de empresa y todas sus subcolecciones
+    match /companyProfiles/{ownerId} {
+      
+      // El propietario puede leer y escribir en su propio documento de perfil
+      allow read, write: if request.auth != null && request.auth.uid == ownerId;
+      
+      // El propietario tiene control total sobre TODAS las subcolecciones dentro de su perfil
+      // Esto cubre: materials, collaborators, purchaseInvoices, saleInvoices, asociados, fuentes, etc.
+      match /{subcollection}/{docId=**} {
+        allow read, write: if request.auth != null && request.auth.uid == ownerId;
+      }
     }
-
-    // Allow any authenticated user to read the userMappings collection.
-    // This is necessary for a collaborator to find out which admin/company they belong to upon login.
+    
+    // Reglas para el mapeo de usuarios (colaboradores)
+    // Permite que un usuario autenticado lea su propio mapeo para encontrar a su administrador
     match /userMappings/{userId} {
       allow read: if request.auth != null;
     }
-
   }
 }
