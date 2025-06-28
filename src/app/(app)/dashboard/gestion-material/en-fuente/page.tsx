@@ -119,7 +119,8 @@ export default function RegistrarRecoleccionPage() {
     if (!material) return;
     
     const peso = parseFloat(currentPeso);
-    const precio = currentPrecio ? parseFloat(currentPrecio) : 0;
+    // If it's a donation, price is always 0. If it's a sale, use input or 0 if empty.
+    const precio = selectedFuente?.tipo === 'venta' ? (currentPrecio ? parseFloat(currentPrecio) : 0) : 0;
     
     const newItem: RecoleccionItem = {
       materialId: material.id,
@@ -499,6 +500,7 @@ export default function RegistrarRecoleccionPage() {
                         <Card className="mt-2 bg-muted/50 p-3 text-xs">
                             <p><strong>Dirección:</strong> {selectedFuente.direccion}</p>
                             <p><strong>Encargado:</strong> {selectedFuente.encargadoNombre}</p>
+                            <p><strong>Tipo:</strong> <span className="font-semibold">{selectedFuente.tipo === 'venta' ? 'Venta' : 'Donación'}</span></p>
                         </Card>
                     )}
                 </div>
@@ -613,10 +615,12 @@ export default function RegistrarRecoleccionPage() {
                         <label htmlFor="peso-input" className="text-xs text-muted-foreground">Peso (kg)</label>
                         <Input id="peso-input" type="number" placeholder="0.00" value={currentPeso} onChange={e => setCurrentPeso(e.target.value)} disabled={isSubmitting} />
                     </div>
-                     <div className="space-y-1">
-                        <label htmlFor="precio-input" className="text-xs text-muted-foreground">Precio/kg (Opcional)</label>
-                        <Input id="precio-input" type="number" placeholder="0.00" value={currentPrecio} onChange={e => setCurrentPrecio(e.target.value)} disabled={isSubmitting} />
-                    </div>
+                    {selectedFuente?.tipo === 'venta' && (
+                        <div className="space-y-1">
+                            <label htmlFor="precio-input" className="text-xs text-muted-foreground">Precio/kg (Opcional)</label>
+                            <Input id="precio-input" type="number" placeholder="0.00" value={currentPrecio} onChange={e => setCurrentPrecio(e.target.value)} disabled={isSubmitting} />
+                        </div>
+                    )}
                     <Button onClick={handleAddItem} disabled={isSubmitting || !selectedMaterialId || !currentPeso} className="md:col-span-4">
                         <Plus className="mr-2 h-4 w-4" /> Agregar Ítem
                     </Button>
@@ -645,10 +649,14 @@ export default function RegistrarRecoleccionPage() {
                             ))}
                         </ul>
                         </div>
-                        <Separator className="my-2"/>
-                        <div className="text-right font-semibold text-lg pr-2">
-                            Total: {formatCurrency(totalCurrentValor)}
-                        </div>
+                        {totalCurrentValor > 0 && (
+                            <>
+                                <Separator className="my-2"/>
+                                <div className="text-right font-semibold text-lg pr-2">
+                                    Total: {formatCurrency(totalCurrentValor)}
+                                </div>
+                            </>
+                        )}
                     </div>
                   )}
               </div>

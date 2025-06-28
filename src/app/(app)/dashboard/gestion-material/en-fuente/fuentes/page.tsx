@@ -41,6 +41,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from "@/components/ui/badge";
 
 export default function GestionFuentesPage() {
   const { toast } = useToast();
@@ -283,6 +284,7 @@ export default function GestionFuentesPage() {
                 <TableHeader>
                     <TableRow>
                     <TableHead>Nombre Fuente</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Dirección</TableHead>
                     <TableHead>Encargado</TableHead>
                     <TableHead className="text-right w-[120px]">Acciones</TableHead>
@@ -292,6 +294,11 @@ export default function GestionFuentesPage() {
                     {filteredFuentes.map((fuente) => (
                     <TableRow key={fuente.id}>
                         <TableCell className="font-medium">{fuente.nombre}</TableCell>
+                        <TableCell>
+                            <Badge variant={fuente.tipo === 'venta' ? 'default' : 'secondary'}>
+                                {fuente.tipo === 'venta' ? 'Venta' : 'Donación'}
+                            </Badge>
+                        </TableCell>
                         <TableCell>{fuente.direccion}</TableCell>
                         <TableCell>
                           <div className="flex flex-col">

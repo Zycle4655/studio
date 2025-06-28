@@ -23,6 +23,7 @@ import {
   DialogClose,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FuenteFormSchema, type FuenteFormData } from "@/schemas/fuente";
 import { Save, XCircle, Building, MapPin, User, Phone, Mail } from "lucide-react";
 
@@ -50,6 +51,7 @@ export default function FuenteForm({
     defaultValues: {
       nombre: "",
       direccion: "",
+      tipo: "venta",
       encargadoNombre: "",
       encargadoTelefono: "",
       encargadoEmail: "",
@@ -61,6 +63,7 @@ export default function FuenteForm({
       form.reset({
         nombre: defaultValues?.nombre || "",
         direccion: defaultValues?.direccion || "",
+        tipo: defaultValues?.tipo || "venta",
         encargadoNombre: defaultValues?.encargadoNombre || "",
         encargadoTelefono: defaultValues?.encargadoTelefono || "",
         encargadoEmail: defaultValues?.encargadoEmail || null,
@@ -113,6 +116,34 @@ export default function FuenteForm({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+            
+             <FormField
+                control={form.control}
+                name="tipo"
+                render={({ field }) => (
+                    <FormItem className="space-y-3">
+                    <FormLabel>Tipo de Fuente</FormLabel>
+                    <FormControl>
+                        <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex items-center space-x-4"
+                        disabled={isLoading}
+                        >
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl><RadioGroupItem value="venta" /></FormControl>
+                            <FormLabel className="font-normal">Venta</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl><RadioGroupItem value="donacion" /></FormControl>
+                            <FormLabel className="font-normal">Donación</FormLabel>
+                        </FormItem>
+                        </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
             />
 
             <h3 className="text-sm font-semibold text-foreground pt-2">Información del Encargado</h3>
