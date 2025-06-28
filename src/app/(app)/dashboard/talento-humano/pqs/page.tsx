@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -16,8 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PQSFormSchema, type PQSFormData } from "@/schemas/pqs";
-import type { PQSEmailInput } from "@/ai/flows/send-pqs-email-flow";
+import { PQSFormSchema, type PQSFormData, type PQSEmailInput } from "@/schemas/pqs";
 import { sendPQS } from "@/ai/flows/send-pqs-email-flow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";

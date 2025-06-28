@@ -1,22 +1,13 @@
-
 'use server';
 /**
  * @fileOverview A flow to handle formatting PQS (Petitions, Complaints, Suggestions) emails.
  *
  * - sendPQS - A function that handles formatting the PQS submission into an email.
- * - PQSEmailInput - The input type for the sendPQS function.
  */
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { PQSEmailInputSchema, type PQSEmailInput } from '@/schemas/pqs';
 
-export const PQSEmailInputSchema = z.object({
-  collaboratorName: z.string().describe("The name of the collaborator submitting the form."),
-  collaboratorEmail: z.string().email().describe("The email address of the collaborator."),
-  subject: z.string().describe("The subject of the PQS submission."),
-  message: z.string().describe("The detailed message from the collaborator."),
-  companyEmail: z.string().email().describe("The company's email address where the PQS should be sent."),
-});
-export type PQSEmailInput = z.infer<typeof PQSEmailInputSchema>;
 
 const pqsEmailPrompt = ai.definePrompt({
   name: 'pqsEmailPrompt',
