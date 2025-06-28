@@ -4,22 +4,18 @@
 import * as React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, Timestamp, collection, query, where, getDocs, orderBy, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, Timestamp, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { AbrirCajaFormSchema, type AbrirCajaFormData, CerrarCajaFormSchema, type CerrarCajaFormData, type CajaDiariaDocument } from "@/schemas/caja";
-import { type FacturaCompraDocument } from "@/schemas/compra";
-import { type FacturaVentaDocument } from "@/schemas/venta";
+import { AbrirCajaFormSchema, type AbrirCajaFormData, type CajaDiariaDocument } from "@/schemas/caja";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Landmark, ArrowDownCircle, ArrowUpCircle, Scale, Calculator, CheckCircle, AlertTriangle, PiggyBank, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Landmark, PiggyBank, CheckCircle } from "lucide-react";
 
 // Helper to get date in YYYY-MM-DD format for document ID
 const getTodayDateId = () => {
@@ -35,9 +31,6 @@ export default function ArqueoCajaPage() {
   const { toast } = useToast();
 
   const [cajaDiaria, setCajaDiaria] = React.useState<CajaDiariaDocument | null>(null);
-  const [totalCompras, setTotalCompras] = React.useState(0);
-  const [totalVentas, setTotalVentas] = React.useState(0);
-  const [saldoEsperado, setSaldoEsperado] = React.useState(0);
   const [isPageLoading, setIsPageLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -49,86 +42,42 @@ export default function ArqueoCajaPage() {
     defaultValues: { baseInicial: 0 },
   });
 
-  const cerrarCajaForm = useForm<CerrarCajaFormData>({
-    resolver: zodResolver(CerrarCajaFormSchema),
-    defaultValues: { saldoReal: 0, observaciones: "" },
-  });
-
-  React.useEffect(() => {
-    document.title = 'Arqueo de Caja | ZYCLE';
-
-    if (authLoading) {
-      return; // Wait until auth context is ready
+  const fetchCajaData = React.useCallback(async () => {
+    if (!isOwner || !companyOwnerId) {
+        setIsPageLoading(false);
+        return;
     }
-
-    if (!isOwner) {
-      setIsPageLoading(false); // Not the owner, stop loading and show restricted access
-      return;
-    }
-    
-    const fetchDataForOwner = async () => {
-      setIsPageLoading(true);
-      try {
-        const cajaRef = doc(db, "companyProfiles", companyOwnerId!, "cajaDiaria", todayId);
+    setIsPageLoading(true);
+    try {
+        const cajaRef = doc(db, "companyProfiles", companyOwnerId, "cajaDiaria", todayId);
         const cajaSnap = await getDoc(cajaRef);
         const cajaData = cajaSnap.exists() ? (cajaSnap.data() as CajaDiariaDocument) : null;
         setCajaDiaria(cajaData);
-
-        if (cajaData && cajaData.estado === 'Abierta') {
-          const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0);
-
-          // Fetch all purchase invoices and filter on the client
-          const comprasRef = collection(db, "companyProfiles", companyOwnerId!, "purchaseInvoices");
-          const comprasSnap = await getDocs(comprasRef);
-          const totalComprasSum = comprasSnap.docs
-              .map(doc => doc.data() as FacturaCompraDocument)
-              .filter(docData => {
-                  const docDate = docData.fecha.toDate();
-                  return docDate >= todayStart && docData.formaDePago === 'efectivo';
-              })
-              .reduce((sum, docData) => sum + docData.netoPagado, 0);
-          setTotalCompras(totalComprasSum);
-          
-          // Fetch all sale invoices and filter on the client
-          const ventasRef = collection(db, "companyProfiles", companyOwnerId!, "saleInvoices");
-          const ventasSnap = await getDocs(ventasRef);
-          const totalVentasSum = ventasSnap.docs
-              .map(doc => doc.data() as FacturaVentaDocument)
-              .filter(docData => {
-                   const docDate = docData.fecha.toDate();
-                   return docDate >= todayStart && docData.formaDePago === 'efectivo';
-              })
-              .reduce((sum, docData) => sum + docData.totalFactura, 0);
-          setTotalVentas(totalVentasSum);
-
-          setSaldoEsperado(cajaData.baseInicial - totalComprasSum + totalVentasSum);
-        }
-      } catch (error) {
+    } catch (error) {
         console.error("Error fetching caja data:", error);
         toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos de la caja." });
-      } finally {
+    } finally {
         setIsPageLoading(false);
-      }
-    };
+    }
+  }, [isOwner, companyOwnerId, todayId, toast]);
 
-    fetchDataForOwner();
-  }, [authLoading, isOwner, companyOwnerId, todayId, toast]);
+
+  React.useEffect(() => {
+    document.title = 'Arqueo de Caja | ZYCLE';
+    if (!authLoading) {
+      fetchCajaData();
+    }
+  }, [authLoading, fetchCajaData]);
   
   const handleAbrirCaja = async (data: AbrirCajaFormData) => {
       if (!isOwner || !user?.email || !companyOwnerId) return;
       setIsSubmitting(true);
       try {
         const cajaRef = doc(db, "companyProfiles", companyOwnerId, "cajaDiaria", todayId);
-        const nuevaCaja: CajaDiariaDocument = {
+        const nuevaCaja: Partial<CajaDiariaDocument> = {
             id: todayId,
             fecha: Timestamp.now(),
             baseInicial: data.baseInicial,
-            totalComprasEfectivo: 0,
-            totalVentasEfectivo: 0,
-            saldoEsperado: data.baseInicial,
-            saldoReal: 0,
-            diferencia: 0,
             estado: 'Abierta',
             abiertoPor: { uid: user.uid, email: user.email },
             createdAt: serverTimestamp() as Timestamp,
@@ -138,10 +87,10 @@ export default function ArqueoCajaPage() {
         toast({ title: "Caja Abierta", description: `La caja para hoy se abrió con una base de ${formatCurrency(data.baseInicial)}.` });
         
         // Refetch data after opening
-        setCajaDiaria(nuevaCaja);
-        setTotalCompras(0);
-        setTotalVentas(0);
-        setSaldoEsperado(nuevaCaja.baseInicial);
+        const cajaSnap = await getDoc(cajaRef);
+        if (cajaSnap.exists()) {
+            setCajaDiaria(cajaSnap.data() as CajaDiariaDocument);
+        }
 
       } catch (error) {
         console.error("Error opening caja:", error);
@@ -151,55 +100,10 @@ export default function ArqueoCajaPage() {
       }
   };
   
-  const handleCerrarCaja = async (data: CerrarCajaFormData) => {
-    if (!isOwner || !user?.email || !cajaDiaria || !companyOwnerId) return;
-    setIsSubmitting(true);
-    try {
-        const cajaRef = doc(db, "companyProfiles", companyOwnerId, "cajaDiaria", todayId);
-        const diferencia = data.saldoReal - saldoEsperado;
-
-        const updatedCaja: CajaDiariaDocument = {
-            ...cajaDiaria,
-            estado: 'Cerrada',
-            saldoReal: data.saldoReal,
-            diferencia: diferencia,
-            observaciones: data.observaciones || undefined,
-            totalComprasEfectivo: totalCompras,
-            totalVentasEfectivo: totalVentas,
-            saldoEsperado: saldoEsperado,
-            cerradoPor: { uid: user.uid, email: user.email },
-            updatedAt: serverTimestamp() as Timestamp,
-        };
-        
-        await setDoc(cajaRef, updatedCaja, { merge: true });
-
-        toast({ title: "Caja Cerrada", description: `El arqueo de caja se ha completado. Diferencia: ${formatCurrency(diferencia)}` });
-        setCajaDiaria(updatedCaja); // Update state to reflect closed status
-    } catch(error) {
-         console.error("Error closing caja:", error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar la caja." });
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
   
-  const renderLoadingState = () => (
-     <div className="space-y-6">
-        <Skeleton className="h-24 w-full" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-        </div>
-         <Skeleton className="h-48 w-full" />
-    </div>
-  );
-
   if (authLoading || isPageLoading) {
     return (
       <div className="container py-8 px-4 md:px-6">
@@ -207,7 +111,10 @@ export default function ArqueoCajaPage() {
           <Skeleton className="h-9 w-1/3 mb-2" />
           <Skeleton className="h-5 w-2/3" />
         </CardHeader>
-        {renderLoadingState()}
+        <Card className="max-w-2xl mx-auto shadow-lg">
+            <CardHeader><Skeleton className="h-8 w-1/2 mx-auto" /></CardHeader>
+            <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+        </Card>
       </div>
     );
   }
@@ -235,7 +142,7 @@ export default function ArqueoCajaPage() {
         <CardHeader className="text-center">
             <PiggyBank className="mx-auto h-12 w-12 text-primary mb-4"/>
             <CardTitle>Abrir Caja del Día</CardTitle>
-            <CardDescription>Para empezar a registrar compras y ventas en efectivo, ingrese el monto base de la caja para hoy.</CardDescription>
+            <CardDescription>Para empezar a registrar movimientos, ingrese el monto base de la caja para hoy.</CardDescription>
         </CardHeader>
         <CardContent>
              <Form {...abrirCajaForm}>
@@ -262,78 +169,18 @@ export default function ArqueoCajaPage() {
       </Card>
   );
 
-  const renderCajaCerrada = () => (
-      <Card className="max-w-4xl mx-auto shadow-lg bg-gray-50">
-         <CardHeader className="text-center">
-            <Lock className="mx-auto h-12 w-12 text-gray-500 mb-4"/>
-            <CardTitle>Caja del Día Cerrada</CardTitle>
-            <CardDescription>El arqueo para el día {cajaDiaria?.id} ya se ha realizado. Aquí está el resumen.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card className="bg-white"><CardHeader><CardTitle className="text-sm font-medium">Saldo Esperado</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{formatCurrency(cajaDiaria!.saldoEsperado)}</CardContent></Card>
-                <Card className="bg-white"><CardHeader><CardTitle className="text-sm font-medium">Saldo Real Contado</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{formatCurrency(cajaDiaria!.saldoReal)}</CardContent></Card>
-                <Card className={cn("text-white", cajaDiaria!.diferencia === 0 ? "bg-green-600" : "bg-destructive")}>
-                    <CardHeader><CardTitle className="text-sm font-medium text-white">Diferencia</CardTitle></CardHeader>
-                    <CardContent className="text-2xl font-bold">{formatCurrency(cajaDiaria!.diferencia)}</CardContent>
-                </Card>
-            </div>
-            {cajaDiaria!.observaciones && (
-                <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400">
-                    <h4 className="font-bold text-yellow-800">Observaciones del Cierre</h4>
-                    <p className="text-sm text-yellow-700 mt-1">{cajaDiaria!.observaciones}</p>
-                </div>
-            )}
-        </CardContent>
-      </Card>
-  );
-
   const renderCajaAbierta = () => (
-    <>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Base Inicial</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(cajaDiaria!.baseInicial)}</div></CardContent></Card>
-            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><ArrowDownCircle className="text-destructive"/>Total Compras (Efectivo)</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(totalCompras)}</div></CardContent></Card>
-            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><ArrowUpCircle className="text-green-600"/>Total Ventas (Efectivo)</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(totalVentas)}</div></CardContent></Card>
-            <Card className="bg-primary/5 border-primary"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Scale/>Saldo Esperado en Caja</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-primary">{formatCurrency(saldoEsperado)}</div></CardContent></Card>
-        </div>
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Calculator/>Realizar Arqueo y Cierre de Caja</CardTitle>
-                <CardDescription>Al final del día, cuente el dinero en efectivo y regístrelo aquí para cerrar la caja.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...cerrarCajaForm}>
-                   <form onSubmit={cerrarCajaForm.handleSubmit(handleCerrarCaja)} className="space-y-4">
-                        <FormField
-                            control={cerrarCajaForm.control}
-                            name="saldoReal"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Saldo Real Contado (COP)</FormLabel>
-                                    <FormControl><Input type="number" placeholder="Ingrese el monto contado" {...field} disabled={isSubmitting}/></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={cerrarCajaForm.control}
-                            name="observaciones"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Observaciones (Opcional)</FormLabel>
-                                    <FormControl><Textarea placeholder="Añada notas sobre cualquier diferencia encontrada..." {...field} disabled={isSubmitting}/></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="submit" disabled={isSubmitting} variant="destructive">
-                            {isSubmitting ? "Cerrando..." : "Cerrar Caja y Guardar Arqueo"}
-                        </Button>
-                   </form>
-                </Form>
-            </CardContent>
-        </Card>
-    </>
+    <Card className="max-w-2xl mx-auto shadow-lg bg-green-50 border-green-200">
+        <CardHeader className="text-center">
+           <CheckCircle className="mx-auto h-12 w-12 text-green-600 mb-4"/>
+           <CardTitle className="text-green-800">Caja del Día Abierta</CardTitle>
+           <CardDescription className="text-green-700">La caja para el {cajaDiaria?.id} ya está operativa.</CardDescription>
+       </CardHeader>
+       <CardContent className="text-center">
+            <p className="text-muted-foreground">Base Inicial Registrada:</p>
+            <p className="text-3xl font-bold text-primary">{formatCurrency(cajaDiaria!.baseInicial)}</p>
+       </CardContent>
+     </Card>
   );
 
 
@@ -343,14 +190,10 @@ export default function ArqueoCajaPage() {
             <h1 className="text-3xl font-bold tracking-tight text-primary mb-2 font-headline flex items-center">
                 <Landmark className="mr-3 h-8 w-8"/> Arqueo de Caja
             </h1>
-            <p className="text-lg text-muted-foreground">Gestione el flujo de caja diario de su operación.</p>
+            <p className="text-lg text-muted-foreground">Gestione el estado diario de su caja.</p>
         </div>
 
-        {!cajaDiaria && renderAbrirCaja()}
-        {cajaDiaria && cajaDiaria.estado === 'Abierta' && renderCajaAbierta()}
-        {cajaDiaria && cajaDiaria.estado === 'Cerrada' && renderCajaCerrada()}
+        {!cajaDiaria ? renderAbrirCaja() : renderCajaAbierta()}
     </div>
   );
 }
-
-    
