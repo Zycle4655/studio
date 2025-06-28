@@ -39,6 +39,7 @@ import {
   Landmark,
   Calculator,
   MapPin,
+  MapPinned,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -83,7 +84,7 @@ export function AppSidebar() {
   }, [pathname]);
 
 
-  const isActive = (path: string) => pathname === path || (path === '/dashboard/equipo' && pathname.startsWith('/dashboard/equipo'));
+  const isActive = (path: string) => pathname === path || (path === '/dashboard/equipo' && pathname.startsWith('/dashboard/equipo')) || (path === '/dashboard/gestion-material/en-fuente/fuentes' && pathname.startsWith('/dashboard/gestion-material/en-fuente/fuentes'));
   
 
   // Tooltip texts (only shown when sidebar is collapsed to icons)
@@ -212,7 +213,18 @@ export function AppSidebar() {
                     >
                         <Link href="/dashboard/gestion-material/en-fuente">
                         <MapPin />
-                        <span>Gestión en Fuente</span>
+                        <span>Registrar Recolección</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/en-fuente/fuentes')}
+                    >
+                        <Link href="/dashboard/gestion-material/en-fuente/fuentes">
+                        <MapPinned />
+                        <span>Gestionar Fuentes</span>
                         </Link>
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
