@@ -38,6 +38,7 @@ import {
   MessageSquareQuote,
   Landmark,
   Calculator,
+  MapPin,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -129,6 +130,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
                 {gestionMaterialOpen && (
                 <SidebarMenuSub>
+                    {/* EN BODEGA Sub-group */}
+                    <div className="mt-1 mb-1 px-2 py-1.5 text-xs font-semibold text-sidebar-foreground/70">
+                      En Bodega
+                    </div>
                     <SidebarMenuSubItem>
                     <SidebarMenuSubButton
                         asChild
@@ -195,6 +200,23 @@ export function AppSidebar() {
                         </Link>
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
+
+                    {/* EN FUENTE Sub-group */}
+                    <div className="mt-2 mb-1 px-2 py-1.5 text-xs font-semibold text-sidebar-foreground/70">
+                      En Fuente
+                    </div>
+                     <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/en-fuente')}
+                    >
+                        <Link href="/dashboard/gestion-material/en-fuente">
+                        <MapPin />
+                        <span>Gestión en Fuente</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+
                 </SidebarMenuSub>
                 )}
             </SidebarMenuItem>
