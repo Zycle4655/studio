@@ -21,7 +21,7 @@ import type { PQSEmailInput } from "@/ai/flows/send-pqs-email-flow";
 import { sendPQS } from "@/ai/flows/send-pqs-email-flow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquareQuestion, Send } from "lucide-react";
+import { MessageSquareQuote, Send } from "lucide-react";
 
 export default function PQSPage() {
   const { user, collaboratorName, companyProfile } = useAuth();
@@ -99,7 +99,7 @@ export default function PQSPage() {
       <Card className="max-w-2xl mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-headline text-primary flex items-center">
-            <MessageSquareQuestion className="mr-3 h-7 w-7" />
+            <MessageSquareQuote className="mr-3 h-7 w-7" />
             Peticiones, Quejas y Sugerencias
           </CardTitle>
           <CardDescription>

@@ -35,7 +35,7 @@ import {
   Truck,
   HandCoins,
   UserCog,
-  MessageSquareQuestion
+  MessageSquareQuote
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -388,7 +388,7 @@ export function AppSidebar() {
                                 isActive={isActive('/dashboard/talento-humano/pqs')}
                             >
                                 <Link href="/dashboard/talento-humano/pqs">
-                                <MessageSquareQuestion />
+                                <MessageSquareQuote />
                                 <span>PQS</span>
                                 </Link>
                             </SidebarMenuSubButton>
