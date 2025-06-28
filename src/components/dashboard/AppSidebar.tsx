@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -380,6 +379,17 @@ export function AppSidebar() {
                             <span>Control Asistencia</span>
                             </Link>
                         </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                              asChild
+                              isActive={isActive('/dashboard/talento-humano/certificados')}
+                          >
+                              <Link href="/dashboard/talento-humano/certificados">
+                              <FileBadge />
+                              <span>Certificados</span>
+                              </Link>
+                          </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                         <SidebarMenuSubButton
