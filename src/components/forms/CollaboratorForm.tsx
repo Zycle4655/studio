@@ -24,11 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -40,14 +35,10 @@ import {
 import { CollaboratorFormSchema, type CollaboratorFormData, type Permissions, DEFAULT_ROLES } from "@/schemas/equipo";
 import { TIPO_ID_LABELS, type TipoIdentificacionKey } from "@/schemas/sui";
 import type { CargoDocument } from "@/schemas/cargo";
-import { Save, XCircle, UserCog, Lock, Eye, EyeOff, Sparkles, CalendarIcon } from "lucide-react";
+import { Save, XCircle, UserCog, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar } from "../ui/calendar";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import type { Timestamp } from "firebase/firestore";
 
 interface CollaboratorFormProps {
@@ -298,41 +289,73 @@ export default function CollaboratorForm({
                         </FormItem>
                     )}
                 />
-                <FormField
+                 <FormField
                     control={form.control}
                     name="fechaNacimiento"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Fecha de Nacimiento</FormLabel>
-                            <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                                >
-                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione una fecha</span>}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                mode="single"
-                                captionLayout="dropdown"
-                                fromYear={1950}
-                                toYear={new Date().getFullYear() - 16}
-                                selected={field.value || undefined}
-                                onSelect={field.onChange}
-                                disabled={(date) => date > new Date() || date < new Date("1950-01-01")}
-                                initialFocus
-                                locale={es}
-                                />
-                            </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+                    render={({ field }) => {
+                        const [day, setDay] = React.useState<string>(field.value ? String(field.value.getDate()) : "");
+                        const [month, setMonth] = React.useState<string>(field.value ? String(field.value.getMonth() + 1) : "");
+                        const [year, setYear] = React.useState<string>(field.value ? String(field.value.getFullYear()) : "");
+
+                        React.useEffect(() => {
+                            const dayNum = parseInt(day, 10);
+                            const monthNum = parseInt(month, 10);
+                            const yearNum = parseInt(year, 10);
+
+                            if (day && month && year && !isNaN(dayNum) && !isNaN(monthNum) && !isNaN(yearNum) && year.length === 4) {
+                                const newDate = new Date(yearNum, monthNum - 1, dayNum);
+                                if (newDate.getFullYear() === yearNum && newDate.getMonth() === monthNum - 1 && newDate.getDate() === dayNum) {
+                                    field.onChange(newDate);
+                                } else {
+                                    field.onChange(null);
+                                }
+                            } else if (field.value !== null) {
+                                field.onChange(null);
+                            }
+                        }, [day, month, year, field]);
+
+                        React.useEffect(() => {
+                            if (field.value instanceof Date) {
+                                setDay(String(field.value.getDate()));
+                                setMonth(String(field.value.getMonth() + 1));
+                                setYear(String(field.value.getFullYear()));
+                            } else if (field.value === null) {
+                                setDay("");
+                                setMonth("");
+                                setYear("");
+                            }
+                        }, [field.value]);
+
+                        return (
+                            <FormItem className="md:col-span-2">
+                                <FormLabel>Fecha de Nacimiento</FormLabel>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <Input
+                                        placeholder="DD"
+                                        value={day}
+                                        onChange={(e) => setDay(e.target.value)}
+                                        maxLength={2}
+                                        disabled={isLoading}
+                                    />
+                                    <Input
+                                        placeholder="MM"
+                                        value={month}
+                                        onChange={(e) => setMonth(e.target.value)}
+                                        maxLength={2}
+                                        disabled={isLoading}
+                                    />
+                                    <Input
+                                        placeholder="AAAA"
+                                        value={year}
+                                        onChange={(e) => setYear(e.target.value)}
+                                        maxLength={4}
+                                        disabled={isLoading}
+                                    />
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        );
+                    }}
                 />
             </div>
 
