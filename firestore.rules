@@ -1,25 +1,39 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Permite a un usuario autenticado leer su propio documento de mapeo
-    // para saber a qué empresa pertenece.
-    match /userMappings/{userId} {
-      allow read: if request.auth.uid != null && request.auth.uid == userId;
+  
+    // Helper function to check if the requesting user is a collaborator of a given company owner.
+    function isCollaboratorOf(ownerId) {
+      // It checks if a mapping document exists for the current user 
+      // and if that mapping points to the ownerId they are trying to access.
+      return exists(/databases/$(database)/documents/userMappings/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/userMappings/$(request.auth.uid)).data.adminUid == ownerId;
     }
 
-    // Reglas principales para todos los datos de una empresa.
+    // Allow authenticated users to read their own mapping document.
+    // This is crucial for a collaborator to find out which company they belong to.
+    match /userMappings/{userId} {
+      allow read: if request.auth.uid != null && request.auth.uid == userId;
+      // Write access is complex and should ideally be handled by a secure backend function.
+      // For now, we'll rely on the subcollection rules under the admin's profile
+      // which allows the admin to create these mappings via batch writes in the app.
+    }
+
+    // Rules for company data.
     match /companyProfiles/{ownerId} {
-      // El usuario cuyo UID coincide con el ID del documento es el propietario.
-      // El propietario puede leer y escribir en su propio documento de perfil principal.
-      allow read, write: if request.auth.uid == ownerId;
+      // The owner can do anything with their main profile document.
+      // A collaborator can read the main profile document (e.g., to get company name/logo).
+      allow write: if request.auth.uid == ownerId;
+      allow read: if request.auth.uid == ownerId || isCollaboratorOf(ownerId);
       
-      // El propietario también puede leer y escribir en CUALQUIER documento de CUALQUIER
-      // subcolección bajo su propio perfil de empresa. Este es un comodín recursivo.
-      // Esta regla cubre 'fuentes', 'materiales', 'colaboradores', etc.
-      match /{subcollection}/{doc=**} {
-        allow read, write: if request.auth.uid == ownerId;
+      // Rules for ALL subcollections under a company profile (materials, fuentes, recolecciones, etc.).
+      match /{subcollection}/{docId=**} {
+        // The owner can do anything.
+        // A collaborator of this company can also read and write to any subcollection.
+        // The application's UI is responsible for finer-grained control (e.g., only allowing writes if a user has a specific permission).
+        allow read, write: if request.auth.uid == ownerId || isCollaboratorOf(ownerId);
       }
     }
   }
