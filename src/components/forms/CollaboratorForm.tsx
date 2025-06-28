@@ -319,9 +319,12 @@ export default function CollaboratorForm({
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                 mode="single"
+                                captionLayout="dropdown-buttons"
+                                fromYear={1950}
+                                toYear={new Date().getFullYear() - 16}
                                 selected={field.value || undefined}
                                 onSelect={field.onChange}
-                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                disabled={(date) => date > new Date() || date < new Date("1950-01-01")}
                                 initialFocus
                                 locale={es}
                                 />
