@@ -56,8 +56,13 @@ export default function ArqueoCajaPage() {
 
 
   const fetchData = React.useCallback(async () => {
-    if (!companyOwnerId) {
-      setIsLoading(false);
+    // Definitive security check right before any database operation.
+    if (!companyOwnerId || !user || user.uid !== companyOwnerId) {
+      if (user && companyOwnerId && user.uid !== companyOwnerId) {
+        // This is a collaborator, not the owner. Stop loading and let the UI handle it.
+        setIsLoading(false);
+      }
+      // If required IDs are missing, we are not ready. The AuthContext handles the UI.
       return;
     }
     setIsLoading(true);
@@ -88,7 +93,7 @@ export default function ArqueoCajaPage() {
         // Fetch Ventas
         const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
         const qVentas = query(ventasRef, 
-            where("fecha", ">=", Timestamp.fromDate(startOfDay)), 
+            where("fecha", ">=", Timestamp.fromDate(endOfDay)), 
             where("fecha", "<=", Timestamp.fromDate(endOfDay)),
             where("formaDePago", "==", "efectivo")
         );
@@ -104,23 +109,15 @@ export default function ArqueoCajaPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [companyOwnerId, todayId, toast]);
+  }, [companyOwnerId, user, todayId, toast]);
 
   React.useEffect(() => {
     document.title = 'Arqueo de Caja | ZYCLE';
-    // This check is now more robust. It ensures companyOwnerId is loaded
-    // before making a decision, preventing race conditions on initial render.
-    if (companyOwnerId) { // Only proceed if we know who the owner is.
-      if (user?.uid === companyOwnerId) { // Check if the current user is the owner.
-        fetchData();
-      } else {
-        // If the user is not the owner, we know they don't have permission.
-        // Stop loading and let the UI show the restricted access message.
-        setIsLoading(false);
-      }
+    // This effect just triggers the fetch. All logic and security is now inside fetchData.
+    if (companyOwnerId) {
+      fetchData();
     }
-    // If companyOwnerId is not yet loaded, this effect does nothing and will re-run when it is.
-  }, [companyOwnerId, user, fetchData]);
+  }, [companyOwnerId, fetchData]);
   
   const handleAbrirCaja = async (data: AbrirCajaFormData) => {
       if (!companyOwnerId || !user || !user.email) return;
@@ -351,5 +348,3 @@ export default function ArqueoCajaPage() {
     </div>
   );
 }
-
-    
