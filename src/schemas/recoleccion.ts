@@ -26,6 +26,8 @@ export interface RecoleccionDocument {
   fuenteId: string;
   fuenteNombre: string;
   encargadoNombre: string;
+  vehiculoId?: string | null;
+  vehiculoPlaca?: string | null;
   fecha: Timestamp;
   items: RecoleccionItem[];
   totalPeso: number;

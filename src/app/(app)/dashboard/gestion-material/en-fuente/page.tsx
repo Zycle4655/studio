@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check, FileDown, Share2, Printer, PlusCircleIcon } from "lucide-react";
+import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check, FileDown, Share2, Printer, PlusCircleIcon, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp } fro
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import type { FuenteDocument } from "@/schemas/fuente";
 import type { MaterialDocument } from "@/schemas/material";
+import type { VehiculoDocument } from "@/schemas/vehiculo";
 import type { RecoleccionItem, RecoleccionDocument } from "@/schemas/recoleccion";
 import type { CompanyProfileDocument } from "@/schemas/company";
 import SignaturePad from "@/components/forms/SignaturePad";
@@ -37,8 +38,14 @@ export default function RegistrarRecoleccionPage() {
   // Form state
   const [fuentes, setFuentes] = React.useState<FuenteDocument[]>([]);
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
+  const [vehiculos, setVehiculos] = React.useState<VehiculoDocument[]>([]);
+  
   const [selectedFuenteId, setSelectedFuenteId] = React.useState<string>("");
+  const [selectedVehiculoId, setSelectedVehiculoId] = React.useState<string>("");
+  
   const [openFuenteCombobox, setOpenFuenteCombobox] = React.useState(false);
+  const [openVehiculoCombobox, setOpenVehiculoCombobox] = React.useState(false);
+
   const [currentItems, setCurrentItems] = React.useState<RecoleccionItem[]>([]);
   const [selectedMaterialId, setSelectedMaterialId] = React.useState("");
   const [currentPeso, setCurrentPeso] = React.useState("");
@@ -69,20 +76,24 @@ export default function RegistrarRecoleccionPage() {
     try {
       const fuentesRef = collection(db, "companyProfiles", companyOwnerId, "fuentes");
       const materialsRef = collection(db, "companyProfiles", companyOwnerId, "materials");
+      const vehiculosRef = collection(db, "companyProfiles", companyOwnerId, "vehiculos");
       
-      const [fuentesSnap, materialsSnap] = await Promise.all([
+      const [fuentesSnap, materialsSnap, vehiculosSnap] = await Promise.all([
         getDocs(query(fuentesRef, orderBy("nombre", "asc"))),
-        getDocs(query(materialsRef, orderBy("name", "asc")))
+        getDocs(query(materialsRef, orderBy("name", "asc"))),
+        getDocs(query(vehiculosRef, orderBy("placa", "asc")))
       ]);
       
       const fuentesList = fuentesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as FuenteDocument));
       const materialsList = materialsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaterialDocument));
+      const vehiculosList = vehiculosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiculoDocument));
 
       setFuentes(fuentesList);
       setMaterials(materialsList);
+      setVehiculos(vehiculosList);
     } catch (error) {
       console.error("Error fetching initial data for collection:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar las fuentes o materiales." });
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar las fuentes, materiales o vehículos." });
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +102,10 @@ export default function RegistrarRecoleccionPage() {
   const selectedFuente = React.useMemo(() => {
     return fuentes.find(f => f.id === selectedFuenteId);
   }, [selectedFuenteId, fuentes]);
+  
+  const selectedVehiculo = React.useMemo(() => {
+    return vehiculos.find(v => v.id === selectedVehiculoId);
+  }, [selectedVehiculoId, vehiculos]);
 
   const handleAddItem = () => {
     if (!selectedMaterialId || !currentPeso) {
@@ -125,6 +140,7 @@ export default function RegistrarRecoleccionPage() {
   
   const resetForm = () => {
       setSelectedFuenteId("");
+      setSelectedVehiculoId("");
       setCurrentItems([]);
       setFirmaDataUrl("");
       setSelloFile(null);
@@ -148,6 +164,10 @@ export default function RegistrarRecoleccionPage() {
         toast({ variant: "destructive", title: "Firma Requerida", description: "El encargado debe firmar el recibo." });
         return;
     }
+    if (!selectedVehiculo) {
+        toast({ variant: "destructive", title: "Vehículo Requerido", description: "Debe seleccionar un vehículo para la recolección." });
+        return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -169,6 +189,8 @@ export default function RegistrarRecoleccionPage() {
             fuenteId: selectedFuente.id,
             fuenteNombre: selectedFuente.nombre,
             encargadoNombre: selectedFuente.encargadoNombre,
+            vehiculoId: selectedVehiculo.id,
+            vehiculoPlaca: selectedVehiculo.placa,
             fecha: fechaServer,
             items: currentItems,
             totalPeso: totalPeso,
@@ -283,6 +305,13 @@ export default function RegistrarRecoleccionPage() {
         doc.text('Fecha:', margin, y);
         doc.setFont('helvetica', 'normal');
         doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
+        if (recoleccionData.vehiculoPlaca) {
+            y += 7;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Vehículo:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(recoleccionData.vehiculoPlaca, margin + 25, y);
+        }
         y += 15;
 
         // --- Materials Table ---
@@ -397,66 +426,118 @@ export default function RegistrarRecoleccionPage() {
         <CardContent className="space-y-6">
           {view === 'form' ? (
             <>
-              {/* Paso 1: Seleccionar Fuente */}
-              <div className="space-y-2">
-                <label className="font-medium">1. Seleccionar la Fuente</label>
-                <Popover open={openFuenteCombobox} onOpenChange={setOpenFuenteCombobox}>
-                    <PopoverTrigger asChild>
-                    <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openFuenteCombobox}
-                        className="w-full justify-between"
-                        disabled={isSubmitting || fuentes.length === 0}
-                    >
-                        {selectedFuenteId
-                        ? fuentes.find((fuente) => fuente.id === selectedFuenteId)?.nombre
-                        : "Busque y seleccione una fuente..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                    <Command>
-                        <CommandInput placeholder="Buscar fuente por nombre..." />
-                        <CommandList>
-                        <CommandEmpty>No se encontró ninguna fuente.</CommandEmpty>
-                        <CommandGroup>
-                            {fuentes.map((fuente) => (
-                            <CommandItem
-                                key={fuente.id}
-                                value={fuente.nombre}
-                                onSelect={() => {
-                                    setSelectedFuenteId(fuente.id);
-                                    setOpenFuenteCombobox(false);
-                                }}
-                            >
-                                <Check
-                                className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedFuenteId === fuente.id ? "opacity-100" : "opacity-0"
-                                )}
-                                />
-                                {fuente.nombre}
-                            </CommandItem>
-                            ))}
-                        </CommandGroup>
-                        </CommandList>
-                    </Command>
-                    </PopoverContent>
-                </Popover>
-                {selectedFuente && (
-                    <Card className="mt-2 bg-muted/50 p-4 text-sm">
-                        <p><strong>Dirección:</strong> {selectedFuente.direccion}</p>
-                        <p><strong>Encargado:</strong> {selectedFuente.encargadoNombre}</p>
-                    </Card>
-                )}
+              {/* Paso 1: Seleccionar Fuente y Vehículo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <label className="font-medium">1. Seleccionar la Fuente</label>
+                    <Popover open={openFuenteCombobox} onOpenChange={setOpenFuenteCombobox}>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openFuenteCombobox}
+                            className="w-full justify-between"
+                            disabled={isSubmitting || fuentes.length === 0}
+                        >
+                            {selectedFuenteId
+                            ? fuentes.find((fuente) => fuente.id === selectedFuenteId)?.nombre
+                            : "Busque y seleccione una fuente..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                            <CommandInput placeholder="Buscar fuente por nombre..." />
+                            <CommandList>
+                            <CommandEmpty>No se encontró ninguna fuente.</CommandEmpty>
+                            <CommandGroup>
+                                {fuentes.map((fuente) => (
+                                <CommandItem
+                                    key={fuente.id}
+                                    value={fuente.nombre}
+                                    onSelect={() => {
+                                        setSelectedFuenteId(fuente.id);
+                                        setOpenFuenteCombobox(false);
+                                    }}
+                                >
+                                    <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedFuenteId === fuente.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                    />
+                                    {fuente.nombre}
+                                </CommandItem>
+                                ))}
+                            </CommandGroup>
+                            </CommandList>
+                        </Command>
+                        </PopoverContent>
+                    </Popover>
+                    {selectedFuente && (
+                        <Card className="mt-2 bg-muted/50 p-3 text-xs">
+                            <p><strong>Dirección:</strong> {selectedFuente.direccion}</p>
+                            <p><strong>Encargado:</strong> {selectedFuente.encargadoNombre}</p>
+                        </Card>
+                    )}
+                </div>
+                <div className="space-y-2">
+                    <label className="font-medium">2. Seleccionar Vehículo</label>
+                     <Popover open={openVehiculoCombobox} onOpenChange={setOpenVehiculoCombobox}>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openVehiculoCombobox}
+                            className="w-full justify-between"
+                            disabled={isSubmitting || vehiculos.length === 0}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Truck className="h-4 w-4" />
+                                {selectedVehiculoId
+                                ? vehiculos.find((v) => v.id === selectedVehiculoId)?.placa
+                                : "Seleccione una placa..."}
+                            </div>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                            <CommandInput placeholder="Buscar placa..." />
+                            <CommandList>
+                            <CommandEmpty>No se encontró ningún vehículo.</CommandEmpty>
+                            <CommandGroup>
+                                {vehiculos.map((v) => (
+                                <CommandItem
+                                    key={v.id}
+                                    value={v.placa}
+                                    onSelect={() => {
+                                        setSelectedVehiculoId(v.id);
+                                        setOpenVehiculoCombobox(false);
+                                    }}
+                                >
+                                    <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedVehiculoId === v.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                    />
+                                    {v.placa}
+                                </CommandItem>
+                                ))}
+                            </CommandGroup>
+                            </CommandList>
+                        </Command>
+                        </PopoverContent>
+                    </Popover>
+                </div>
               </div>
               
               <Separator />
               
               {/* Paso 2: Agregar Materiales */}
               <div className="space-y-4">
-                  <label className="font-medium block">2. Registrar Materiales Recolectados</label>
+                  <label className="font-medium block">3. Registrar Materiales Recolectados</label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="space-y-1">
                         <label htmlFor="material-select" className="text-xs text-muted-foreground">Material</label>
@@ -540,11 +621,11 @@ export default function RegistrarRecoleccionPage() {
               {/* Paso 3: Firma y Sello */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                      <label className="font-medium flex items-center gap-2">3. Firma del Encargado <span className="text-destructive">*</span></label>
+                      <label className="font-medium flex items-center gap-2">4. Firma del Encargado <span className="text-destructive">*</span></label>
                       <SignaturePad signatureRef={signatureRef} onSignatureEnd={setFirmaDataUrl} />
                   </div>
                   <div className="space-y-2">
-                      <label className="font-medium">4. Foto del Sello (Opcional)</label>
+                      <label className="font-medium">5. Foto del Sello (Opcional)</label>
                       <Input id="sello-input" type="file" accept="image/*" capture="environment" onChange={(e) => setSelloFile(e.target.files ? e.target.files[0] : null)} disabled={isSubmitting} />
                       {selloFile && <p className="text-xs text-green-600 flex items-center gap-1 mt-2"><CheckCircle size={14}/> {selloFile.name} listo para subir.</p>}
                       {!selloFile && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2"><AlertTriangle size={14}/> Sin foto de sello seleccionada.</p>}
@@ -555,7 +636,7 @@ export default function RegistrarRecoleccionPage() {
               
               {/* Paso 4: Guardar */}
               <div className="flex justify-end">
-                  <Button onClick={handleSaveRecoleccion} size="lg" disabled={isSubmitting || isLoading || !selectedFuenteId || currentItems.length === 0 || !firmaDataUrl}>
+                  <Button onClick={handleSaveRecoleccion} size="lg" disabled={isSubmitting || isLoading || !selectedFuenteId || !selectedVehiculoId || currentItems.length === 0 || !firmaDataUrl}>
                       {isSubmitting ? "Guardando..." : "Guardar Recolección"}
                   </Button>
               </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Printer, Search, Eye, Share2, FileDown, History } from "lucide-react";
+import { Printer, Search, Eye, Share2, FileDown, History, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -181,6 +181,13 @@ export default function HistorialRecoleccionesPage() {
     doc.text('Fecha:', margin, y);
     doc.setFont('helvetica', 'normal');
     doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
+    if (recoleccionData.vehiculoPlaca) {
+        y += 7;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Vehículo:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(recoleccionData.vehiculoPlaca, margin + 25, y);
+    }
     y += 15;
 
     // --- Materials Table ---
@@ -340,6 +347,7 @@ export default function HistorialRecoleccionesPage() {
                   <TableRow>
                     <TableHead>Fecha y Hora</TableHead>
                     <TableHead>Fuente</TableHead>
+                    <TableHead>Vehículo</TableHead>
                     <TableHead className="text-right">Peso Total</TableHead>
                     <TableHead className="text-center w-[120px]">Acciones</TableHead>
                   </TableRow>
@@ -349,6 +357,7 @@ export default function HistorialRecoleccionesPage() {
                     <TableRow key={rec.id}>
                       <TableCell>{formatDateWithTime(rec.fecha)}</TableCell>
                       <TableCell className="font-medium">{rec.fuenteNombre}</TableCell>
+                      <TableCell>{rec.vehiculoPlaca || 'N/A'}</TableCell>
                       <TableCell className="text-right font-semibold text-primary">{formatWeight(rec.totalPeso)}</TableCell>
                       <TableCell className="text-center">
                         <Button variant="ghost" size="icon" className="hover:text-primary" onClick={() => handleOpenModal(rec)} aria-label="Ver recibo">
@@ -379,6 +388,9 @@ export default function HistorialRecoleccionesPage() {
                 <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
                     <div><strong>Fecha:</strong> {formatDateWithTime(recoleccionToView.fecha)}</div>
                     <div><strong>Encargado:</strong> {recoleccionToView.encargadoNombre}</div>
+                    {recoleccionToView.vehiculoPlaca && (
+                      <div><strong>Vehículo:</strong> {recoleccionToView.vehiculoPlaca}</div>
+                    )}
                     <h4 className="font-semibold pt-2 border-t">Materiales</h4>
                     <ul className="list-disc pl-5 space-y-1 text-sm">
                         {recoleccionToView.items.map((item, index) => (
