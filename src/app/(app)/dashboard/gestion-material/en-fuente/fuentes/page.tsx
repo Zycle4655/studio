@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -169,7 +170,8 @@ export default function GestionFuentesPage() {
       ...data,
       encargadoEmail: data.encargadoEmail || null,
     };
-
+    
+    let success = false;
     try {
       if (editingFuente) {
         const fuenteRef = doc(fuentesCollectionRef, editingFuente.id);
@@ -192,18 +194,21 @@ export default function GestionFuentesPage() {
           description: `La fuente "${data.nombre}" ha sido agregada.`,
         });
       }
-      setIsFormOpen(false);
-      setEditingFuente(null);
-      fetchFuentes();
+      success = true;
     } catch (error) {
       console.error("Error saving fuente:", error);
       toast({
         variant: "destructive",
         title: "Error al Guardar",
-        description: "No se pudo guardar la fuente.",
+        description: "No se pudo guardar la fuente. Verifique sus permisos de escritura.",
       });
     } finally {
       setIsSubmitting(false);
+      if (success) {
+        setIsFormOpen(false);
+        setEditingFuente(null);
+        fetchFuentes();
+      }
     }
   };
 
