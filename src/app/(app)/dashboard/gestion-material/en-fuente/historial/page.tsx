@@ -126,8 +126,13 @@ export default function HistorialRecoleccionesPage() {
             const url = new URL(logoUrl);
             const pathName = decodeURIComponent(url.pathname);
             const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
-            const validFormats = ['JPEG', 'JPG', 'PNG', 'WEBP'];
-            const imageFormat = validFormats.includes(extension) ? extension : 'PNG';
+            
+            let imageFormat = 'PNG'; // Default format
+            if (extension === "JPG" || extension === "JPEG") {
+              imageFormat = "JPEG";
+            } else if (extension === "WEBP") {
+              imageFormat = "WEBP";
+            }
 
             doc.addImage(logoUrl, imageFormat, margin, y, 30, 30, undefined, 'FAST');
         } catch (e) {
