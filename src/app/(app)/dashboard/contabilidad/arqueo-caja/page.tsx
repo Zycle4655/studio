@@ -56,7 +56,10 @@ export default function ArqueoCajaPage() {
 
 
   const fetchData = React.useCallback(async () => {
-    if (!companyOwnerId) return;
+    if (!companyOwnerId) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -105,14 +108,19 @@ export default function ArqueoCajaPage() {
 
   React.useEffect(() => {
     document.title = 'Arqueo de Caja | ZYCLE';
-    // Only the owner should perform data operations for this module
-    // to prevent Firestore permission errors for collaborators.
-    if (isOwner) {
-      fetchData();
-    } else {
-      setIsLoading(false);
+    // This check is now more robust. It ensures companyOwnerId is loaded
+    // before making a decision, preventing race conditions on initial render.
+    if (companyOwnerId) { // Only proceed if we know who the owner is.
+      if (user?.uid === companyOwnerId) { // Check if the current user is the owner.
+        fetchData();
+      } else {
+        // If the user is not the owner, we know they don't have permission.
+        // Stop loading and let the UI show the restricted access message.
+        setIsLoading(false);
+      }
     }
-  }, [isOwner, fetchData]);
+    // If companyOwnerId is not yet loaded, this effect does nothing and will re-run when it is.
+  }, [companyOwnerId, user, fetchData]);
   
   const handleAbrirCaja = async (data: AbrirCajaFormData) => {
       if (!companyOwnerId || !user || !user.email) return;
@@ -211,8 +219,8 @@ export default function ArqueoCajaPage() {
             <CardContent>
               <p>
                 { !isOwner 
-                  ? "Esta funcionalidad solo está disponible para el administrador principal."
-                  : "No tiene permiso para acceder a este módulo."
+                  ? "Esta funcionalidad solo está disponible para el administrador principal de la cuenta."
+                  : "No tiene los permisos necesarios para acceder a este módulo."
                 }
               </p>
             </CardContent>
@@ -343,3 +351,5 @@ export default function ArqueoCajaPage() {
     </div>
   );
 }
+
+    
