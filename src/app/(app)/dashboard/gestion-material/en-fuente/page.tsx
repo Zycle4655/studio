@@ -225,7 +225,13 @@ export default function RegistrarRecoleccionPage() {
         // --- Header ---
         if (logoUrl) {
             try {
-                doc.addImage(logoUrl, 'PNG', margin, y, 30, 30, undefined, 'FAST');
+                const url = new URL(logoUrl);
+                const pathName = decodeURIComponent(url.pathname);
+                const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
+                const validFormats = ['JPEG', 'JPG', 'PNG', 'WEBP'];
+                const imageFormat = validFormats.includes(extension) ? extension : 'PNG';
+    
+                doc.addImage(logoUrl, imageFormat, margin, y, 30, 30, undefined, 'FAST');
             } catch (e) {
                 console.error("Error adding logo to PDF:", e);
             }
@@ -575,5 +581,3 @@ export default function RegistrarRecoleccionPage() {
     </div>
   );
 }
-
-    

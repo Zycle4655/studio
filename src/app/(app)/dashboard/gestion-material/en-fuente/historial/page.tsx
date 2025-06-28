@@ -45,6 +45,7 @@ export default function HistorialRecoleccionesPage() {
     }
     setIsLoading(true);
     try {
+      // Use Firestore client-side SDK rules for access control
       const recoleccionesRef = collection(db, "companyProfiles", companyOwnerId, "recolecciones");
       const q = query(recoleccionesRef, orderBy("fecha", "desc"));
       const querySnapshot = await getDocs(q);
@@ -68,12 +69,12 @@ export default function HistorialRecoleccionesPage() {
 
   React.useEffect(() => {
     document.title = 'Historial de Recolecciones | ZYCLE';
-    if (companyOwnerId && permissions?.gestionMaterial) {
+    if (companyOwnerId) {
       fetchRecoleccionesAndProfile();
     } else {
       setIsLoading(false);
     }
-  }, [companyOwnerId, fetchRecoleccionesAndProfile, permissions]);
+  }, [companyOwnerId, fetchRecoleccionesAndProfile]);
 
   const formatWeight = (value: number) => {
     return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg';
@@ -122,7 +123,13 @@ export default function HistorialRecoleccionesPage() {
     // --- Header ---
     if (logoUrl) {
         try {
-            doc.addImage(logoUrl, 'PNG', margin, y, 30, 30, undefined, 'FAST');
+            const url = new URL(logoUrl);
+            const pathName = decodeURIComponent(url.pathname);
+            const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
+            const validFormats = ['JPEG', 'JPG', 'PNG', 'WEBP'];
+            const imageFormat = validFormats.includes(extension) ? extension : 'PNG';
+
+            doc.addImage(logoUrl, imageFormat, margin, y, 30, 30, undefined, 'FAST');
         } catch (e) {
             console.error("Error adding logo to PDF:", e);
         }
@@ -404,5 +411,3 @@ export default function HistorialRecoleccionesPage() {
     </div>
   );
 }
-
-    
