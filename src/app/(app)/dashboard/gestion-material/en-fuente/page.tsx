@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,6 +24,9 @@ import SignaturePad from "@/components/forms/SignaturePad";
 import type SignatureCanvas from "react-signature-canvas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 export default function RegistrarRecoleccionPage() {
   const { toast } = useToast();
@@ -38,6 +40,8 @@ export default function RegistrarRecoleccionPage() {
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   
   const [selectedFuenteId, setSelectedFuenteId] = React.useState<string>("");
+  const [openCombobox, setOpenCombobox] = React.useState(false);
+
   const [currentItems, setCurrentItems] = React.useState<RecoleccionItem[]>([]);
   
   const [selectedMaterialId, setSelectedMaterialId] = React.useState("");
@@ -216,12 +220,50 @@ export default function RegistrarRecoleccionPage() {
           {/* Paso 1: Seleccionar Fuente */}
           <div className="space-y-2">
             <label className="font-medium">1. Seleccionar la Fuente</label>
-            <Select value={selectedFuenteId} onValueChange={setSelectedFuenteId} disabled={isSubmitting}>
-              <SelectTrigger><SelectValue placeholder="Elija una fuente de recolección..." /></SelectTrigger>
-              <SelectContent>
-                {fuentes.map(f => <SelectItem key={f.id} value={f.id}>{f.nombre}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox}
+                    className="w-full justify-between"
+                    disabled={isSubmitting || fuentes.length === 0}
+                >
+                    {selectedFuenteId
+                    ? fuentes.find((fuente) => fuente.id === selectedFuenteId)?.nombre
+                    : "Busque y seleccione una fuente..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                    <CommandInput placeholder="Buscar fuente por nombre..." />
+                    <CommandList>
+                    <CommandEmpty>No se encontró ninguna fuente.</CommandEmpty>
+                    <CommandGroup>
+                        {fuentes.map((fuente) => (
+                        <CommandItem
+                            key={fuente.id}
+                            value={fuente.nombre}
+                            onSelect={() => {
+                                setSelectedFuenteId(fuente.id);
+                                setOpenCombobox(false);
+                            }}
+                        >
+                            <Check
+                            className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedFuenteId === fuente.id ? "opacity-100" : "opacity-0"
+                            )}
+                            />
+                            {fuente.nombre}
+                        </CommandItem>
+                        ))}
+                    </CommandGroup>
+                    </CommandList>
+                </Command>
+                </PopoverContent>
+            </Popover>
              {selectedFuente && (
                 <Card className="mt-2 bg-muted/50 p-4 text-sm">
                     <p><strong>Dirección:</strong> {selectedFuente.direccion}</p>
