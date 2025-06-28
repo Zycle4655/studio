@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -33,7 +34,8 @@ import {
   Receipt,
   Truck,
   HandCoins,
-  UserCog
+  UserCog,
+  MessageSquareQuestion
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -42,7 +44,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export function AppSidebar() {
   const pathname = usePathname();
   const { open: sidebarOpen } = useSidebar();
-  const { permissions } = useAuth(); // Get user permissions from context
+  const { permissions, collaboratorId } = useAuth(); // Get user permissions from context
 
   const [gestionMaterialOpen, setGestionMaterialOpen] = React.useState(
     isModulePathActive('/dashboard/gestion-material')
@@ -316,7 +318,7 @@ export function AppSidebar() {
           )}
           
           {/* Fused Talento Humano & Equipo Module */}
-          {(permissions?.talentoHumano || permissions?.equipo) && (
+          {(permissions?.talentoHumano || permissions?.equipo || collaboratorId) && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setTalentoHumanoOpen(!talentoHumanoOpen)}
@@ -357,7 +359,7 @@ export function AppSidebar() {
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     </>)}
-                    {permissions?.talentoHumano && (<>
+                    {(permissions?.talentoHumano || collaboratorId) && (<>
                         <SidebarMenuSubItem>
                         <SidebarMenuSubButton
                             asChild
@@ -379,6 +381,17 @@ export function AppSidebar() {
                             <span>Control Asistencia</span>
                             </Link>
                         </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                                asChild
+                                isActive={isActive('/dashboard/talento-humano/pqs')}
+                            >
+                                <Link href="/dashboard/talento-humano/pqs">
+                                <MessageSquareQuestion />
+                                <span>PQS</span>
+                                </Link>
+                            </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton

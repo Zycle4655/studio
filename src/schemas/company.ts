@@ -16,6 +16,7 @@ export type CompanyProfileFormData = z.infer<typeof CompanyProfileSchema>;
 // CompanyProfileDocument representa los datos que se guardan en Firestore para el perfil de la empresa.
 export interface CompanyProfileDocument {
   userId: string;
+  email: string;
   companyName: string;
   nit: string;
   phone: string;
@@ -24,4 +25,5 @@ export interface CompanyProfileDocument {
   createdAt: Timestamp; // Asegúrate que Timestamp sea el tipo correcto de Firestore
   updatedAt: Timestamp; // Asegúrate que Timestamp sea el tipo correcto de Firestore
 }
+
 

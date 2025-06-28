@@ -107,7 +107,7 @@ export default function ProfileSetupPage() {
         if (companyProfile) {
             const existingData = companyProfile;
             resolvedDefaultValues = {
-                email: user.email || "",
+                email: companyProfile.email || user.email || "",
                 companyName: existingData.companyName || "",
                 nit: existingData.nit || "",
                 phone: existingData.phone || "",
@@ -206,6 +206,7 @@ export default function ProfileSetupPage() {
       
       const companyProfileData: CompanyProfileDocument = {
         userId: user.uid,
+        email: data.email,
         companyName: data.companyName,
         nit: data.nit,
         phone: data.phone,
