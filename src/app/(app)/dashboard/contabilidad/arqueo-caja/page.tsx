@@ -79,26 +79,30 @@ export default function ArqueoCajaPage() {
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
-        // Fetch Compras
+        // Fetch Compras (Filter by date, then by payment method on client)
         const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
         const qCompras = query(comprasRef, 
             where("fecha", ">=", Timestamp.fromDate(startOfDay)), 
-            where("fecha", "<=", Timestamp.fromDate(endOfDay)),
-            where("formaDePago", "==", "efectivo")
+            where("fecha", "<=", Timestamp.fromDate(endOfDay))
         );
         const comprasSnap = await getDocs(qCompras);
-        const totalComprasSum = comprasSnap.docs.reduce((sum, doc) => sum + (doc.data() as FacturaCompraDocument).netoPagado, 0);
+        const totalComprasSum = comprasSnap.docs
+            .map(doc => doc.data() as FacturaCompraDocument)
+            .filter(doc => doc.formaDePago === 'efectivo')
+            .reduce((sum, doc) => sum + doc.netoPagado, 0);
         setTotalCompras(totalComprasSum);
         
-        // Fetch Ventas
+        // Fetch Ventas (Filter by date, then by payment method on client)
         const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
         const qVentas = query(ventasRef, 
             where("fecha", ">=", Timestamp.fromDate(startOfDay)), 
-            where("fecha", "<=", Timestamp.fromDate(endOfDay)),
-            where("formaDePago", "==", "efectivo")
+            where("fecha", "<=", Timestamp.fromDate(endOfDay))
         );
         const ventasSnap = await getDocs(qVentas);
-        const totalVentasSum = ventasSnap.docs.reduce((sum, doc) => sum + (doc.data() as FacturaVentaDocument).totalFactura, 0);
+        const totalVentasSum = ventasSnap.docs
+            .map(doc => doc.data() as FacturaVentaDocument)
+            .filter(doc => doc.formaDePago === 'efectivo')
+            .reduce((sum, doc) => sum + doc.totalFactura, 0);
         setTotalVentas(totalVentasSum);
 
         setSaldoEsperado(cajaData.baseInicial - totalComprasSum + totalVentasSum);
@@ -114,10 +118,10 @@ export default function ArqueoCajaPage() {
   React.useEffect(() => {
     document.title = 'Arqueo de Caja | ZYCLE';
     // This effect just triggers the fetch. All logic and security is now inside fetchData.
-    if (companyOwnerId) {
+    if (companyOwnerId && user) {
       fetchData();
     }
-  }, [companyOwnerId, fetchData]);
+  }, [companyOwnerId, user, fetchData]);
   
   const handleAbrirCaja = async (data: AbrirCajaFormData) => {
       if (!companyOwnerId || !user || !user.email) return;
