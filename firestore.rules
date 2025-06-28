@@ -3,16 +3,25 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow owner full access to their company profile and ALL subcollections
-    match /companyProfiles/{ownerId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == ownerId;
+    
+    // Permite a un usuario autenticado leer su propio documento de mapeo
+    // para saber a qué empresa pertenece.
+    match /userMappings/{userId} {
+      allow read: if request.auth.uid != null && request.auth.uid == userId;
     }
 
-    // Allow any authenticated user to read their own user mapping.
-    // This is necessary for collaborators to find their company's admin ID.
-    match /userMappings/{userId} {
-      allow get: if request.auth != null && request.auth.uid == userId;
+    // Reglas principales para todos los datos de una empresa.
+    match /companyProfiles/{ownerId} {
+      // El usuario cuyo UID coincide con el ID del documento es el propietario.
+      // El propietario puede leer y escribir en su propio documento de perfil principal.
+      allow read, write: if request.auth.uid == ownerId;
+      
+      // El propietario también puede leer y escribir en CUALQUIER documento de CUALQUIER
+      // subcolección bajo su propio perfil de empresa. Este es un comodín recursivo.
+      // Esta regla cubre 'fuentes', 'materiales', 'colaboradores', etc.
+      match /{subcollection}/{doc=**} {
+        allow read, write: if request.auth.uid == ownerId;
+      }
     }
   }
 }
