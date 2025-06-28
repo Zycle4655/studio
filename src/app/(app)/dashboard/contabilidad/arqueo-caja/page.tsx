@@ -59,10 +59,8 @@ export default function ArqueoCajaPage() {
     // Definitive security check right before any database operation.
     if (!companyOwnerId || !user || user.uid !== companyOwnerId) {
       if (user && companyOwnerId && user.uid !== companyOwnerId) {
-        // This is a collaborator, not the owner. Stop loading and let the UI handle it.
         setIsLoading(false);
       }
-      // If required IDs are missing, we are not ready. The AuthContext handles the UI.
       return;
     }
     setIsLoading(true);
@@ -74,35 +72,30 @@ export default function ArqueoCajaPage() {
       setCajaDiaria(cajaData);
 
       if (cajaData && cajaData.estado === 'Abierta') {
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
+        const todayString = new Date().toDateString();
 
-        // Fetch Compras (Filter by date, then by payment method on client)
+        // Fetch all purchase invoices and filter on the client
         const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
-        const qCompras = query(comprasRef, 
-            where("fecha", ">=", Timestamp.fromDate(startOfDay)), 
-            where("fecha", "<=", Timestamp.fromDate(endOfDay))
-        );
-        const comprasSnap = await getDocs(qCompras);
+        const comprasSnap = await getDocs(comprasRef);
         const totalComprasSum = comprasSnap.docs
             .map(doc => doc.data() as FacturaCompraDocument)
-            .filter(doc => doc.formaDePago === 'efectivo')
-            .reduce((sum, doc) => sum + doc.netoPagado, 0);
+            .filter(docData => {
+                const docDate = docData.fecha.toDate();
+                return docDate.toDateString() === todayString && docData.formaDePago === 'efectivo';
+            })
+            .reduce((sum, docData) => sum + docData.netoPagado, 0);
         setTotalCompras(totalComprasSum);
         
-        // Fetch Ventas (Filter by date, then by payment method on client)
+        // Fetch all sale invoices and filter on the client
         const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
-        const qVentas = query(ventasRef, 
-            where("fecha", ">=", Timestamp.fromDate(startOfDay)), 
-            where("fecha", "<=", Timestamp.fromDate(endOfDay))
-        );
-        const ventasSnap = await getDocs(qVentas);
+        const ventasSnap = await getDocs(ventasRef);
         const totalVentasSum = ventasSnap.docs
             .map(doc => doc.data() as FacturaVentaDocument)
-            .filter(doc => doc.formaDePago === 'efectivo')
-            .reduce((sum, doc) => sum + doc.totalFactura, 0);
+            .filter(docData => {
+                 const docDate = docData.fecha.toDate();
+                 return docDate.toDateString() === todayString && docData.formaDePago === 'efectivo';
+            })
+            .reduce((sum, docData) => sum + docData.totalFactura, 0);
         setTotalVentas(totalVentasSum);
 
         setSaldoEsperado(cajaData.baseInicial - totalComprasSum + totalVentasSum);
@@ -117,7 +110,6 @@ export default function ArqueoCajaPage() {
 
   React.useEffect(() => {
     document.title = 'Arqueo de Caja | ZYCLE';
-    // This effect just triggers the fetch. All logic and security is now inside fetchData.
     if (companyOwnerId && user) {
       fetchData();
     }
