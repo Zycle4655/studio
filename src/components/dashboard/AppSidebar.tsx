@@ -40,6 +40,7 @@ import {
   Calculator,
   MapPin,
   MapPinned,
+  History,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -84,7 +85,8 @@ export function AppSidebar() {
   }, [pathname]);
 
 
-  const isActive = (path: string) => pathname === path || (path === '/dashboard/equipo' && pathname.startsWith('/dashboard/equipo')) || (path === '/dashboard/gestion-material/en-fuente/fuentes' && pathname.startsWith('/dashboard/gestion-material/en-fuente/fuentes'));
+  const isActive = (path: string) => pathname.startsWith(path) && (pathname === path || pathname.startsWith(`${path}/`));
+  const isExactActive = (path: string) => pathname === path;
   
 
   // Tooltip texts (only shown when sidebar is collapsed to icons)
@@ -103,7 +105,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive('/dashboard')}
+              isActive={isExactActive('/dashboard')}
               tooltip={dashboardTooltip}
             >
               <Link href="/dashboard">
@@ -209,7 +211,7 @@ export function AppSidebar() {
                      <SidebarMenuSubItem>
                     <SidebarMenuSubButton
                         asChild
-                        isActive={isActive('/dashboard/gestion-material/en-fuente')}
+                        isActive={isExactActive('/dashboard/gestion-material/en-fuente')}
                     >
                         <Link href="/dashboard/gestion-material/en-fuente">
                         <MapPin />
@@ -225,6 +227,17 @@ export function AppSidebar() {
                         <Link href="/dashboard/gestion-material/en-fuente/fuentes">
                         <MapPinned />
                         <span>Gestionar Fuentes</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/gestion-material/en-fuente/historial')}
+                    >
+                        <Link href="/dashboard/gestion-material/en-fuente/historial">
+                        <History />
+                        <span>Historial</span>
                         </Link>
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
