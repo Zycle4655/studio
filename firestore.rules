@@ -3,32 +3,19 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Rules for companyProfiles collection
-    match /companyProfiles/{userId} {
-      // The owner of the profile can read and write their own document.
-      allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      // The owner can also read and write to ANY document in ANY subcollection.
-      // This covers 'materials', 'cajaDiaria', 'fuentes', 'collaborators', etc.
-      match /{subcollection}/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
+    // Allow a user full read/write access to their own company profile
+    // and all documents in all subcollections within it (e.g., materials, collaborators, fuentes, etc.).
+    // The {documents=**} is a recursive wildcard.
+    match /companyProfiles/{userId}/{documents=**} {
+      allow read, write: if request.auth.uid == userId;
     }
-    
-    // Rules for the user-to-company mapping
-    match /userMappings/{authUid} {
-      // The user themselves can read their mapping to find their admin.
-      allow get: if request.auth != null && request.auth.uid == authUid;
-      
-      // An admin can create a mapping for a new collaborator.
-      // We check if the 'adminUid' being written in the mapping document
-      // matches the person making the request. This prevents a random user
-      // from assigning a new collaborator to an admin.
-      allow create: if request.auth != null && request.resource.data.adminUid == request.auth.uid;
-      
-      // No one should update or delete mappings for now to keep it simple.
-      allow update, delete: if false;
+
+    // Allow any authenticated user to read the userMappings collection.
+    // This is necessary for a collaborator to find out which admin/company they belong to upon login.
+    match /userMappings/{userId} {
+      allow read: if request.auth != null;
     }
+
   }
 }
