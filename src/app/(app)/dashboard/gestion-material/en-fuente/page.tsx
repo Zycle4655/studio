@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
+import 'jspdf-autotable';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -263,7 +264,7 @@ export default function RegistrarRecoleccionPage() {
             try {
                 const url = new URL(logoUrl);
                 const pathName = decodeURIComponent(url.pathname);
-                const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
+                let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
                 
                 let imageFormat = 'PNG'; 
                 if (extension === "JPG" || extension === "JPEG") {
@@ -345,7 +346,7 @@ export default function RegistrarRecoleccionPage() {
             return row;
         });
 
-        doc.autoTable({
+        (doc as any).autoTable({
             startY: y,
             head: [tableHeaders],
             body: tableData,
@@ -703,4 +704,3 @@ export default function RegistrarRecoleccionPage() {
     </div>
   );
 }
-
