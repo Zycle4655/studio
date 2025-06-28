@@ -58,10 +58,7 @@ export function AppSidebar() {
     isModulePathActive('/dashboard/sui')
   );
   const [talentoHumanoOpen, setTalentoHumanoOpen] = React.useState(
-    isModulePathActive('/dashboard/talento-humano')
-  );
-   const [equipoOpen, setEquipoOpen] = React.useState(
-    isModulePathActive('/dashboard/equipo')
+    isModulePathActive('/dashboard/talento-humano') || isModulePathActive('/dashboard/equipo')
   );
 
   function isModulePathActive(basePath: string) {
@@ -74,8 +71,7 @@ export function AppSidebar() {
     setTransporteOpen(isModulePathActive('/dashboard/transporte'));
     setReportesOpen(isModulePathActive('/dashboard/reportes'));
     setSuiOpen(isModulePathActive('/dashboard/sui'));
-    setTalentoHumanoOpen(isModulePathActive('/dashboard/talento-humano'));
-    setEquipoOpen(isModulePathActive('/dashboard/equipo'));
+    setTalentoHumanoOpen(isModulePathActive('/dashboard/talento-humano') || isModulePathActive('/dashboard/equipo'));
   }, [pathname]);
 
 
@@ -89,7 +85,6 @@ export function AppSidebar() {
   const reportesTooltip = sidebarOpen ? undefined : "Reportes";
   const suiTooltip = sidebarOpen ? undefined : "SUI";
   const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
-  const equipoTooltip = sidebarOpen ? undefined : "Gestión de Equipo";
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -321,12 +316,12 @@ export function AppSidebar() {
             </SidebarMenuItem>
           )}
           
-          {/* Talento Humano Module */}
-          {permissions?.talentoHumano && (
+          {/* Fused Talento Humano & Equipo Module */}
+          {(permissions?.talentoHumano || permissions?.equipo) && (
             <SidebarMenuItem>
                 <SidebarMenuButton
                 onClick={() => setTalentoHumanoOpen(!talentoHumanoOpen)}
-                isActive={isModulePathActive('/dashboard/talento-humano')}
+                isActive={isModulePathActive('/dashboard/talento-humano') || isModulePathActive('/dashboard/equipo')}
                 tooltip={talentoHumanoTooltip}
                 >
                 <UsersRound />
@@ -339,84 +334,65 @@ export function AppSidebar() {
                 </SidebarMenuButton>
                 {talentoHumanoOpen && (
                 <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                        asChild
-                        isActive={isActive('/dashboard/talento-humano/prestamos')}
-                    >
-                        <Link href="/dashboard/talento-humano/prestamos">
-                        <HandCoins />
-                        <span>Préstamos</span>
-                        </Link>
-                    </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                        asChild
-                        isActive={isActive('/dashboard/talento-humano/control-asistencia')}
-                    >
-                        <Link href="/dashboard/talento-humano/control-asistencia">
-                        <CalendarCheck />
-                        <span>Control Asistencia</span>
-                        </Link>
-                    </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                        asChild
-                        isActive={isActive('/dashboard/talento-humano/desprendibles-pago')}
-                    >
-                        <Link href="/dashboard/talento-humano/desprendibles-pago">
-                        <Receipt />
-                        <span>Desprendibles de Pago</span>
-                        </Link>
-                    </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                </SidebarMenuSub>
-                )}
-            </SidebarMenuItem>
-          )}
-
-          {/* Equipo Module */}
-          {permissions?.equipo && (
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                onClick={() => setEquipoOpen(!equipoOpen)}
-                isActive={isModulePathActive('/dashboard/equipo')}
-                tooltip={equipoTooltip}
-                >
-                <UserCog />
-                <span>Gestión de Equipo</span>
-                <ChevronDown
-                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                    equipoOpen ? 'rotate-180' : ''
-                    }`}
-                />
-                </SidebarMenuButton>
-                {equipoOpen && (
-                <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                        asChild
-                        isActive={isActive('/dashboard/equipo')}
-                    >
-                        <Link href="/dashboard/equipo">
-                        <Users />
-                        <span>Colaboradores</span>
-                        </Link>
-                    </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                        asChild
-                        isActive={isActive('/dashboard/equipo/cargos')}
-                    >
-                        <Link href="/dashboard/equipo/cargos">
-                        <Briefcase />
-                        <span>Gestionar Cargos</span>
-                        </Link>
-                    </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                    {permissions?.equipo && (<>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                                asChild
+                                isActive={isActive('/dashboard/equipo')}
+                            >
+                                <Link href="/dashboard/equipo">
+                                <Users />
+                                <span>Colaboradores</span>
+                                </Link>
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                                asChild
+                                isActive={isActive('/dashboard/equipo/cargos')}
+                            >
+                                <Link href="/dashboard/equipo/cargos">
+                                <Briefcase />
+                                <span>Gestionar Cargos</span>
+                                </Link>
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    </>)}
+                    {permissions?.talentoHumano && (<>
+                        <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                            asChild
+                            isActive={isActive('/dashboard/talento-humano/prestamos')}
+                        >
+                            <Link href="/dashboard/talento-humano/prestamos">
+                            <HandCoins />
+                            <span>Préstamos</span>
+                            </Link>
+                        </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                            asChild
+                            isActive={isActive('/dashboard/talento-humano/control-asistencia')}
+                        >
+                            <Link href="/dashboard/talento-humano/control-asistencia">
+                            <CalendarCheck />
+                            <span>Control Asistencia</span>
+                            </Link>
+                        </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                        <SidebarMenuSubButton
+                            asChild
+                            isActive={isActive('/dashboard/talento-humano/desprendibles-pago')}
+                        >
+                            <Link href="/dashboard/talento-humano/desprendibles-pago">
+                            <Receipt />
+                            <span>Desprendibles de Pago</span>
+                            </Link>
+                        </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    </>)}
                 </SidebarMenuSub>
                 )}
             </SidebarMenuItem>
