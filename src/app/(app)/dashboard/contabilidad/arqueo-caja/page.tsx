@@ -93,7 +93,7 @@ export default function ArqueoCajaPage() {
         // Fetch Ventas
         const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
         const qVentas = query(ventasRef, 
-            where("fecha", ">=", Timestamp.fromDate(endOfDay)), 
+            where("fecha", ">=", Timestamp.fromDate(startOfDay)), 
             where("fecha", "<=", Timestamp.fromDate(endOfDay)),
             where("formaDePago", "==", "efectivo")
         );
