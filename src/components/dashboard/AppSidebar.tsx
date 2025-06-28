@@ -35,7 +35,9 @@ import {
   Truck,
   HandCoins,
   UserCog,
-  MessageSquareQuote
+  MessageSquareQuote,
+  Landmark,
+  Calculator,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -61,6 +63,9 @@ export function AppSidebar() {
   const [talentoHumanoOpen, setTalentoHumanoOpen] = React.useState(
     isModulePathActive('/dashboard/talento-humano') || isModulePathActive('/dashboard/equipo')
   );
+  const [contabilidadOpen, setContabilidadOpen] = React.useState(
+    isModulePathActive('/dashboard/contabilidad')
+  );
 
   function isModulePathActive(basePath: string) {
     return pathname.startsWith(basePath);
@@ -73,6 +78,7 @@ export function AppSidebar() {
     setReportesOpen(isModulePathActive('/dashboard/reportes'));
     setSuiOpen(isModulePathActive('/dashboard/sui'));
     setTalentoHumanoOpen(isModulePathActive('/dashboard/talento-humano') || isModulePathActive('/dashboard/equipo'));
+    setContabilidadOpen(isModulePathActive('/dashboard/contabilidad'));
   }, [pathname]);
 
 
@@ -86,6 +92,7 @@ export function AppSidebar() {
   const reportesTooltip = sidebarOpen ? undefined : "Reportes";
   const suiTooltip = sidebarOpen ? undefined : "SUI";
   const talentoHumanoTooltip = sidebarOpen ? undefined : "Talento Humano";
+  const contabilidadTooltip = sidebarOpen ? undefined : "Contabilidad";
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -185,6 +192,40 @@ export function AppSidebar() {
                         <Link href="/dashboard/gestion-material/facturas-venta">
                         <FileText />
                         <span>Facturas Venta</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+                )}
+            </SidebarMenuItem>
+          )}
+
+           {/* Contabilidad Module */}
+          {permissions?.contabilidad && (
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                onClick={() => setContabilidadOpen(!contabilidadOpen)}
+                isActive={isModulePathActive('/dashboard/contabilidad')}
+                tooltip={contabilidadTooltip}
+                >
+                <Landmark />
+                <span>Contabilidad</span>
+                <ChevronDown
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    contabilidadOpen ? 'rotate-180' : ''
+                    }`}
+                />
+                </SidebarMenuButton>
+                {contabilidadOpen && (
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/contabilidad/arqueo-caja')}
+                    >
+                        <Link href="/dashboard/contabilidad/arqueo-caja">
+                        <Calculator />
+                        <span>Arqueo de Caja</span>
                         </Link>
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>

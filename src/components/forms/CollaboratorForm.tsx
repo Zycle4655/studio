@@ -35,7 +35,7 @@ import {
 import { CollaboratorFormSchema, type CollaboratorFormData, type Permissions, DEFAULT_ROLES } from "@/schemas/equipo";
 import { TIPO_ID_LABELS, type TipoIdentificacionKey } from "@/schemas/sui";
 import type { CargoDocument } from "@/schemas/cargo";
-import { Save, XCircle, UserCog, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
+import { Save, XCircle, UserCog, Lock, Eye, EyeOff, Sparkles, Calendar } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -59,12 +59,13 @@ const permissionLabels: { [key in keyof Permissions]: string } = {
     sui: "SUI",
     talentoHumano: "Talento Humano",
     equipo: "Gestión de Equipo (Admin)",
+    contabilidad: "Contabilidad (Caja)",
 };
 
 const defaultPermissionsByRole: { [key: string]: Partial<Permissions> } = {
-  admin: { gestionMaterial: true, transporte: true, reportes: true, sui: true, talentoHumano: true, equipo: true },
-  bodeguero: { gestionMaterial: true, transporte: false, reportes: true, sui: false, talentoHumano: false, equipo: false },
-  recolector: { gestionMaterial: false, transporte: true, reportes: false, sui: false, talentoHumano: false, equipo: false },
+  admin: { gestionMaterial: true, transporte: true, reportes: true, sui: true, talentoHumano: true, equipo: true, contabilidad: true },
+  bodeguero: { gestionMaterial: true, transporte: false, reportes: true, sui: false, talentoHumano: false, equipo: false, contabilidad: false },
+  recolector: { gestionMaterial: false, transporte: true, reportes: false, sui: false, talentoHumano: false, equipo: false, contabilidad: false },
 };
 
 export default function CollaboratorForm({
@@ -97,6 +98,7 @@ export default function CollaboratorForm({
         sui: false,
         talentoHumano: false,
         equipo: false,
+        contabilidad: false,
       },
       tipoIdentificacion: null,
       numeroIdentificacion: null,
@@ -126,6 +128,7 @@ export default function CollaboratorForm({
                 sui: false,
                 talentoHumano: false,
                 equipo: false,
+                contabilidad: false,
             },
             tipoIdentificacion: defaultValues?.tipoIdentificacion || null,
             numeroIdentificacion: defaultValues?.numeroIdentificacion || null,
@@ -156,6 +159,7 @@ export default function CollaboratorForm({
         sui: false,
         talentoHumano: false,
         equipo: false,
+        contabilidad: false,
         ...permissions
     });
   };

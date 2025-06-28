@@ -22,6 +22,7 @@ export const permissionsSchema = z.object({
     sui: z.boolean().default(false),
     talentoHumano: z.boolean().default(false),
     equipo: z.boolean().default(false),
+    contabilidad: z.boolean().default(false),
 });
 
 export type Permissions = z.infer<typeof permissionsSchema>;

@@ -29,6 +29,7 @@ const FULL_ADMIN_PERMISSIONS: Permissions = {
   sui: true,
   talentoHumano: true,
   equipo: true,
+  contabilidad: true,
 };
 
 
