@@ -22,7 +22,7 @@ import jsPDF from "jspdf";
 
 export default function HistorialRecoleccionesPage() {
   const { toast } = useToast();
-  const { user, companyOwnerId, companyProfile: authCompanyProfile } = useAuth();
+  const { user, companyOwnerId, companyProfile: authCompanyProfile, permissions } = useAuth();
   const [recolecciones, setRecolecciones] = React.useState<RecoleccionDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(authCompanyProfile);
@@ -68,12 +68,12 @@ export default function HistorialRecoleccionesPage() {
 
   React.useEffect(() => {
     document.title = 'Historial de Recolecciones | ZYCLE';
-    if (companyOwnerId) {
+    if (companyOwnerId && permissions?.gestionMaterial) {
       fetchRecoleccionesAndProfile();
     } else {
       setIsLoading(false);
     }
-  }, [companyOwnerId, fetchRecoleccionesAndProfile]);
+  }, [companyOwnerId, fetchRecoleccionesAndProfile, permissions]);
 
   const formatWeight = (value: number) => {
     return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg';
@@ -95,73 +95,143 @@ export default function HistorialRecoleccionesPage() {
   );
   
   // PDF Generation and Sharing Logic
-  const generatePdf = (recoleccionData: RecoleccionDocument) => {
-    // This function is copied from RegistrarRecoleccionPage. Can be extracted to a util later.
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: [80, 150] });
+  const generatePdf = (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null) => {
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
     const formatDate = (timestamp: any) => {
         if (!timestamp) return "N/A";
-        const jsDate = timestamp.toDate ? timestamp.toDate() : new Date();
-        return format(jsDate, "d 'de' MMMM, yyyy HH:mm", { locale: es });
+        const jsDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return format(jsDate, "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es });
     };
+    
+    const companyName = profileData?.companyName || 'Nombre de la Empresa';
+    const companyNit = profileData?.nit || 'NIT no especificado';
+    const companyAddress = profileData?.address || 'Dirección no especificada';
+    const companyPhone = profileData?.phone || 'Teléfono no especificado';
+    const logoUrl = profileData?.logoUrl;
 
-    const companyName = companyProfile?.companyName || 'Recibo de Recolección';
-    const nit = companyProfile?.nit || '';
-    const address = companyProfile?.address || '';
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    let y = margin;
+
+    // --- Header ---
+    if (logoUrl) {
+        try {
+            doc.addImage(logoUrl, 'PNG', margin, y, 30, 30, undefined, 'FAST');
+        } catch (e) {
+            console.error("Error adding logo to PDF:", e);
+        }
+    }
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(companyName, 40, 10, { align: 'center' });
-    doc.setFontSize(7);
+    doc.text(companyName, pageWidth - margin, y + 5, { align: 'right' });
     doc.setFont('helvetica', 'normal');
-    if(nit) doc.text(`NIT: ${nit}`, 40, 14, { align: 'center' });
-    if(address) doc.text(address, 40, 18, { align: 'center' });
-    doc.setLineDashPattern([0.5, 0.5], 0);
-    doc.line(5, 22, 75, 22);
-    doc.setFontSize(8);
-    doc.text(`Fecha: ${formatDate(recoleccionData.fecha)}`, 5, 26);
     doc.setFontSize(9);
+    doc.text(`NIT: ${companyNit}`, pageWidth - margin, y + 10, { align: 'right' });
+    doc.text(companyAddress, pageWidth - margin, y + 15, { align: 'right' });
+    doc.text(`Tel: ${companyPhone}`, pageWidth - margin, y + 20, { align: 'right' });
+
+    y += 45;
+
+    // --- Title ---
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Fuente: ${recoleccionData.fuenteNombre}`, 5, 32);
+    doc.text("CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`Encargado: ${recoleccionData.encargadoNombre}`, 5, 36);
-    doc.setLineDashPattern([0.5, 0.5], 0);
-    doc.line(5, 40, 75, 40);
-    let y = 45;
+    doc.text("Material Aprovechable", pageWidth / 2, y + 6, { align: 'center' });
+    
+    y += 20;
+
+    // --- Certificate Body ---
+    doc.setFontSize(11);
+    const splitText = doc.splitTextToSize(`Por medio de la presente, la empresa ${companyName} certifica que ha recibido los siguientes materiales de:`, pageWidth - margin * 2);
+    doc.text(splitText, margin, y);
+    y += (splitText.length * 5) + 8;
+
     doc.setFont('helvetica', 'bold');
-    doc.text('Material', 5, y);
-    doc.text('Peso (kg)', 75, y, { align: 'right' });
-    y += 2;
-    doc.line(5, y, 75, y);
-    y += 3;
+    doc.text('Fuente:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(recoleccionData.fuenteNombre, margin + 25, y);
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Encargado:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(recoleccionData.encargadoNombre, margin + 25, y);
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fecha:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
+    y += 15;
+
+    // --- Materials Table ---
+    const tableX = margin;
+    const tableY = y;
+    const tableWidth = pageWidth - margin * 2;
+    const col1Width = tableWidth * 0.7;
+    const col2Width = tableWidth * 0.3;
+    const rowHeight = 8;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFillColor(230, 230, 230);
+    doc.rect(tableX, tableY, tableWidth, rowHeight, 'F');
+    doc.text('Material', tableX + 5, tableY + rowHeight - 3);
+    doc.text('Peso (kg)', tableX + col1Width + col2Width / 2, tableY + rowHeight - 3, { align: 'center' });
+    y += rowHeight;
+
     doc.setFont('helvetica', 'normal');
     recoleccionData.items.forEach(item => {
-        doc.text(item.materialName, 5, y);
-        doc.text(`${item.peso.toFixed(2)}`, 75, y, { align: 'right' });
-        y += 5;
+        doc.line(tableX, y, tableX + tableWidth, y);
+        doc.text(item.materialName, tableX + 5, y + rowHeight - 3);
+        doc.text(item.peso.toFixed(2), tableX + col1Width + col2Width / 2, y + rowHeight - 3, { align: 'center' });
+        y += rowHeight;
     });
-    doc.line(5, y, 75, y);
-    y += 4;
+
+    doc.line(tableX, y, tableX + tableWidth, y);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total Recolectado:', 5, y);
-    doc.text(`${recoleccionData.totalPeso.toFixed(2)} kg`, 75, y, { align: 'right' });
-    y += 8;
-    doc.text('Firma del Encargado:', 5, y);
-    y += 2;
-    doc.addImage(recoleccionData.firmaDataUrl, 'PNG', 15, y, 50, 20, undefined, 'FAST');
+    doc.text('Total Recolectado', tableX + 5, y + rowHeight - 3);
+    doc.text(recoleccionData.totalPeso.toFixed(2) + ' kg', tableX + col1Width + col2Width / 2, y + rowHeight - 3, { align: 'center' });
+    y += rowHeight;
+    doc.line(tableX, y, tableX + tableWidth, y);
+    doc.line(tableX, tableY, tableX, y);
+    doc.line(tableX + tableWidth, tableY, tableX + tableWidth, y);
+    doc.line(tableX + col1Width, tableY, tableX + col1Width, y);
+
+    y += 25;
+
+    // --- Signature ---
+    if (y > pageHeight - 50) {
+        doc.addPage();
+        y = margin;
+    }
+    
+    doc.addImage(recoleccionData.firmaDataUrl, 'PNG', (pageWidth / 2) - 40, y, 80, 30, undefined, 'FAST');
+    y += 30;
+    doc.line(margin + 50, y, pageWidth - margin - 50, y);
+    doc.setFontSize(10);
+    doc.text('Firma del Encargado', pageWidth / 2, y + 5, { align: 'center' });
+    doc.text(recoleccionData.encargadoNombre, pageWidth / 2, y + 10, { align: 'center' });
+
     return doc;
   };
 
   const handleDownloadPdf = () => {
     if (!recoleccionToView) return;
-    const pdf = generatePdf(recoleccionToView);
+    const pdf = generatePdf(recoleccionToView, companyProfile);
     pdf.save(`recibo_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}_${recoleccionToView.id?.substring(0,5)}.pdf`);
   };
 
   const handleShare = async () => {
     if (!recoleccionToView || !navigator.share) return;
     try {
-        const pdf = generatePdf(recoleccionToView);
+        const pdf = generatePdf(recoleccionToView, companyProfile);
         const pdfBlob = pdf.output('blob');
         const pdfFile = new File([pdfBlob], `recibo_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}.pdf`, { type: 'application/pdf' });
         
@@ -176,6 +246,33 @@ export default function HistorialRecoleccionesPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+        <div className="container py-8 px-4 md:px-6">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/4 mb-2"/>
+                    <Skeleton className="h-5 w-1/2"/>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                            <Skeleton key={i} className="h-12 w-full rounded-md"/>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
+  if (!permissions?.gestionMaterial) {
+      return (
+        <div className="container py-8 px-4 md:px-6">
+            <Card><CardContent className="py-12 text-center">No tiene permiso para acceder a esta sección.</CardContent></Card>
+        </div>
+      )
+  }
 
   return (
     <div className="container py-8 px-4 md:px-6">
@@ -307,3 +404,5 @@ export default function HistorialRecoleccionesPage() {
     </div>
   );
 }
+
+    
