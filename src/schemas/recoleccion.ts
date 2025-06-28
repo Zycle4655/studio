@@ -7,6 +7,8 @@ export const RecoleccionItemSchema = z.object({
   materialId: z.string().min(1, "Debe seleccionar un material."),
   materialName: z.string(),
   peso: z.coerce.number().positive("El peso debe ser un número positivo."),
+  precioUnitario: z.coerce.number().min(0, "El precio no puede ser negativo.").default(0),
+  subtotal: z.coerce.number().min(0).default(0),
 });
 export type RecoleccionItem = z.infer<typeof RecoleccionItemSchema>;
 
@@ -31,6 +33,7 @@ export interface RecoleccionDocument {
   fecha: Timestamp;
   items: RecoleccionItem[];
   totalPeso: number;
+  totalValor: number;
   firmaDataUrl: string; // The base64 data URL of the signature
   selloImageUrl?: string | null; // URL to the image in Firebase Storage
   createdAt: Timestamp;

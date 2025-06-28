@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
 import jsPDF from "jspdf";
+import 'jspdf-autotable';
 
 export default function HistorialRecoleccionesPage() {
   const { toast } = useToast();
@@ -45,7 +46,6 @@ export default function HistorialRecoleccionesPage() {
     }
     setIsLoading(true);
     try {
-      // Use Firestore client-side SDK rules for access control
       const recoleccionesRef = collection(db, "companyProfiles", companyOwnerId, "recolecciones");
       const q = query(recoleccionesRef, orderBy("fecha", "desc"));
       const querySnapshot = await getDocs(q);
@@ -79,6 +79,10 @@ export default function HistorialRecoleccionesPage() {
   const formatWeight = (value: number) => {
     return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg';
   };
+  
+   const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+  };
 
   const formatDateWithTime = (timestamp: Timestamp | Date): string => {
     if (!timestamp) return "N/A";
@@ -95,150 +99,154 @@ export default function HistorialRecoleccionesPage() {
     rec.fuenteNombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // PDF Generation and Sharing Logic
   const generatePdf = (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null) => {
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-    });
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
 
-    const formatDate = (timestamp: any) => {
-        if (!timestamp) return "N/A";
-        const jsDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return format(jsDate, "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es });
-    };
+        const formatDate = (timestamp: any) => {
+            if (!timestamp) return "N/A";
+            const jsDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return format(jsDate, "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es });
+        };
+        
+        const companyName = profileData?.companyName || 'Nombre de la Empresa';
+        const companyNit = profileData?.nit || 'NIT no especificado';
+        const companyAddress = profileData?.address || 'Dirección no especificada';
+        const companyPhone = profileData?.phone || 'Teléfono no especificado';
+        const logoUrl = profileData?.logoUrl;
+        const isPurchase = recoleccionData.totalValor > 0;
+
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 15;
+        let y = margin;
+
+        // --- Header ---
+        if (logoUrl) {
+            try {
+                const url = new URL(logoUrl);
+                const pathName = decodeURIComponent(url.pathname);
+                const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
+                
+                let imageFormat = 'PNG'; 
+                if (extension === "JPG" || extension === "JPEG") {
+                  imageFormat = "JPEG";
+                } else if (extension === "WEBP") {
+                  imageFormat = "WEBP";
+                }
     
-    const companyName = profileData?.companyName || 'Nombre de la Empresa';
-    const companyNit = profileData?.nit || 'NIT no especificado';
-    const companyAddress = profileData?.address || 'Dirección no especificada';
-    const companyPhone = profileData?.phone || 'Teléfono no especificado';
-    const logoUrl = profileData?.logoUrl;
-
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
-    let y = margin;
-
-    // --- Header ---
-    if (logoUrl) {
-        try {
-            const url = new URL(logoUrl);
-            const pathName = decodeURIComponent(url.pathname);
-            const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
-            
-            let imageFormat = 'PNG'; // Default format
-            if (extension === "JPG" || extension === "JPEG") {
-              imageFormat = "JPEG";
-            } else if (extension === "WEBP") {
-              imageFormat = "WEBP";
+                doc.addImage(logoUrl, imageFormat, margin, y, 30, 30, undefined, 'FAST');
+            } catch (e) {
+                console.error("Error adding logo to PDF:", e);
             }
-
-            doc.addImage(logoUrl, imageFormat, margin, y, 30, 30, undefined, 'FAST');
-        } catch (e) {
-            console.error("Error adding logo to PDF:", e);
         }
-    }
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text(companyName, pageWidth - margin, y + 5, { align: 'right' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(`NIT: ${companyNit}`, pageWidth - margin, y + 10, { align: 'right' });
-    doc.text(companyAddress, pageWidth - margin, y + 15, { align: 'right' });
-    doc.text(`Tel: ${companyPhone}`, pageWidth - margin, y + 20, { align: 'right' });
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(companyName, pageWidth - margin, y + 5, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(`NIT: ${companyNit}`, pageWidth - margin, y + 10, { align: 'right' });
+        doc.text(companyAddress, pageWidth - margin, y + 15, { align: 'right' });
+        doc.text(`Tel: ${companyPhone}`, pageWidth - margin, y + 20, { align: 'right' });
 
-    y += 45;
+        y += 45;
 
-    // --- Title ---
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text("CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text("Material Aprovechable", pageWidth / 2, y + 6, { align: 'center' });
-    
-    y += 20;
+        // --- Title ---
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(isPurchase ? "COMPROBANTE DE COMPRA EN FUENTE" : "CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text("Material Aprovechable", pageWidth / 2, y + 6, { align: 'center' });
+        
+        y += 20;
 
-    // --- Certificate Body ---
-    doc.setFontSize(11);
-    const splitText = doc.splitTextToSize(`Por medio de la presente, la empresa ${companyName} certifica que ha recibido los siguientes materiales de:`, pageWidth - margin * 2);
-    doc.text(splitText, margin, y);
-    y += (splitText.length * 5) + 8;
+        // --- Certificate Body ---
+        doc.setFontSize(11);
+        const introText = isPurchase 
+            ? `Por medio de la presente, la empresa ${companyName} certifica que ha comprado los siguientes materiales de:`
+            : `Por medio de la presente, la empresa ${companyName} certifica que ha recibido en donación los siguientes materiales de:`;
+        const splitText = doc.splitTextToSize(introText, pageWidth - margin * 2);
+        doc.text(splitText, margin, y);
+        y += (splitText.length * 5) + 8;
 
-    doc.setFont('helvetica', 'bold');
-    doc.text('Fuente:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(recoleccionData.fuenteNombre, margin + 25, y);
-    y += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Encargado:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(recoleccionData.encargadoNombre, margin + 25, y);
-    y += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Fecha:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
-    if (recoleccionData.vehiculoPlaca) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Fuente:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(recoleccionData.fuenteNombre, margin + 25, y);
         y += 7;
         doc.setFont('helvetica', 'bold');
-        doc.text('Vehículo:', margin, y);
+        doc.text('Encargado:', margin, y);
         doc.setFont('helvetica', 'normal');
-        doc.text(recoleccionData.vehiculoPlaca, margin + 25, y);
-    }
-    y += 15;
+        doc.text(recoleccionData.encargadoNombre, margin + 25, y);
+        y += 7;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Fecha:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
+        if (recoleccionData.vehiculoPlaca) {
+            y += 7;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Vehículo:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(recoleccionData.vehiculoPlaca, margin + 25, y);
+        }
+        y += 15;
 
-    // --- Materials Table ---
-    const tableX = margin;
-    const tableY = y;
-    const tableWidth = pageWidth - margin * 2;
-    const col1Width = tableWidth * 0.7;
-    const col2Width = tableWidth * 0.3;
-    const rowHeight = 8;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFillColor(230, 230, 230);
-    doc.rect(tableX, tableY, tableWidth, rowHeight, 'F');
-    doc.text('Material', tableX + 5, tableY + rowHeight - 3);
-    doc.text('Peso (kg)', tableX + col1Width + col2Width / 2, tableY + rowHeight - 3, { align: 'center' });
-    y += rowHeight;
+        // --- Materials Table ---
+        const tableHeaders = ['Material', 'Peso (kg)'];
+        if (isPurchase) {
+            tableHeaders.push('Vr. Unitario', 'Subtotal');
+        }
+        
+        const tableData = recoleccionData.items.map(item => {
+            const row = [item.materialName, item.peso.toFixed(2)];
+            if(isPurchase) {
+                row.push(formatCurrency(item.precioUnitario), formatCurrency(item.subtotal));
+            }
+            return row;
+        });
 
-    doc.setFont('helvetica', 'normal');
-    recoleccionData.items.forEach(item => {
-        doc.line(tableX, y, tableX + tableWidth, y);
-        doc.text(item.materialName, tableX + 5, y + rowHeight - 3);
-        doc.text(item.peso.toFixed(2), tableX + col1Width + col2Width / 2, y + rowHeight - 3, { align: 'center' });
-        y += rowHeight;
-    });
+        (doc as any).autoTable({
+            startY: y,
+            head: [tableHeaders],
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [22, 163, 74] }, // Primary color
+        });
 
-    doc.line(tableX, y, tableX + tableWidth, y);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total Recolectado', tableX + 5, y + rowHeight - 3);
-    doc.text(recoleccionData.totalPeso.toFixed(2) + ' kg', tableX + col1Width + col2Width / 2, y + rowHeight - 3, { align: 'center' });
-    y += rowHeight;
-    doc.line(tableX, y, tableX + tableWidth, y);
-    doc.line(tableX, tableY, tableX, y);
-    doc.line(tableX + tableWidth, tableY, tableX + tableWidth, y);
-    doc.line(tableX + col1Width, tableY, tableX + col1Width, y);
+        y = (doc as any).lastAutoTable.finalY + 10;
+        
+        // --- Totals ---
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        if (isPurchase) {
+            doc.text(`Total Compra: ${formatCurrency(recoleccionData.totalValor)}`, pageWidth - margin, y, { align: 'right' });
+            y += 7;
+        }
+        doc.text(`Peso Total: ${recoleccionData.totalPeso.toFixed(2)} kg`, pageWidth - margin, y, { align: 'right' });
+        y += 25;
 
-    y += 25;
 
-    // --- Signature ---
-    if (y > pageHeight - 50) {
-        doc.addPage();
-        y = margin;
-    }
-    
-    doc.addImage(recoleccionData.firmaDataUrl, 'PNG', (pageWidth / 2) - 40, y, 80, 30, undefined, 'FAST');
-    y += 30;
-    doc.line(margin + 50, y, pageWidth - margin - 50, y);
-    doc.setFontSize(10);
-    doc.text('Firma del Encargado', pageWidth / 2, y + 5, { align: 'center' });
-    doc.text(recoleccionData.encargadoNombre, pageWidth / 2, y + 10, { align: 'center' });
+        // --- Signature ---
+        if (y > pageHeight - 50) {
+            doc.addPage();
+            y = margin;
+        }
+        
+        doc.addImage(recoleccionData.firmaDataUrl, 'PNG', (pageWidth / 2) - 40, y, 80, 30, undefined, 'FAST');
+        y += 30;
+        doc.line(margin + 50, y, pageWidth - margin - 50, y);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Firma del Encargado', pageWidth / 2, y + 5, { align: 'center' });
+        doc.text(recoleccionData.encargadoNombre, pageWidth / 2, y + 10, { align: 'center' });
 
-    return doc;
+        return doc;
   };
 
   const handleDownloadPdf = () => {
@@ -349,6 +357,7 @@ export default function HistorialRecoleccionesPage() {
                     <TableHead>Fuente</TableHead>
                     <TableHead>Vehículo</TableHead>
                     <TableHead className="text-right">Peso Total</TableHead>
+                    <TableHead className="text-right">Valor Total</TableHead>
                     <TableHead className="text-center w-[120px]">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -359,6 +368,7 @@ export default function HistorialRecoleccionesPage() {
                       <TableCell className="font-medium">{rec.fuenteNombre}</TableCell>
                       <TableCell>{rec.vehiculoPlaca || 'N/A'}</TableCell>
                       <TableCell className="text-right font-semibold text-primary">{formatWeight(rec.totalPeso)}</TableCell>
+                       <TableCell className="text-right font-semibold text-green-600">{rec.totalValor > 0 ? formatCurrency(rec.totalValor) : "Donación"}</TableCell>
                       <TableCell className="text-center">
                         <Button variant="ghost" size="icon" className="hover:text-primary" onClick={() => handleOpenModal(rec)} aria-label="Ver recibo">
                           <Eye className="h-4 w-4" />
@@ -394,11 +404,17 @@ export default function HistorialRecoleccionesPage() {
                     <h4 className="font-semibold pt-2 border-t">Materiales</h4>
                     <ul className="list-disc pl-5 space-y-1 text-sm">
                         {recoleccionToView.items.map((item, index) => (
-                            <li key={index}>{item.materialName}: <strong>{formatWeight(item.peso)}</strong></li>
+                           <li key={index}>
+                            {item.materialName}: <strong>{formatWeight(item.peso)}</strong>
+                            {item.subtotal > 0 && <span className="text-muted-foreground"> ({formatCurrency(item.subtotal)})</span>}
+                           </li>
                         ))}
                     </ul>
-                    <h4 className="font-semibold pt-2 border-t">Total Recolectado</h4>
-                    <p className="font-bold text-lg text-primary">{formatWeight(recoleccionToView.totalPeso)}</p>
+                     <h4 className="font-semibold pt-2 border-t">Totales</h4>
+                    {recoleccionToView.totalValor > 0 && (
+                      <p className="font-bold text-lg text-green-600">Total Compra: {formatCurrency(recoleccionToView.totalValor)}</p>
+                    )}
+                    <p className="font-bold text-lg text-primary">Peso Total: {formatWeight(recoleccionToView.totalPeso)}</p>
 
                     <h4 className="font-semibold pt-2 border-t">Firma</h4>
                     <div className="border rounded-md p-2 bg-muted flex justify-center">
@@ -428,3 +444,4 @@ export default function HistorialRecoleccionesPage() {
     </div>
   );
 }
+

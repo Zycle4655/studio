@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check, FileDown, Share2, Printer, PlusCircleIcon, Truck } from "lucide-react";
+import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check, FileDown, Share2, Printer, PlusCircleIcon, Truck, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -49,7 +49,9 @@ export default function RegistrarRecoleccionPage() {
   const [currentItems, setCurrentItems] = React.useState<RecoleccionItem[]>([]);
   const [selectedMaterialId, setSelectedMaterialId] = React.useState("");
   const [currentPeso, setCurrentPeso] = React.useState("");
+  const [currentPrecio, setCurrentPrecio] = React.useState("");
   const [openMaterialCombobox, setOpenMaterialCombobox] = React.useState(false);
+
   const [firmaDataUrl, setFirmaDataUrl] = React.useState<string>("");
   const [selloFile, setSelloFile] = React.useState<File | null>(null);
 
@@ -115,15 +117,21 @@ export default function RegistrarRecoleccionPage() {
     const material = materials.find(m => m.id === selectedMaterialId);
     if (!material) return;
     
+    const peso = parseFloat(currentPeso);
+    const precio = currentPrecio ? parseFloat(currentPrecio) : 0;
+    
     const newItem: RecoleccionItem = {
       materialId: material.id,
       materialName: material.name,
-      peso: parseFloat(currentPeso),
+      peso: peso,
+      precioUnitario: precio,
+      subtotal: peso * precio,
     };
 
     setCurrentItems(prev => [...prev, newItem]);
     setSelectedMaterialId("");
     setCurrentPeso("");
+    setCurrentPrecio("");
     setOpenMaterialCombobox(false);
   };
 
@@ -181,6 +189,7 @@ export default function RegistrarRecoleccionPage() {
         }
         
         const totalPeso = currentItems.reduce((sum, item) => sum + item.peso, 0);
+        const totalValor = currentItems.reduce((sum, item) => sum + item.subtotal, 0);
         const fechaServer = serverTimestamp();
 
         const recoleccionDoc: RecoleccionDocument = {
@@ -194,6 +203,7 @@ export default function RegistrarRecoleccionPage() {
             fecha: fechaServer,
             items: currentItems,
             totalPeso: totalPeso,
+            totalValor: totalValor,
             firmaDataUrl: firmaDataUrl,
             selloImageUrl: selloImageUrl,
             createdAt: fechaServer,
@@ -207,7 +217,6 @@ export default function RegistrarRecoleccionPage() {
             description: "El registro ha sido guardado. Ahora puede descargar o compartir el recibo.",
         });
         
-        // Asignar la fecha actual al documento para la generación inmediata del PDF
         const finalDocForPdf = { ...recoleccionDoc, fecha: new Date() };
         setLastRecoleccion(finalDocForPdf as unknown as RecoleccionDocument);
         setView('success');
@@ -220,6 +229,10 @@ export default function RegistrarRecoleccionPage() {
     }
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+  };
+  
     const generatePdf = (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null) => {
         const doc = new jsPDF({
             orientation: 'portrait',
@@ -238,6 +251,7 @@ export default function RegistrarRecoleccionPage() {
         const companyAddress = profileData?.address || 'Dirección no especificada';
         const companyPhone = profileData?.phone || 'Teléfono no especificado';
         const logoUrl = profileData?.logoUrl;
+        const isPurchase = recoleccionData.totalValor > 0;
 
         const pageHeight = doc.internal.pageSize.getHeight();
         const pageWidth = doc.internal.pageSize.getWidth();
@@ -251,7 +265,7 @@ export default function RegistrarRecoleccionPage() {
                 const pathName = decodeURIComponent(url.pathname);
                 const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
                 
-                let imageFormat = 'PNG'; // Default format
+                let imageFormat = 'PNG'; 
                 if (extension === "JPG" || extension === "JPEG") {
                   imageFormat = "JPEG";
                 } else if (extension === "WEBP") {
@@ -278,7 +292,7 @@ export default function RegistrarRecoleccionPage() {
         // --- Title ---
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text("CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
+        doc.text(isPurchase ? "COMPROBANTE DE COMPRA EN FUENTE" : "CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
         doc.text("Material Aprovechable", pageWidth / 2, y + 6, { align: 'center' });
@@ -287,7 +301,10 @@ export default function RegistrarRecoleccionPage() {
 
         // --- Certificate Body ---
         doc.setFontSize(11);
-        const splitText = doc.splitTextToSize(`Por medio de la presente, la empresa ${companyName} certifica que ha recibido los siguientes materiales de:`, pageWidth - margin * 2);
+        const introText = isPurchase 
+            ? `Por medio de la presente, la empresa ${companyName} certifica que ha comprado los siguientes materiales de:`
+            : `Por medio de la presente, la empresa ${companyName} certifica que ha recibido en donación los siguientes materiales de:`;
+        const splitText = doc.splitTextToSize(introText, pageWidth - margin * 2);
         doc.text(splitText, margin, y);
         y += (splitText.length * 5) + 8;
 
@@ -315,39 +332,39 @@ export default function RegistrarRecoleccionPage() {
         y += 15;
 
         // --- Materials Table ---
-        const tableX = margin;
-        const tableY = y;
-        const tableWidth = pageWidth - margin * 2;
-        const col1Width = tableWidth * 0.7;
-        const col2Width = tableWidth * 0.3;
-        const rowHeight = 8;
+        const tableHeaders = ['Material', 'Peso (kg)'];
+        if (isPurchase) {
+            tableHeaders.push('Vr. Unitario', 'Subtotal');
+        }
         
-        doc.setFont('helvetica', 'bold');
-        doc.setFillColor(230, 230, 230);
-        doc.rect(tableX, tableY, tableWidth, rowHeight, 'F');
-        doc.text('Material', tableX + 5, tableY + rowHeight - 3);
-        doc.text('Peso (kg)', tableX + col1Width + col2Width / 2, tableY + rowHeight - 3, { align: 'center' });
-        y += rowHeight;
-
-        doc.setFont('helvetica', 'normal');
-        recoleccionData.items.forEach(item => {
-            doc.line(tableX, y, tableX + tableWidth, y);
-            doc.text(item.materialName, tableX + 5, y + rowHeight - 3);
-            doc.text(item.peso.toFixed(2), tableX + col1Width + col2Width / 2, y + rowHeight - 3, { align: 'center' });
-            y += rowHeight;
+        const tableData = recoleccionData.items.map(item => {
+            const row = [item.materialName, item.peso.toFixed(2)];
+            if(isPurchase) {
+                row.push(formatCurrency(item.precioUnitario), formatCurrency(item.subtotal));
+            }
+            return row;
         });
 
-        doc.line(tableX, y, tableX + tableWidth, y);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Total Recolectado', tableX + 5, y + rowHeight - 3);
-        doc.text(recoleccionData.totalPeso.toFixed(2) + ' kg', tableX + col1Width + col2Width / 2, y + rowHeight - 3, { align: 'center' });
-        y += rowHeight;
-        doc.line(tableX, y, tableX + tableWidth, y);
-        doc.line(tableX, tableY, tableX, y);
-        doc.line(tableX + tableWidth, tableY, tableX + tableWidth, y);
-        doc.line(tableX + col1Width, tableY, tableX + col1Width, y);
+        doc.autoTable({
+            startY: y,
+            head: [tableHeaders],
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [22, 163, 74] }, // Primary color
+        });
 
+        y = (doc as any).lastAutoTable.finalY + 10;
+        
+        // --- Totals ---
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        if (isPurchase) {
+            doc.text(`Total Compra: ${formatCurrency(recoleccionData.totalValor)}`, pageWidth - margin, y, { align: 'right' });
+            y += 7;
+        }
+        doc.text(`Peso Total: ${recoleccionData.totalPeso.toFixed(2)} kg`, pageWidth - margin, y, { align: 'right' });
         y += 25;
+
 
         // --- Signature ---
         if (y > pageHeight - 50) {
@@ -359,6 +376,7 @@ export default function RegistrarRecoleccionPage() {
         y += 30;
         doc.line(margin + 50, y, pageWidth - margin - 50, y);
         doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
         doc.text('Firma del Encargado', pageWidth / 2, y + 5, { align: 'center' });
         doc.text(recoleccionData.encargadoNombre, pageWidth / 2, y + 10, { align: 'center' });
 
@@ -389,6 +407,8 @@ export default function RegistrarRecoleccionPage() {
         toast({ variant: 'destructive', title: 'Error al compartir', description: 'No se pudo compartir el archivo.' });
     }
   };
+
+  const totalCurrentValor = currentItems.reduce((acc, item) => acc + item.subtotal, 0);
 
 
   if (isLoading) {
@@ -535,11 +555,11 @@ export default function RegistrarRecoleccionPage() {
               
               <Separator />
               
-              {/* Paso 2: Agregar Materiales */}
+              {/* Paso 3: Agregar Materiales */}
               <div className="space-y-4">
                   <label className="font-medium block">3. Registrar Materiales Recolectados</label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                    <div className="space-y-1">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div className="space-y-1 md:col-span-2">
                         <label htmlFor="material-select" className="text-xs text-muted-foreground">Material</label>
                         <Popover open={openMaterialCombobox} onOpenChange={setOpenMaterialCombobox}>
                             <PopoverTrigger asChild>
@@ -569,6 +589,7 @@ export default function RegistrarRecoleccionPage() {
                                                     value={material.name}
                                                     onSelect={() => {
                                                         setSelectedMaterialId(material.id);
+                                                        setCurrentPrecio(material.price.toString());
                                                         setOpenMaterialCombobox(false);
                                                     }}
                                                 >
@@ -587,24 +608,34 @@ export default function RegistrarRecoleccionPage() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <div className="space-y-1">
+                     <div className="space-y-1">
                         <label htmlFor="peso-input" className="text-xs text-muted-foreground">Peso (kg)</label>
                         <Input id="peso-input" type="number" placeholder="0.00" value={currentPeso} onChange={e => setCurrentPeso(e.target.value)} disabled={isSubmitting} />
                     </div>
-                    <Button onClick={handleAddItem} disabled={isSubmitting || !selectedMaterialId || !currentPeso}>
+                     <div className="space-y-1">
+                        <label htmlFor="precio-input" className="text-xs text-muted-foreground">Precio/kg (Opcional)</label>
+                        <Input id="precio-input" type="number" placeholder="0.00" value={currentPrecio} onChange={e => setCurrentPrecio(e.target.value)} disabled={isSubmitting} />
+                    </div>
+                    <Button onClick={handleAddItem} disabled={isSubmitting || !selectedMaterialId || !currentPeso} className="md:col-span-4">
                         <Plus className="mr-2 h-4 w-4" /> Agregar Ítem
                     </Button>
                   </div>
 
                   {currentItems.length > 0 && (
                     <div className="border rounded-md p-2">
-                        <ul className="space-y-2">
+                        <div className="flow-root">
+                        <ul className="divide-y divide-border">
                             {currentItems.map((item, index) => (
-                                <li key={index} className="flex justify-between items-center bg-background p-2 rounded-md">
+                                <li key={index} className="flex justify-between items-center bg-background p-2">
                                     <div className="flex items-center gap-2">
                                         <Package size={16} className="text-primary"/>
-                                        <span>{item.materialName}</span>
-                                        <span className="text-muted-foreground">- {item.peso} kg</span>
+                                        <div>
+                                          <p className="font-medium">{item.materialName}</p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {item.peso} kg
+                                            {item.subtotal > 0 && ` @ ${formatCurrency(item.precioUnitario)} = ${formatCurrency(item.subtotal)}`}
+                                          </p>
+                                        </div>
                                     </div>
                                     <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isSubmitting} className="h-7 w-7">
                                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -612,13 +643,18 @@ export default function RegistrarRecoleccionPage() {
                                 </li>
                             ))}
                         </ul>
+                        </div>
+                        <Separator className="my-2"/>
+                        <div className="text-right font-semibold text-lg pr-2">
+                            Total: {formatCurrency(totalCurrentValor)}
+                        </div>
                     </div>
                   )}
               </div>
 
               <Separator />
 
-              {/* Paso 3: Firma y Sello */}
+              {/* Paso 4: Firma y Sello */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                       <label className="font-medium flex items-center gap-2">4. Firma del Encargado <span className="text-destructive">*</span></label>
@@ -634,7 +670,7 @@ export default function RegistrarRecoleccionPage() {
               
               <Separator />
               
-              {/* Paso 4: Guardar */}
+              {/* Paso 5: Guardar */}
               <div className="flex justify-end">
                   <Button onClick={handleSaveRecoleccion} size="lg" disabled={isSubmitting || isLoading || !selectedFuenteId || !selectedVehiculoId || currentItems.length === 0 || !firmaDataUrl}>
                       {isSubmitting ? "Guardando..." : "Guardar Recolección"}
@@ -667,3 +703,4 @@ export default function RegistrarRecoleccionPage() {
     </div>
   );
 }
+
