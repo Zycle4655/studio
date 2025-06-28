@@ -65,9 +65,6 @@ export default function GestionFuentesPage() {
   const fetchFuentes = React.useCallback(async () => {
     const fuentesCollectionRef = getFuentesCollectionRef();
     if (!fuentesCollectionRef) {
-      if (companyOwnerId) {
-          toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
-      }
       setIsLoading(false);
       return;
     }
@@ -85,7 +82,7 @@ export default function GestionFuentesPage() {
       toast({
         variant: "destructive",
         title: "Error al Cargar Fuentes",
-        description: "No se pudieron cargar las fuentes de recolección.",
+        description: "No se pudieron cargar las fuentes de recolección. Verifique las reglas de seguridad de Firestore.",
       });
       setFuentes([]); 
     } finally {
@@ -100,7 +97,6 @@ export default function GestionFuentesPage() {
       fetchFuentes();
     } else {
       setIsLoading(false);
-      setFuentes([]);
     }
   }, [companyOwnerId, fetchFuentes]);
 
@@ -133,10 +129,8 @@ export default function GestionFuentesPage() {
 
   const handleDeleteFuente = async () => {
     const fuentesCollectionRef = getFuentesCollectionRef();
-    if (!fuenteToDelete || !fuentesCollectionRef) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar la fuente." });
-      return;
-    }
+    if (!fuenteToDelete || !fuentesCollectionRef) return;
+    
     setIsSubmitting(true);
     try {
       await deleteDoc(doc(fuentesCollectionRef, fuenteToDelete.id));
@@ -144,7 +138,7 @@ export default function GestionFuentesPage() {
         title: "Fuente Eliminada",
         description: `La fuente "${fuenteToDelete.nombre}" ha sido eliminada.`,
       });
-      fetchFuentes();
+      await fetchFuentes();
     } catch (error) {
       console.error("Error deleting fuente:", error);
       toast({
@@ -161,17 +155,14 @@ export default function GestionFuentesPage() {
 
   const handleFormSubmit = async (data: FuenteFormData) => {
     const fuentesCollectionRef = getFuentesCollectionRef();
-    if (!fuentesCollectionRef) {
-      toast({ variant: "destructive", title: "Error", description: "La base de datos no está disponible." });
-      return;
-    }
+    if (!fuentesCollectionRef) return;
+    
     setIsSubmitting(true);
     const fuenteData = {
       ...data,
       encargadoEmail: data.encargadoEmail || null,
     };
     
-    let success = false;
     try {
       if (editingFuente) {
         const fuenteRef = doc(fuentesCollectionRef, editingFuente.id);
@@ -194,21 +185,18 @@ export default function GestionFuentesPage() {
           description: `La fuente "${data.nombre}" ha sido agregada.`,
         });
       }
-      success = true;
+      setIsFormOpen(false);
+      setEditingFuente(null);
+      await fetchFuentes();
     } catch (error) {
       console.error("Error saving fuente:", error);
       toast({
         variant: "destructive",
         title: "Error al Guardar",
-        description: "No se pudo guardar la fuente. Verifique sus permisos de escritura.",
+        description: "No se pudo guardar la fuente.",
       });
     } finally {
       setIsSubmitting(false);
-      if (success) {
-        setIsFormOpen(false);
-        setEditingFuente(null);
-        fetchFuentes();
-      }
     }
   };
 
@@ -358,7 +346,7 @@ export default function GestionFuentesPage() {
         isOpen={isFormOpen}
         setIsOpen={setIsFormOpen}
         onSubmit={handleFormSubmit}
-        defaultValues={editingFuente || {}}
+        defaultValues={editingFuente || undefined}
         isLoading={isSubmitting}
         title={editingFuente ? "Editar Fuente" : "Agregar Nueva Fuente"}
         description={editingFuente ? "Actualice la información de la fuente de recolección." : "Complete los datos de la nueva fuente de recolección."}

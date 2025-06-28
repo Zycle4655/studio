@@ -1,25 +1,18 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Reglas para perfiles de empresa y todas sus subcolecciones
-    match /companyProfiles/{ownerId} {
-      
-      // El propietario puede leer y escribir en su propio documento de perfil
+
+    // Allow owner full access to their company profile and ALL subcollections
+    match /companyProfiles/{ownerId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == ownerId;
-      
-      // El propietario tiene control total sobre TODAS las subcolecciones dentro de su perfil
-      // Esto cubre: materials, collaborators, purchaseInvoices, saleInvoices, asociados, fuentes, etc.
-      match /{subcollection}/{docId=**} {
-        allow read, write: if request.auth != null && request.auth.uid == ownerId;
-      }
     }
-    
-    // Reglas para el mapeo de usuarios (colaboradores)
-    // Permite que un usuario autenticado lea su propio mapeo para encontrar a su administrador
+
+    // Allow any authenticated user to read their own user mapping.
+    // This is necessary for collaborators to find their company's admin ID.
     match /userMappings/{userId} {
-      allow read: if request.auth != null;
+      allow get: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
