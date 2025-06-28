@@ -33,6 +33,7 @@ const getTodayDateId = () => {
 export default function ArqueoCajaPage() {
   const { user, companyOwnerId, permissions } = useAuth();
   const { toast } = useToast();
+  const isOwner = user?.uid === companyOwnerId;
 
   const [cajaDiaria, setCajaDiaria] = React.useState<CajaDiariaDocument | null>(null);
   const [totalCompras, setTotalCompras] = React.useState(0);
@@ -104,12 +105,14 @@ export default function ArqueoCajaPage() {
 
   React.useEffect(() => {
     document.title = 'Arqueo de Caja | ZYCLE';
-    if (permissions?.contabilidad) {
+    // Only the owner should perform data operations for this module
+    // to prevent Firestore permission errors for collaborators.
+    if (isOwner) {
       fetchData();
     } else {
       setIsLoading(false);
     }
-  }, [permissions, fetchData]);
+  }, [isOwner, fetchData]);
   
   const handleAbrirCaja = async (data: AbrirCajaFormData) => {
       if (!companyOwnerId || !user || !user.email) return;
@@ -200,12 +203,19 @@ export default function ArqueoCajaPage() {
     );
   }
   
-  if (!permissions?.contabilidad) {
+  if (!permissions?.contabilidad || !isOwner) {
     return (
        <div className="container py-8 px-4 md:px-6">
           <Card className="shadow-lg text-center py-12">
-            <CardHeader><CardTitle>Acceso Denegado</CardTitle></CardHeader>
-            <CardContent><p>No tiene permiso para acceder a este módulo.</p></CardContent>
+            <CardHeader><CardTitle>Acceso Restringido</CardTitle></CardHeader>
+            <CardContent>
+              <p>
+                { !isOwner 
+                  ? "Esta funcionalidad solo está disponible para el administrador principal."
+                  : "No tiene permiso para acceder a este módulo."
+                }
+              </p>
+            </CardContent>
           </Card>
         </div>
     )
