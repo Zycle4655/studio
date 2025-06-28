@@ -1,22 +1,15 @@
+
 "use client";
 
 import * as React from "react";
 import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import type { FuenteDocument } from "@/schemas/fuente";
 import type { MaterialDocument } from "@/schemas/material";
 import type { RecoleccionItem, RecoleccionDocument } from "@/schemas/recoleccion";
@@ -49,6 +42,8 @@ export default function RegistrarRecoleccionPage() {
 
   const [firmaDataUrl, setFirmaDataUrl] = React.useState<string>("");
   const [selloFile, setSelloFile] = React.useState<File | null>(null);
+
+  const [openMaterialCombobox, setOpenMaterialCombobox] = React.useState(false);
 
   React.useEffect(() => {
     document.title = 'Registrar Recolección en Fuente | ZYCLE';
@@ -280,10 +275,51 @@ export default function RegistrarRecoleccionPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div className="space-y-1">
                     <label htmlFor="material-select" className="text-xs text-muted-foreground">Material</label>
-                    <Select value={selectedMaterialId} onValueChange={setSelectedMaterialId} disabled={isSubmitting}>
-                        <SelectTrigger id="material-select"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                        <SelectContent>{materials.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <Popover open={openMaterialCombobox} onOpenChange={setOpenMaterialCombobox}>
+                        <PopoverTrigger asChild>
+                        <Button
+                            id="material-select"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openMaterialCombobox}
+                            className="w-full justify-between"
+                            disabled={isSubmitting}
+                        >
+                            {selectedMaterialId
+                            ? materials.find((material) => material.id === selectedMaterialId)?.name
+                            : "Seleccionar..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput placeholder="Buscar material..." />
+                                <CommandList>
+                                    <CommandEmpty>No se encontró ningún material.</CommandEmpty>
+                                    <CommandGroup>
+                                        {materials.map((material) => (
+                                            <CommandItem
+                                                key={material.id}
+                                                value={material.name}
+                                                onSelect={() => {
+                                                    setSelectedMaterialId(material.id);
+                                                    setOpenMaterialCombobox(false);
+                                                }}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        selectedMaterialId === material.id ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                {material.name}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
                  <div className="space-y-1">
                      <label htmlFor="peso-input" className="text-xs text-muted-foreground">Peso (kg)</label>
