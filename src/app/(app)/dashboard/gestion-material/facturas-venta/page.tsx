@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Printer, Edit, Store, PackageSearch, Search } from "lucide-react";
+import { Printer, Edit, Store, PackageSearch, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,9 +25,21 @@ import {
   doc,
   getDoc,
   Timestamp,
+  writeBatch,
+  increment,
 } from "firebase/firestore";
 import type { FacturaVentaDocument } from "@/schemas/venta";
 import type { CompanyProfileDocument } from "@/schemas/company";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -49,11 +61,15 @@ export default function FacturasVentaPage() {
   const router = useRouter(); 
   const [invoices, setInvoices] = React.useState<FacturaVentaDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(null);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
 
   const [invoiceToPrint, setInvoiceToPrint] = React.useState<FacturaVentaDocument | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = React.useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = React.useState<FacturaVentaDocument | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const getSaleInvoicesCollectionRef = React.useCallback(() => {
@@ -128,10 +144,51 @@ export default function FacturasVentaPage() {
     setIsPrintModalOpen(true);
   };
   
+  const openDeleteDialog = (invoice: FacturaVentaDocument) => {
+    setInvoiceToDelete(invoice);
+    setIsDeleteDialogOpen(true);
+  };
+
   const handleEditInvoice = (invoiceId: string | undefined) => {
     if(!invoiceId) return;
     router.push(`/dashboard/gestion-material/facturas-venta/${invoiceId}/edit`);
   };
+
+  const handleDeleteInvoice = async () => {
+    if (!invoiceToDelete || !companyOwnerId || !db) return;
+    setIsSubmitting(true);
+    try {
+        const batch = writeBatch(db);
+        const materialsRef = collection(db, "companyProfiles", companyOwnerId, "materials");
+        
+        // 1. Revertir el stock (incrementar)
+        invoiceToDelete.items.forEach(item => {
+            const materialDocRef = doc(materialsRef, item.materialId);
+            batch.update(materialDocRef, { stock: increment(item.peso) });
+        });
+        
+        // 2. Eliminar la factura
+        const invoiceRef = doc(db, "companyProfiles", companyOwnerId, "saleInvoices", invoiceToDelete.id!);
+        batch.delete(invoiceRef);
+
+        await batch.commit();
+
+        toast({
+            title: "Factura Eliminada",
+            description: `La factura N° ${invoiceToDelete.numeroFactura} y sus movimientos de inventario han sido revertidos.`,
+        });
+
+        fetchInvoicesAndProfile(); // Recargar datos
+    } catch (error) {
+        console.error("Error deleting invoice:", error);
+        toast({ variant: "destructive", title: "Error al eliminar", description: "No se pudo eliminar la factura." });
+    } finally {
+        setIsSubmitting(false);
+        setIsDeleteDialogOpen(false);
+        setInvoiceToDelete(null);
+    }
+  };
+
 
   const printFacturaPreview = () => {
     const previewElement = document.getElementById("factura-print-content-modal");
@@ -263,7 +320,7 @@ export default function FacturasVentaPage() {
                     placeholder="Buscar por N° o cliente..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-full sm:w-64"
+                    className="pl-10 w-full sm:w-64 shadow-sm"
                 />
             </div>
           </div>
@@ -334,6 +391,16 @@ export default function FacturasVentaPage() {
                           aria-label="Editar factura"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                         <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hover:text-destructive"
+                          onClick={() => openDeleteDialog(invoice)}
+                          aria-label="Eliminar factura"
+                          disabled={isSubmitting}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -439,6 +506,28 @@ export default function FacturasVentaPage() {
          </Dialog>
       )}
 
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro de eliminar esta factura?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará la factura N° {invoiceToDelete?.numeroFactura} y se revertirán los cambios en el inventario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setInvoiceToDelete(null)} disabled={isSubmitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteInvoice}
+              disabled={isSubmitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSubmitting ? "Eliminando..." : "Eliminar Definitivamente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
+
