@@ -17,8 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { AbrirCajaFormSchema, CerrarCajaFormSchema, type AbrirCajaFormData, type CerrarCajaFormData, type CajaDiariaDocument } from "@/schemas/caja";
-import { type FacturaCompraDocument } from "@/schemas/compra";
-import { type FacturaVentaDocument } from "@/schemas/venta";
+import type { FacturaCompraDocument } from "@/schemas/compra";
+import type { FacturaVentaDocument } from "@/schemas/venta";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -66,13 +66,21 @@ export default function ArqueoCajaPage() {
           const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
           const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
           
-          const comprasQuery = query(comprasRef, where("fecha", ">=", todayStart), where("fecha", "<=", todayEnd), where("formaDePago", "==", "efectivo"));
-          const ventasQuery = query(ventasRef, where("fecha", ">=", todayStart), where("fecha", "<=", todayEnd), where("formaDePago", "==", "efectivo"));
+          // Fetch all invoices for the day, then filter in code to avoid needing a composite index.
+          const comprasQuery = query(comprasRef, where("fecha", ">=", todayStart), where("fecha", "<=", todayEnd));
+          const ventasQuery = query(ventasRef, where("fecha", ">=", todayStart), where("fecha", "<=", todayEnd));
 
           const [comprasSnap, ventasSnap] = await Promise.all([getDocs(comprasQuery), getDocs(ventasQuery)]);
 
-          const totalCompras = comprasSnap.docs.reduce((sum, doc) => sum + (doc.data() as FacturaCompraDocument).netoPagado, 0);
-          const totalVentas = ventasSnap.docs.reduce((sum, doc) => sum + (doc.data() as FacturaVentaDocument).totalFactura, 0);
+          const totalCompras = comprasSnap.docs
+            .map(doc => doc.data() as FacturaCompraDocument)
+            .filter(doc => doc.formaDePago === 'efectivo')
+            .reduce((sum, doc) => sum + doc.netoPagado, 0);
+            
+          const totalVentas = ventasSnap.docs
+            .map(doc => doc.data() as FacturaVentaDocument)
+            .filter(doc => doc.formaDePago === 'efectivo')
+            .reduce((sum, doc) => sum + doc.totalFactura, 0);
 
           const saldoEsperado = data.baseInicial + totalVentas - totalCompras;
           
@@ -327,3 +335,5 @@ function InfoCard({ title, value, icon, status }: { title: string, value: string
         </Card>
     )
 }
+
+    
