@@ -293,74 +293,87 @@ export default function CollaboratorForm({
                         </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="fechaNacimiento"
-                    render={({ field }) => {
-                        const [day, setDay] = React.useState<string>(field.value ? String(field.value.getDate()) : "");
-                        const [month, setMonth] = React.useState<string>(field.value ? String(field.value.getMonth() + 1) : "");
-                        const [year, setYear] = React.useState<string>(field.value ? String(field.value.getFullYear()) : "");
+                <FormField
+                  control={form.control}
+                  name="fechaNacimiento"
+                  render={({ field }) => {
+                      const { onChange, value } = field;
+                      const [day, setDay] = React.useState<string>("");
+                      const [month, setMonth] = React.useState<string>("");
+                      const [year, setYear] = React.useState<string>("");
 
-                        React.useEffect(() => {
-                            const dayNum = parseInt(day, 10);
-                            const monthNum = parseInt(month, 10);
-                            const yearNum = parseInt(year, 10);
+                      // Effect to update form value when local day/month/year change
+                      React.useEffect(() => {
+                          const dayNum = parseInt(day, 10);
+                          const monthNum = parseInt(month, 10);
+                          const yearNum = parseInt(year, 10);
 
-                            if (day && month && year && !isNaN(dayNum) && !isNaN(monthNum) && !isNaN(yearNum) && year.length === 4) {
-                                const newDate = new Date(yearNum, monthNum - 1, dayNum);
-                                if (newDate.getFullYear() === yearNum && newDate.getMonth() === monthNum - 1 && newDate.getDate() === dayNum) {
-                                    field.onChange(newDate);
-                                } else {
-                                    field.onChange(null);
-                                }
-                            } else if (field.value !== null) {
-                                field.onChange(null);
-                            }
-                        }, [day, month, year, field]);
+                          if (day && month && year && !isNaN(dayNum) && !isNaN(monthNum) && !isNaN(yearNum) && year.length === 4) {
+                              const newDate = new Date(yearNum, monthNum - 1, dayNum);
+                              // Check if date is valid
+                              if (newDate.getFullYear() === yearNum && newDate.getMonth() === monthNum - 1 && newDate.getDate() === dayNum) {
+                                  // Only update if date is different
+                                  if (value?.getTime() !== newDate.getTime()) {
+                                      onChange(newDate);
+                                  }
+                              } else {
+                                  if (value !== null) onChange(null);
+                              }
+                          } else {
+                              if (value !== null) onChange(null);
+                          }
+                      }, [day, month, year, onChange, value]);
 
-                        React.useEffect(() => {
-                            if (field.value instanceof Date) {
-                                setDay(String(field.value.getDate()));
-                                setMonth(String(field.value.getMonth() + 1));
-                                setYear(String(field.value.getFullYear()));
-                            } else if (field.value === null) {
-                                setDay("");
-                                setMonth("");
-                                setYear("");
-                            }
-                        }, [field.value]);
+                      // Effect to update local state when form value changes from outside
+                      React.useEffect(() => {
+                          if (value instanceof Date) {
+                              const newDay = String(value.getDate());
+                              const newMonth = String(value.getMonth() + 1);
+                              const newYear = String(value.getFullYear());
+                              if (day !== newDay) setDay(newDay);
+                              if (month !== newMonth) setMonth(newMonth);
+                              if (year !== newYear) setYear(newYear);
+                          } else if (value === null) {
+                              if (day !== "") setDay("");
+                              if (month !== "") setMonth("");
+                              if (year !== "") setYear("");
+                          }
+                          // This dependency array is intentionally limited to `value`
+                          // to prevent loops. It only runs when the form value itself changes.
+                          // eslint-disable-next-line react-hooks/exhaustive-deps
+                      }, [value]);
 
-                        return (
-                            <FormItem className="md:col-span-2">
-                                <FormLabel>Fecha de Nacimiento</FormLabel>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <Input
-                                        placeholder="DD"
-                                        value={day}
-                                        onChange={(e) => setDay(e.target.value)}
-                                        maxLength={2}
-                                        disabled={isLoading}
-                                    />
-                                    <Input
-                                        placeholder="MM"
-                                        value={month}
-                                        onChange={(e) => setMonth(e.target.value)}
-                                        maxLength={2}
-                                        disabled={isLoading}
-                                    />
-                                    <Input
-                                        placeholder="AAAA"
-                                        value={year}
-                                        onChange={(e) => setYear(e.target.value)}
-                                        maxLength={4}
-                                        disabled={isLoading}
-                                    />
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        );
-                    }}
-                />
+                      return (
+                          <FormItem className="md:col-span-2">
+                              <FormLabel>Fecha de Nacimiento</FormLabel>
+                              <div className="grid grid-cols-3 gap-2">
+                                  <Input
+                                      placeholder="DD"
+                                      value={day}
+                                      onChange={(e) => setDay(e.target.value)}
+                                      maxLength={2}
+                                      disabled={isLoading}
+                                  />
+                                  <Input
+                                      placeholder="MM"
+                                      value={month}
+                                      onChange={(e) => setMonth(e.target.value)}
+                                      maxLength={2}
+                                      disabled={isLoading}
+                                  />
+                                  <Input
+                                      placeholder="AAAA"
+                                      value={year}
+                                      onChange={(e) => setYear(e.target.value)}
+                                      maxLength={4}
+                                      disabled={isLoading}
+                                  />
+                              </div>
+                              <FormMessage />
+                          </FormItem>
+                      );
+                  }}
+              />
             </div>
 
             <Separator className="my-6" />
