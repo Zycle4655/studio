@@ -21,18 +21,18 @@ export type CerrarCajaFormData = z.infer<typeof CerrarCajaFormSchema>;
 
 // Interface for the daily cash box document in Firestore
 export interface CajaDiariaDocument {
-  id: string; // YYYY-MM-DD
+  id?: string; // YYYY-MM-DD
   fecha: Timestamp;
   baseInicial: number;
   totalComprasEfectivo: number;
   totalVentasEfectivo: number;
   saldoEsperado: number;
-  saldoReal: number;
-  diferencia: number;
+  saldoReal: number | null; // Null until closed
+  diferencia: number | null; // Null until closed
   estado: 'Abierta' | 'Cerrada';
   observaciones?: string | null;
   abiertoPor: { uid: string, email: string | null };
-  cerradoPor?: { uid: string, email: string | null } | null;
+  cerradoPor?: { uid:string, email: string | null } | null; // Null until closed
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
