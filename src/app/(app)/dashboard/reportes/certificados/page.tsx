@@ -91,20 +91,24 @@ export default function CertificadosFuentePage() {
 
       const [year, month] = selectedMonth.split('-').map(Number);
       const selectedDate = new Date(year, month - 1, 1);
-      const startDate = Timestamp.fromDate(startOfMonth(selectedDate));
-      const endDate = Timestamp.fromDate(endOfMonth(selectedDate));
+      const startDate = startOfMonth(selectedDate);
+      const endDate = endOfMonth(selectedDate);
       const periodoLabel = format(selectedDate, "MMMM 'de' yyyy", { locale: es });
 
       const recoleccionesRef = collection(db, "companyProfiles", companyOwnerId, "recolecciones");
       const q = query(
         recoleccionesRef,
-        where("fuenteId", "==", selectedFuenteId),
-        where("fecha", ">=", startDate),
-        where("fecha", "<=", endDate)
+        where("fuenteId", "==", selectedFuenteId)
       );
       
       const querySnapshot = await getDocs(q);
-      const recolecciones = querySnapshot.docs.map(doc => doc.data() as RecoleccionDocument);
+      const allRecoleccionesForFuente = querySnapshot.docs.map(doc => doc.data() as RecoleccionDocument);
+      
+      const recolecciones = allRecoleccionesForFuente.filter(rec => {
+        if (!rec.fecha || typeof rec.fecha.toDate !== 'function') return false;
+        const recDate = rec.fecha.toDate();
+        return recDate >= startDate && recDate <= endDate;
+      });
 
       if (recolecciones.length === 0) {
         toast({ title: "Sin Datos", description: `No se encontraron recolecciones para ${fuente.nombre} en ${periodoLabel}.` });
