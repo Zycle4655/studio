@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { Plus, Edit, Trash2, PackageOpen, Code } from "lucide-react";
+import { Plus, Edit, Trash2, PackageOpen, Code, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -13,6 +12,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -92,6 +92,7 @@ export default function MaterialesPage() {
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingMaterial, setEditingMaterial] = React.useState<MaterialDocument | null>(null);
@@ -309,6 +310,18 @@ export default function MaterialesPage() {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
   };
+  
+  const filteredMaterials = React.useMemo(() => {
+    if (!searchTerm) {
+      return materials;
+    }
+    const term = searchTerm.toLowerCase();
+    return materials.filter(material =>
+      material.name.toLowerCase().includes(term) ||
+      (material.code && material.code.toLowerCase().includes(term))
+    );
+  }, [materials, searchTerm]);
+
 
   if (!user && !isLoading) {
     return (
@@ -330,13 +343,24 @@ export default function MaterialesPage() {
     <div className="container py-8 px-4 md:px-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <div>
-            <CardTitle className="text-2xl font-headline text-primary">
-              Gestión de Materiales
-            </CardTitle>
-            <CardDescription>
-              Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
-            </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl font-headline text-primary">
+                Gestión de Materiales
+              </CardTitle>
+              <CardDescription>
+                Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
+              </CardDescription>
+            </div>
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar por nombre o código..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -362,6 +386,12 @@ export default function MaterialesPage() {
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales registrados</h3>
                 <p className="text-muted-foreground mb-6">Si es un usuario nuevo, la lista de materiales por defecto debería cargarse. Si no, añada un nuevo material utilizando el botón flotante.</p>
             </div>
+          ) : filteredMaterials.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Search className="w-16 h-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
+                <p className="text-muted-foreground">Ningún material coincide con "{searchTerm}".</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -373,7 +403,7 @@ export default function MaterialesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {materials.map((material) => (
+                {filteredMaterials.map((material) => (
                   <TableRow key={material.id}>
                     <TableCell className="font-medium">{material.name}</TableCell>
                     <TableCell>
