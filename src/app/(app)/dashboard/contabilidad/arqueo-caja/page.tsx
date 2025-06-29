@@ -47,7 +47,7 @@ export default function ArqueoCajaPage() {
   
   const ingresoCajaForm = useForm<IngresoCajaFormData>({
     resolver: zodResolver(IngresoCajaFormSchema),
-    defaultValues: { monto: undefined, observacion: "" },
+    defaultValues: { monto: undefined },
   });
 
   const fetchCajaData = React.useCallback(async () => {
@@ -188,7 +188,7 @@ export default function ArqueoCajaPage() {
 
     const nuevoIngreso = {
         monto: data.monto,
-        observacion: data.observacion || "Ingreso manual",
+        observacion: "Ingreso manual",
         fecha: Timestamp.now(),
         registradoPor: { uid: user.uid, email: user.email },
     };
@@ -365,19 +365,6 @@ export default function ArqueoCajaPage() {
                                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                             <Input type="number" {...field} className="pl-10 text-lg h-12" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)} />
                                         </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={ingresoCajaForm.control}
-                            name="observacion"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Observación</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder="Ej: Base adicional, pago de..." {...field} value={field.value || ""} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

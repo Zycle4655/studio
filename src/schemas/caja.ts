@@ -15,7 +15,6 @@ export const IngresoCajaFormSchema = z.object({
   monto: z.coerce
     .number({ required_error: "El monto es obligatorio.", invalid_type_error: "El monto debe ser un número." })
     .positive("El monto debe ser un número positivo."),
-  observacion: z.string().min(3, "La observación es muy corta.").max(100, "La observación es muy larga."),
 });
 export type IngresoCajaFormData = z.infer<typeof IngresoCajaFormSchema>;
 
