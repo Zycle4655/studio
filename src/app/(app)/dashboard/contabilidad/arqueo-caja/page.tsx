@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, Timestamp, arrayUnion, increment } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp, arrayUnion, increment } from "firebase/firestore";
 import { AbrirCajaFormSchema, CerrarCajaFormSchema, IngresoCajaFormSchema, GastoCajaFormSchema, type AbrirCajaFormData, type CerrarCajaFormData, type IngresoCajaFormData, type GastoCajaFormData, type CajaDiariaDocument, type GastoItem } from "@/schemas/caja";
 import type { FacturaCompraDocument } from "@/schemas/compra";
 import type { FacturaVentaDocument } from "@/schemas/venta";
