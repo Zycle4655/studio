@@ -20,6 +20,7 @@ import { es } from "date-fns/locale";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import Image from "next/image";
+import type { Permissions } from "@/schemas/equipo";
 
 
 export default function EditRecoleccionPage() {
@@ -32,6 +33,7 @@ export default function EditRecoleccionPage() {
   const [recoleccion, setRecoleccion] = React.useState<RecoleccionDocument | null>(null);
   const [editableItems, setEditableItems] = React.useState<RecoleccionItem[]>([]);
   const [currentTotal, setCurrentTotal] = React.useState(0);
+  const [currentTotalPeso, setCurrentTotalPeso] = React.useState(0);
 
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(null);
   const [isLoadingPage, setIsLoadingPage] = React.useState(true);
@@ -56,6 +58,7 @@ export default function EditRecoleccionPage() {
           setRecoleccion(data);
           setEditableItems(JSON.parse(JSON.stringify(data.items))); 
           setCurrentTotal(data.totalValor);
+          setCurrentTotalPeso(data.totalPeso);
         } else {
           toast({ variant: "destructive", title: "Error", description: "Recolección no encontrada." });
           router.replace("/dashboard/gestion-material/en-fuente/historial");
@@ -84,6 +87,7 @@ export default function EditRecoleccionPage() {
 
   React.useEffect(() => {
     setCurrentTotal(calculateTotal(editableItems));
+    setCurrentTotalPeso(editableItems.reduce((sum, item) => sum + item.peso, 0));
   }, [editableItems, calculateTotal]);
 
 
@@ -133,6 +137,11 @@ export default function EditRecoleccionPage() {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
+  
+  const formatWeight = (value: number) => {
+    return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
 
   const formatDate = (dateValue: Timestamp | Date | undefined): string => {
     if (!dateValue) return "N/A";
@@ -140,14 +149,14 @@ export default function EditRecoleccionPage() {
     return format(date, "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es }); 
   };
   
-  const generatePdf = (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null) => {
+  const generatePdf = (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null, permissions: Permissions | null) => {
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
     });
 
-    const isPurchase = calculateTotal(editableItems) > 0;
+    const showPrices = permissions?.equipo && calculateTotal(editableItems) > 0;
     const pageHeight = doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 15;
@@ -186,7 +195,7 @@ export default function EditRecoleccionPage() {
     // --- Title ---
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(isPurchase ? "COMPROBANTE DE COMPRA EN FUENTE" : "CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
+    doc.text(showPrices ? "COMPROBANTE DE COMPRA EN FUENTE" : "CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text("Certificado Final", pageWidth / 2, y + 6, { align: 'center' });
@@ -195,7 +204,7 @@ export default function EditRecoleccionPage() {
 
     // --- Certificate Body ---
     doc.setFontSize(11);
-    const introText = isPurchase 
+    const introText = showPrices
         ? `Por medio de la presente, la empresa ${companyName} certifica que ha comprado los siguientes materiales de:`
         : `Por medio de la presente, la empresa ${companyName} certifica que ha recibido en donación los siguientes materiales de:`;
     const splitText = doc.splitTextToSize(introText, pageWidth - margin * 2);
@@ -231,13 +240,18 @@ export default function EditRecoleccionPage() {
     y += 15;
     
     // --- Materials Table ---
-    const tableHeaders = ['Material', 'Peso (kg)', 'Vr. Unitario', 'Subtotal'];
-    const tableData = editableItems.map(item => ([
-        item.materialName,
-        item.peso.toFixed(2),
-        formatCurrency(item.precioUnitario),
-        formatCurrency(item.subtotal)
-    ]));
+    const tableHeaders = ['Material', 'Peso (kg)'];
+    if (showPrices) {
+        tableHeaders.push('Vr. Unitario', 'Subtotal');
+    }
+
+    const tableData = editableItems.map(item => {
+        const row = [item.materialName, item.peso.toFixed(2)];
+        if(showPrices) {
+            row.push(formatCurrency(item.precioUnitario), formatCurrency(item.subtotal));
+        }
+        return row;
+    });
 
     (doc as any).autoTable({
         startY: y,
@@ -253,7 +267,7 @@ export default function EditRecoleccionPage() {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     const finalTotalPeso = editableItems.reduce((sum, item) => sum + item.peso, 0);
-    if (isPurchase) {
+    if (showPrices) {
         doc.text(`Total Compra: ${formatCurrency(calculateTotal(editableItems))}`, pageWidth - margin, y, { align: 'right' });
         y += 7;
     }
@@ -285,7 +299,7 @@ export default function EditRecoleccionPage() {
       items: editableItems,
       totalValor: currentTotal,
     };
-    const pdf = generatePdf(tempDocForPdf, companyProfile);
+    const pdf = generatePdf(tempDocForPdf, companyProfile, permissions);
     pdf.save(`certificado_final_${recoleccion.id?.substring(0,8)}.pdf`);
   };
 
@@ -334,8 +348,12 @@ export default function EditRecoleccionPage() {
                 <TableRow>
                     <TableHead>Material</TableHead>
                     <TableHead className="text-right w-40">Peso (kg)</TableHead>
-                    <TableHead className="text-right w-48">Precio Unit. (COP)</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
+                    {permissions?.equipo && (
+                        <>
+                            <TableHead className="text-right w-48">Precio Unit. (COP)</TableHead>
+                            <TableHead className="text-right">Subtotal</TableHead>
+                        </>
+                    )}
                 </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -353,25 +371,32 @@ export default function EditRecoleccionPage() {
                         disabled={isSaving}
                         />
                     </TableCell>
-                    <TableCell>
-                        <Input
-                        type="number"
-                        value={String(item.precioUnitario ?? "")}
-                        onChange={(e) => handleItemFieldChange(index, "precioUnitario", e.target.value)}
-                        className="h-9 text-right"
-                        step="1"
-                        min="0"
-                        disabled={isSaving || !permissions?.equipo}
-                        />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(item.subtotal)}</TableCell>
+                    {permissions?.equipo && (
+                        <>
+                            <TableCell>
+                                <Input
+                                type="number"
+                                value={String(item.precioUnitario ?? "")}
+                                onChange={(e) => handleItemFieldChange(index, "precioUnitario", e.target.value)}
+                                className="h-9 text-right"
+                                step="1"
+                                min="0"
+                                disabled={isSaving || !permissions?.equipo}
+                                />
+                            </TableCell>
+                            <TableCell className="text-right font-medium">{formatCurrency(item.subtotal)}</TableCell>
+                        </>
+                    )}
                     </TableRow>
                 ))}
                 </TableBody>
             </Table>
             </div>
-             <div className="mt-4 text-right text-xl font-bold">
-                Total: {formatCurrency(currentTotal)}
+             <div className="mt-4 text-right space-y-1">
+                <p className="font-semibold">Peso Total: {formatWeight(currentTotalPeso)} kg</p>
+                {permissions?.equipo && (
+                    <p className="text-xl font-bold">Total Compra: {formatCurrency(currentTotal)}</p>
+                )}
             </div>
 
         </CardContent>
