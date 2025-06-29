@@ -19,6 +19,9 @@ import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Time
 import { AbrirCajaFormSchema, CerrarCajaFormSchema, type AbrirCajaFormData, type CerrarCajaFormData, type CajaDiariaDocument } from "@/schemas/caja";
 import { type FacturaCompraDocument } from "@/schemas/compra";
 import { type FacturaVentaDocument } from "@/schemas/venta";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 type CajaState = 'loading' | 'no_abierta' | 'abierta' | 'cerrada';
 type CajaData = CajaDiariaDocument;
