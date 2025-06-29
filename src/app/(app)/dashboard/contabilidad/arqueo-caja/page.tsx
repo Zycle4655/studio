@@ -8,16 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Landmark, ArrowRight, ArrowLeft, LogIn, LogOut, DollarSign, Scale, Calculator, Info, PlusCircle, Fuel, Ticket, Receipt, ShoppingCart, Banknote } from "lucide-react";
+import { Landmark, ArrowRight, ArrowLeft, LogIn, LogOut, DollarSign, Scale, Calculator, Info, PlusCircle, Fuel, Ticket, Receipt, ShoppingCart, Banknote, Truck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp, arrayUnion, increment } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp, arrayUnion, increment, orderBy } from "firebase/firestore";
 import { AbrirCajaFormSchema, CerrarCajaFormSchema, IngresoCajaFormSchema, GastoCajaFormSchema, type AbrirCajaFormData, type CerrarCajaFormData, type IngresoCajaFormData, type GastoCajaFormData, type CajaDiariaDocument, type GastoItem } from "@/schemas/caja";
 import type { FacturaCompraDocument } from "@/schemas/compra";
 import type { FacturaVentaDocument } from "@/schemas/venta";
+import type { VehiculoDocument } from "@/schemas/vehiculo";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ export default function ArqueoCajaPage() {
   const [cajaState, setCajaState] = React.useState<CajaState>('loading');
   const [cajaData, setCajaData] = React.useState<CajaData | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [vehiculos, setVehiculos] = React.useState<VehiculoDocument[]>([]);
   
   const getTodayId = React.useCallback(() => new Date().toISOString().split('T')[0], []);
   
@@ -54,8 +56,10 @@ export default function ArqueoCajaPage() {
   
   const gastoForm = useForm<GastoCajaFormData>({
     resolver: zodResolver(GastoCajaFormSchema),
-    defaultValues: { monto: undefined, categoria: undefined, observacion: "" },
+    defaultValues: { monto: undefined, categoria: undefined, vehiculoId: null, observacion: "" },
   });
+
+  const categoriaGasto = gastoForm.watch("categoria");
 
   const fetchCajaData = React.useCallback(async () => {
     if (!companyOwnerId) return;
@@ -117,6 +121,23 @@ export default function ArqueoCajaPage() {
         setCajaState('loading'); // Show loading or no-permission state
     }
   }, [companyOwnerId, permissions, fetchCajaData]);
+  
+  React.useEffect(() => {
+    const fetchVehicles = async () => {
+        if (!companyOwnerId) return;
+        try {
+            const vehiculosRef = collection(db, "companyProfiles", companyOwnerId, "vehiculos");
+            const q = query(vehiculosRef, orderBy("placa"));
+            const vehiculosSnap = await getDocs(q);
+            const vehiculosList = vehiculosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiculoDocument));
+            setVehiculos(vehiculosList);
+        } catch (error) {
+            console.error("Error fetching vehicles:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los vehículos." });
+        }
+    };
+    fetchVehicles();
+  }, [companyOwnerId, toast]);
 
 
   const handleAbrirCaja = async (data: AbrirCajaFormData) => {
@@ -160,8 +181,11 @@ export default function ArqueoCajaPage() {
   const handleCerrarCaja = async (data: CerrarCajaFormData) => {
     if (!companyOwnerId || !user || !cajaData) return;
     setIsSubmitting(true);
+    
+    // Ensure saldoEsperado is a number before calculation
+    const saldoEsperado = cajaData.saldoEsperado ?? 0;
+    const diferencia = data.saldoReal - saldoEsperado;
 
-    const diferencia = data.saldoReal - cajaData.saldoEsperado;
     const updateData = {
         estado: 'Cerrada',
         saldoReal: data.saldoReal,
@@ -215,10 +239,15 @@ export default function ArqueoCajaPage() {
   const handleRegistrarGasto = async (data: GastoCajaFormData) => {
     if (!companyOwnerId || !user) return;
     setIsSubmitting(true);
+    
+    const vehiculoSeleccionado = data.vehiculoId ? vehiculos.find(v => v.id === data.vehiculoId) : null;
+    
     const nuevoGasto: GastoItem = {
         id: new Date().toISOString(),
         monto: data.monto,
         categoria: data.categoria,
+        vehiculoId: vehiculoSeleccionado?.id || null,
+        vehiculoPlaca: vehiculoSeleccionado?.placa || null,
         observacion: data.observacion || null,
         fecha: Timestamp.now(),
         registradoPor: { uid: user.uid, email: user.email },
@@ -293,8 +322,8 @@ export default function ArqueoCajaPage() {
                                                     type="number" 
                                                     placeholder="Base en efectivo" 
                                                     {...field} 
-                                                    value={field.value !== field.value ? '' : field.value ?? ''}
-                                                    onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }}
+                                                    value={field.value ?? ''}
+                                                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)}
                                                     className="pl-10 text-lg text-center h-12" 
                                                 />
                                             </div>
@@ -333,8 +362,24 @@ export default function ArqueoCajaPage() {
                         <InfoCard title="Saldo Real Reportado" value={formatCurrency(cajaData.saldoReal)} icon={<DollarSign />} isLarge />
                         <InfoCard title="Diferencia" value={formatCurrency(cajaData.diferencia)} status={cajaData.diferencia === 0 ? 'ok' : 'warn'} icon={<Calculator />} isLarge />
                     </div>
+                    {cajaData.gastos && cajaData.gastos.length > 0 && (
+                        <div className="mt-6">
+                            <h4 className="font-semibold text-sm mb-2">Detalle de Gastos:</h4>
+                            <div className="border rounded-md p-2 text-sm max-h-48 overflow-y-auto">
+                            {cajaData.gastos.map(gasto => (
+                                <div key={gasto.id} className="flex justify-between items-center py-1.5 border-b last:border-b-0">
+                                <div>
+                                    <p className="capitalize font-medium">{gasto.categoria}{gasto.vehiculoPlaca && <span className="font-normal text-muted-foreground"> ({gasto.vehiculoPlaca})</span>}</p>
+                                    {gasto.observacion && <p className="text-xs text-muted-foreground">{gasto.observacion}</p>}
+                                </div>
+                                <p className="font-semibold">{formatCurrency(gasto.monto)}</p>
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                    )}
                     {cajaData.observaciones && (
-                        <div className="mt-6 text-left p-4 bg-muted rounded-md"><h4 className="font-semibold text-sm mb-1">Observaciones del Cierre:</h4><p className="text-sm text-muted-foreground">{cajaData.observaciones}</p></div>
+                        <div className="mt-4 text-left p-4 bg-muted rounded-md"><h4 className="font-semibold text-sm mb-1">Observaciones del Cierre:</h4><p className="text-sm text-muted-foreground">{cajaData.observaciones}</p></div>
                     )}
                 </CardContent>
             </Card>
@@ -369,15 +414,42 @@ export default function ArqueoCajaPage() {
                         <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="ingreso">Registrar Ingreso</TabsTrigger><TabsTrigger value="gasto">Registrar Gasto</TabsTrigger></TabsList>
                         <TabsContent value="ingreso" className="pt-4">
                             <Form {...ingresoCajaForm}><form onSubmit={ingresoCajaForm.handleSubmit(handleRegistrarIngreso)} className="space-y-4">
-                                <FormField control={ingresoCajaForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto a Ingresar</FormLabel><FormControl><Input type="number" {...field} value={field.value !== field.value ? '' : field.value ?? ''} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={ingresoCajaForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto a Ingresar</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={ingresoCajaForm.control} name="observacion" render={({ field }) => (<FormItem><FormLabel>Observación (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Abono de..." {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>)} />
                                 <Button type="submit" disabled={isSubmitting} className="w-full"><Banknote className="mr-2 h-4 w-4"/> Agregar a Caja</Button>
                             </form></Form>
                         </TabsContent>
                         <TabsContent value="gasto" className="pt-4">
                             <Form {...gastoForm}><form onSubmit={gastoForm.handleSubmit(handleRegistrarGasto)} className="space-y-4">
-                                <FormField control={gastoForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto del Gasto</FormLabel><FormControl><Input type="number" {...field} value={field.value !== field.value ? '' : field.value ?? ''} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={gastoForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto del Gasto</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={gastoForm.control} name="categoria" render={({ field }) => (<FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una categoría..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="combustible">Combustible</SelectItem><SelectItem value="peajes">Peajes</SelectItem><SelectItem value="general">Gasto General</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                {(categoriaGasto === 'combustible' || categoriaGasto === 'peajes') && (
+                                    <FormField
+                                        control={gastoForm.control}
+                                        name="vehiculoId"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Vehículo</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <div className="flex items-center gap-2">
+                                                                <Truck className="h-4 w-4 text-muted-foreground"/>
+                                                                <SelectValue placeholder="Asociar a un vehículo..." />
+                                                            </div>
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {vehiculos.map(v => (
+                                                            <SelectItem key={v.id} value={v.id}>{v.placa} - {v.marca}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                                 <FormField control={gastoForm.control} name="observacion" render={({ field }) => (<FormItem><FormLabel>Observación (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Gasolina para vehículo ABC-123" {...field} value={field.value ?? ""}/></FormControl><FormMessage /></FormItem>)} />
                                 <Button type="submit" disabled={isSubmitting} className="w-full"><ShoppingCart className="mr-2 h-4 w-4"/> Registrar Gasto</Button>
                             </form></Form>
@@ -390,7 +462,7 @@ export default function ArqueoCajaPage() {
                 <CardHeader><CardTitle>Cerrar Caja del Día</CardTitle><CardDescription>Realice el conteo final y cierre la operación del día.</CardDescription></CardHeader>
                 <CardContent>
                     <Form {...cerrarCajaForm}><form onSubmit={cerrarCajaForm.handleSubmit(handleCerrarCaja)} className="space-y-4">
-                        <FormField control={cerrarCajaForm.control} name="saldoReal" render={({ field }) => (<FormItem><FormLabel>Saldo Real Contado (Efectivo)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input type="number" {...field} value={field.value !== field.value ? '' : field.value ?? ''} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} className="pl-10 text-lg h-12" /></div></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={cerrarCajaForm.control} name="saldoReal" render={({ field }) => (<FormItem><FormLabel>Saldo Real Contado (Efectivo)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input type="number" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)} className="pl-10 text-lg h-12" /></div></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={cerrarCajaForm.control} name="observaciones" render={({ field }) => (<FormItem><FormLabel>Observaciones (Opcional)</FormLabel><FormControl><Textarea placeholder="Notas sobre faltantes, sobrantes, etc." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>)} />
                         <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-destructive hover:bg-destructive/90">{isSubmitting ? "Cerrando..." : <><LogOut className="mr-2 h-5 w-5" /> Cerrar Caja Definitivamente</>}</Button>
                     </form></Form>
@@ -416,7 +488,3 @@ function InfoCard({ title, value, icon, status, isLarge = false }: { title: stri
         </Card>
     )
 }
-
-    
-
-    

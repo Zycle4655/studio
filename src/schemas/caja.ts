@@ -25,7 +25,16 @@ export const GastoCajaFormSchema = z.object({
         .number({ required_error: "El monto es obligatorio.", invalid_type_error: "El monto debe ser un número." })
         .positive("El monto debe ser un número positivo."),
     categoria: z.enum(["combustible", "peajes", "general"], { required_error: "Debe seleccionar una categoría." }),
+    vehiculoId: z.string().optional().nullable(),
     observacion: z.string().max(100, "La observación no debe exceder 100 caracteres.").optional().nullable(),
+}).refine(data => {
+    if ((data.categoria === 'combustible' || data.categoria === 'peajes') && !data.vehiculoId) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Debe seleccionar un vehículo para este gasto.",
+    path: ["vehiculoId"],
 });
 export type GastoCajaFormData = z.infer<typeof GastoCajaFormSchema>;
 
@@ -51,6 +60,8 @@ export interface IngresoAdicionalItem extends TransaccionBase {}
 
 export interface GastoItem extends TransaccionBase {
     categoria: 'combustible' | 'peajes' | 'general';
+    vehiculoId?: string | null;
+    vehiculoPlaca?: string | null;
 }
 
 
