@@ -50,7 +50,6 @@ export default function RegistrarRecoleccionPage() {
   const [currentItems, setCurrentItems] = React.useState<RecoleccionItem[]>([]);
   const [selectedMaterialId, setSelectedMaterialId] = React.useState("");
   const [currentPeso, setCurrentPeso] = React.useState("");
-  const [currentPrecio, setCurrentPrecio] = React.useState("");
   const [openMaterialCombobox, setOpenMaterialCombobox] = React.useState(false);
 
   const [firmaDataUrl, setFirmaDataUrl] = React.useState<string>("");
@@ -119,8 +118,8 @@ export default function RegistrarRecoleccionPage() {
     if (!material) return;
     
     const peso = parseFloat(currentPeso);
-    // If it's a donation, price is always 0. If it's a sale, use input or 0 if empty.
-    const precio = selectedFuente?.tipo === 'venta' ? (currentPrecio ? parseFloat(currentPrecio) : 0) : 0;
+    // If it's a 'venta' source, use the material's base price. Otherwise, it's a donation (price 0).
+    const precio = selectedFuente?.tipo === 'venta' ? (material.price || 0) : 0;
     
     const newItem: RecoleccionItem = {
       materialId: material.id,
@@ -133,7 +132,6 @@ export default function RegistrarRecoleccionPage() {
     setCurrentItems(prev => [...prev, newItem]);
     setSelectedMaterialId("");
     setCurrentPeso("");
-    setCurrentPrecio("");
     setOpenMaterialCombobox(false);
   };
 
@@ -561,7 +559,7 @@ export default function RegistrarRecoleccionPage() {
               {/* Paso 3: Agregar Materiales */}
               <div className="space-y-4">
                   <label className="font-medium block">3. Registrar Materiales Recolectados</label>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="space-y-1 md:col-span-2">
                         <label htmlFor="material-select" className="text-xs text-muted-foreground">Material</label>
                         <Popover open={openMaterialCombobox} onOpenChange={setOpenMaterialCombobox}>
@@ -592,7 +590,6 @@ export default function RegistrarRecoleccionPage() {
                                                     value={material.name}
                                                     onSelect={() => {
                                                         setSelectedMaterialId(material.id);
-                                                        setCurrentPrecio(material.price.toString());
                                                         setOpenMaterialCombobox(false);
                                                     }}
                                                 >
@@ -615,13 +612,8 @@ export default function RegistrarRecoleccionPage() {
                         <label htmlFor="peso-input" className="text-xs text-muted-foreground">Peso (kg)</label>
                         <Input id="peso-input" type="number" placeholder="0.00" value={currentPeso} onChange={e => setCurrentPeso(e.target.value)} disabled={isSubmitting} />
                     </div>
-                    {selectedFuente?.tipo === 'venta' && (
-                        <div className="space-y-1">
-                            <label htmlFor="precio-input" className="text-xs text-muted-foreground">Precio/kg (Opcional)</label>
-                            <Input id="precio-input" type="number" placeholder="0.00" value={currentPrecio} onChange={e => setCurrentPrecio(e.target.value)} disabled={isSubmitting} />
-                        </div>
-                    )}
-                    <Button onClick={handleAddItem} disabled={isSubmitting || !selectedMaterialId || !currentPeso} className="md:col-span-4">
+                    
+                    <Button onClick={handleAddItem} disabled={isSubmitting || !selectedMaterialId || !currentPeso} className="md:col-span-3">
                         <Plus className="mr-2 h-4 w-4" /> Agregar Ítem
                     </Button>
                   </div>
@@ -712,3 +704,5 @@ export default function RegistrarRecoleccionPage() {
     </div>
   );
 }
+
+    

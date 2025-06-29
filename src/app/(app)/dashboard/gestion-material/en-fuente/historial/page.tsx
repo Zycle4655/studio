@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Printer, Search, Eye, Share2, FileDown, History, Truck } from "lucide-react";
+import { Printer, Search, Eye, Share2, FileDown, History, Truck, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,10 +20,12 @@ import { es } from "date-fns/locale";
 import Image from "next/image";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
+import { useRouter } from "next/navigation";
 
 export default function HistorialRecoleccionesPage() {
   const { toast } = useToast();
   const { user, companyOwnerId, companyProfile: authCompanyProfile, permissions } = useAuth();
+  const router = useRouter();
   const [recolecciones, setRecolecciones] = React.useState<RecoleccionDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(authCompanyProfile);
@@ -129,7 +131,7 @@ export default function HistorialRecoleccionesPage() {
             try {
                 const url = new URL(logoUrl);
                 const pathName = decodeURIComponent(url.pathname);
-                const extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
+                let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
                 
                 let imageFormat = 'PNG'; 
                 if (extension === "JPG" || extension === "JPEG") {
@@ -272,6 +274,10 @@ export default function HistorialRecoleccionesPage() {
         toast({ variant: 'destructive', title: 'Error al compartir', description: 'No se pudo compartir el archivo.' });
     }
   };
+  
+  const handleEdit = (recoleccionId: string) => {
+    router.push(`/dashboard/gestion-material/en-fuente/${recoleccionId}/edit`);
+  };
 
   if (isLoading) {
     return (
@@ -373,6 +379,9 @@ export default function HistorialRecoleccionesPage() {
                         <Button variant="ghost" size="icon" className="hover:text-primary" onClick={() => handleOpenModal(rec)} aria-label="Ver recibo">
                           <Eye className="h-4 w-4" />
                         </Button>
+                         <Button variant="ghost" size="icon" className="hover:text-amber-600" onClick={() => handleEdit(rec.id!)} aria-label="Editar recolección">
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -445,3 +454,4 @@ export default function HistorialRecoleccionesPage() {
   );
 }
 
+    
