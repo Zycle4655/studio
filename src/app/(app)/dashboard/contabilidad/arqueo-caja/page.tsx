@@ -362,14 +362,14 @@ export default function ArqueoCajaPage() {
                         <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="ingreso">Registrar Ingreso</TabsTrigger><TabsTrigger value="gasto">Registrar Gasto</TabsTrigger></TabsList>
                         <TabsContent value="ingreso" className="pt-4">
                             <Form {...ingresoCajaForm}><form onSubmit={ingresoCajaForm.handleSubmit(handleRegistrarIngreso)} className="space-y-4">
-                                <FormField control={ingresoCajaForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto a Ingresar</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={ingresoCajaForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto a Ingresar</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={ingresoCajaForm.control} name="observacion" render={({ field }) => (<FormItem><FormLabel>Observación (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Abono de..." {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>)} />
                                 <Button type="submit" disabled={isSubmitting} className="w-full"><Banknote className="mr-2 h-4 w-4"/> Agregar a Caja</Button>
                             </form></Form>
                         </TabsContent>
                         <TabsContent value="gasto" className="pt-4">
                             <Form {...gastoForm}><form onSubmit={gastoForm.handleSubmit(handleRegistrarGasto)} className="space-y-4">
-                                <FormField control={gastoForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto del Gasto</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={gastoForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto del Gasto</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={gastoForm.control} name="categoria" render={({ field }) => (<FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una categoría..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="combustible">Combustible</SelectItem><SelectItem value="peajes">Peajes</SelectItem><SelectItem value="general">Gasto General</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                 <FormField control={gastoForm.control} name="observacion" render={({ field }) => (<FormItem><FormLabel>Observación (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Gasolina para vehículo ABC-123" {...field} value={field.value ?? ""}/></FormControl><FormMessage /></FormItem>)} />
                                 <Button type="submit" disabled={isSubmitting} className="w-full"><ShoppingCart className="mr-2 h-4 w-4"/> Registrar Gasto</Button>
@@ -409,3 +409,5 @@ function InfoCard({ title, value, icon, status, isLarge = false }: { title: stri
         </Card>
     )
 }
+
+    
