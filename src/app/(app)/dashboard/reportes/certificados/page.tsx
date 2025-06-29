@@ -4,6 +4,8 @@
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,9 +20,10 @@ import html2canvas from 'html2canvas';
 
 import type { RecoleccionDocument } from "@/schemas/recoleccion";
 import type { FuenteDocument } from "@/schemas/fuente";
-import { FileBadge, Search, FileDown, ArrowLeft, Calendar, BarChartHorizontalBig, Package } from "lucide-react";
+import { FileBadge, Search, FileDown, ArrowLeft, Calendar, BarChartHorizontalBig, Package, ChevronsUpDown, Check } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface ReportData {
   fuente: FuenteDocument;
@@ -52,6 +55,7 @@ export default function CertificadosFuentePage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [reportData, setReportData] = React.useState<ReportData | null>(null);
+  const [isFuentePopoverOpen, setIsFuentePopoverOpen] = React.useState(false);
 
   const monthOptions = React.useMemo(() => getMonthOptions(), []);
   const chartRef = React.useRef<HTMLDivElement>(null);
@@ -91,19 +95,17 @@ export default function CertificadosFuentePage() {
 
       const [year, month] = selectedMonth.split('-').map(Number);
       const selectedDate = new Date(year, month - 1, 1);
-      const startDate = startOfMonth(selectedDate);
-      const endDate = endOfMonth(selectedDate);
       const periodoLabel = format(selectedDate, "MMMM 'de' yyyy", { locale: es });
-
+      
       const recoleccionesRef = collection(db, "companyProfiles", companyOwnerId, "recolecciones");
-      const q = query(
-        recoleccionesRef,
-        where("fuenteId", "==", selectedFuenteId)
-      );
+      const q = query(recoleccionesRef, where("fuenteId", "==", selectedFuenteId));
       
       const querySnapshot = await getDocs(q);
       const allRecoleccionesForFuente = querySnapshot.docs.map(doc => doc.data() as RecoleccionDocument);
       
+      const startDate = startOfMonth(selectedDate);
+      const endDate = endOfMonth(selectedDate);
+
       const recolecciones = allRecoleccionesForFuente.filter(rec => {
         if (!rec.fecha || typeof rec.fecha.toDate !== 'function') return false;
         const recDate = rec.fecha.toDate();
@@ -310,12 +312,51 @@ export default function CertificadosFuentePage() {
         <div className="flex flex-col items-center justify-center space-y-4 py-12">
             <h3 className="text-lg font-medium">Seleccione Fuente y Período</h3>
             <div className="flex flex-col sm:flex-row gap-4">
-                <Select value={selectedFuenteId} onValueChange={setSelectedFuenteId} disabled={fuentes.length === 0}>
-                    <SelectTrigger className="w-full sm:w-[250px]"><SelectValue placeholder="Seleccione una fuente..." /></SelectTrigger>
-                    <SelectContent>
-                        {fuentes.map(f => <SelectItem key={f.id} value={f.id}>{f.nombre}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <Popover open={isFuentePopoverOpen} onOpenChange={setIsFuentePopoverOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={isFuentePopoverOpen}
+                            className="w-full sm:w-[250px] justify-between"
+                            disabled={fuentes.length === 0 || isLoading}
+                        >
+                            {selectedFuenteId
+                                ? fuentes.find((fuente) => fuente.id === selectedFuenteId)?.nombre
+                                : "Busque y seleccione una fuente..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                            <CommandInput placeholder="Buscar fuente..." />
+                            <CommandList>
+                                <CommandEmpty>No se encontró ninguna fuente.</CommandEmpty>
+                                <CommandGroup>
+                                    {fuentes.map((fuente) => (
+                                        <CommandItem
+                                            key={fuente.id}
+                                            value={fuente.nombre}
+                                            onSelect={() => {
+                                                setSelectedFuenteId(fuente.id);
+                                                setIsFuentePopoverOpen(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    selectedFuenteId === fuente.id ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            {fuente.nombre}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                     <SelectTrigger className="w-full sm:w-[200px]">
                         <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" /><SelectValue placeholder="Seleccione un mes" /></div>
