@@ -79,20 +79,20 @@ export default function ArqueoCajaPage() {
         const totalCompras = comprasSnap.docs
             .map(d => d.data() as FacturaCompraDocument)
             .filter(d => d.formaDePago === 'efectivo')
-            .reduce((sum, d) => sum + d.netoPagado, 0);
+            .reduce((sum, d) => sum + (d.netoPagado || 0), 0);
 
         const totalVentas = ventasSnap.docs
             .map(d => d.data() as FacturaVentaDocument)
             .filter(d => d.formaDePago === 'efectivo')
-            .reduce((sum, d) => sum + d.totalFactura, 0);
+            .reduce((sum, d) => sum + (d.totalFactura || 0), 0);
             
-        const saldoEsperado = data.baseInicial + totalVentas + data.totalIngresosAdicionales - totalCompras - data.totalGastos;
+        const saldoEsperado = (data.baseInicial || 0) + (totalVentas || 0) + (data.totalIngresosAdicionales || 0) - (totalCompras || 0) - (data.totalGastos || 0);
 
         const updatedData = { ...data, totalComprasEfectivo: totalCompras, totalVentasEfectivo: totalVentas, saldoEsperado };
         setCajaData(updatedData);
         
         if (data.estado === 'Abierta') {
-          cerrarCajaForm.setValue('saldoReal', saldoEsperado);
+          cerrarCajaForm.setValue('saldoReal', isNaN(saldoEsperado) ? 0 : saldoEsperado);
           setCajaState('abierta');
         } else {
           setCajaState('cerrada');
@@ -293,7 +293,7 @@ export default function ArqueoCajaPage() {
                                                     type="number" 
                                                     placeholder="Base en efectivo" 
                                                     {...field} 
-                                                    value={field.value ?? ""}
+                                                    value={field.value !== field.value ? '' : field.value ?? ''}
                                                     onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }}
                                                     className="pl-10 text-lg text-center h-12" 
                                                 />
@@ -369,14 +369,14 @@ export default function ArqueoCajaPage() {
                         <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="ingreso">Registrar Ingreso</TabsTrigger><TabsTrigger value="gasto">Registrar Gasto</TabsTrigger></TabsList>
                         <TabsContent value="ingreso" className="pt-4">
                             <Form {...ingresoCajaForm}><form onSubmit={ingresoCajaForm.handleSubmit(handleRegistrarIngreso)} className="space-y-4">
-                                <FormField control={ingresoCajaForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto a Ingresar</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={ingresoCajaForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto a Ingresar</FormLabel><FormControl><Input type="number" {...field} value={field.value !== field.value ? '' : field.value ?? ''} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={ingresoCajaForm.control} name="observacion" render={({ field }) => (<FormItem><FormLabel>Observación (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Abono de..." {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>)} />
                                 <Button type="submit" disabled={isSubmitting} className="w-full"><Banknote className="mr-2 h-4 w-4"/> Agregar a Caja</Button>
                             </form></Form>
                         </TabsContent>
                         <TabsContent value="gasto" className="pt-4">
                             <Form {...gastoForm}><form onSubmit={gastoForm.handleSubmit(handleRegistrarGasto)} className="space-y-4">
-                                <FormField control={gastoForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto del Gasto</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={gastoForm.control} name="monto" render={({ field }) => (<FormItem><FormLabel>Monto del Gasto</FormLabel><FormControl><Input type="number" {...field} value={field.value !== field.value ? '' : field.value ?? ''} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={gastoForm.control} name="categoria" render={({ field }) => (<FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una categoría..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="combustible">Combustible</SelectItem><SelectItem value="peajes">Peajes</SelectItem><SelectItem value="general">Gasto General</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                 <FormField control={gastoForm.control} name="observacion" render={({ field }) => (<FormItem><FormLabel>Observación (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Gasolina para vehículo ABC-123" {...field} value={field.value ?? ""}/></FormControl><FormMessage /></FormItem>)} />
                                 <Button type="submit" disabled={isSubmitting} className="w-full"><ShoppingCart className="mr-2 h-4 w-4"/> Registrar Gasto</Button>
@@ -390,7 +390,7 @@ export default function ArqueoCajaPage() {
                 <CardHeader><CardTitle>Cerrar Caja del Día</CardTitle><CardDescription>Realice el conteo final y cierre la operación del día.</CardDescription></CardHeader>
                 <CardContent>
                     <Form {...cerrarCajaForm}><form onSubmit={cerrarCajaForm.handleSubmit(handleCerrarCaja)} className="space-y-4">
-                        <FormField control={cerrarCajaForm.control} name="saldoReal" render={({ field }) => (<FormItem><FormLabel>Saldo Real Contado (Efectivo)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input type="number" {...field} value={field.value ?? ""} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} className="pl-10 text-lg h-12" /></div></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={cerrarCajaForm.control} name="saldoReal" render={({ field }) => (<FormItem><FormLabel>Saldo Real Contado (Efectivo)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input type="number" {...field} value={field.value !== field.value ? '' : field.value ?? ''} onChange={(e) => { const parsed = parseFloat(e.target.value); field.onChange(isNaN(parsed) ? undefined : parsed); }} className="pl-10 text-lg h-12" /></div></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={cerrarCajaForm.control} name="observaciones" render={({ field }) => (<FormItem><FormLabel>Observaciones (Opcional)</FormLabel><FormControl><Textarea placeholder="Notas sobre faltantes, sobrantes, etc." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>)} />
                         <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-destructive hover:bg-destructive/90">{isSubmitting ? "Cerrando..." : <><LogOut className="mr-2 h-5 w-5" /> Cerrar Caja Definitivamente</>}</Button>
                     </form></Form>
