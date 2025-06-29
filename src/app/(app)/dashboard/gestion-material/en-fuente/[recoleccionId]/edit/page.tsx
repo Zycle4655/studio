@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -362,7 +361,7 @@ export default function EditRecoleccionPage() {
                         className="h-9 text-right"
                         step="1"
                         min="0"
-                        disabled={isSaving}
+                        disabled={isSaving || !permissions?.equipo}
                         />
                     </TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(item.subtotal)}</TableCell>
