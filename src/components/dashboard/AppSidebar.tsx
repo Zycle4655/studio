@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -41,6 +40,7 @@ import {
   MapPin,
   MapPinned,
   History,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -344,6 +344,17 @@ export function AppSidebar() {
                 </SidebarMenuButton>
                 {reportesOpen && (
                 <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/reportes/exportar-datos')}
+                    >
+                        <Link href="/dashboard/reportes/exportar-datos">
+                        <FileSpreadsheet />
+                        <span>Exportar Datos</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                     <SidebarMenuSubButton
                         asChild
