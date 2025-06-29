@@ -276,6 +276,17 @@ export function AppSidebar() {
                         </Link>
                     </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive('/dashboard/contabilidad/historial-arqueo')}
+                    >
+                        <Link href="/dashboard/contabilidad/historial-arqueo">
+                        <History />
+                        <span>Historial de Arqueos</span>
+                        </Link>
+                    </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
                 </SidebarMenuSub>
                 )}
             </SidebarMenuItem>
