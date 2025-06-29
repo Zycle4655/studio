@@ -10,6 +10,16 @@ export const AbrirCajaFormSchema = z.object({
 });
 export type AbrirCajaFormData = z.infer<typeof AbrirCajaFormSchema>;
 
+// Schema for adding money to the cash box
+export const IngresoCajaFormSchema = z.object({
+  monto: z.coerce
+    .number({ required_error: "El monto es obligatorio.", invalid_type_error: "El monto debe ser un número." })
+    .positive("El monto debe ser un número positivo."),
+  observacion: z.string().min(3, "La observación es muy corta.").max(100, "La observación es muy larga."),
+});
+export type IngresoCajaFormData = z.infer<typeof IngresoCajaFormSchema>;
+
+
 // Schema for the form to close the cash box
 export const CerrarCajaFormSchema = z.object({
   saldoReal: z.coerce
@@ -26,6 +36,13 @@ export interface CajaDiariaDocument {
   baseInicial: number;
   totalComprasEfectivo: number;
   totalVentasEfectivo: number;
+  totalIngresosAdicionales: number; // New field
+  ingresosAdicionales: { // New field for audit trail
+    monto: number;
+    fecha: Timestamp;
+    observacion: string;
+    registradoPor: { uid: string, email: string | null };
+  }[];
   saldoEsperado: number;
   saldoReal: number | null; // Null until closed
   diferencia: number | null; // Null until closed

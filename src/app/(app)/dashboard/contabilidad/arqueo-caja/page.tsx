@@ -9,14 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Landmark, ArrowRight, ArrowLeft, LogIn, LogOut, DollarSign, Scale, Calculator, Info } from "lucide-react";
+import { Landmark, ArrowRight, ArrowLeft, LogIn, LogOut, DollarSign, Scale, Calculator, Info, PlusCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp } from "firebase/firestore";
-import { AbrirCajaFormSchema, CerrarCajaFormSchema, type AbrirCajaFormData, type CerrarCajaFormData, type CajaDiariaDocument } from "@/schemas/caja";
+import { collection, doc, getDoc, setDoc, updateDoc, getDocs, query, where, Timestamp, arrayUnion, increment } from "firebase/firestore";
+import { AbrirCajaFormSchema, CerrarCajaFormSchema, IngresoCajaFormSchema, type AbrirCajaFormData, type CerrarCajaFormData, type IngresoCajaFormData, type CajaDiariaDocument } from "@/schemas/caja";
 import type { FacturaCompraDocument } from "@/schemas/compra";
 import type { FacturaVentaDocument } from "@/schemas/venta";
 import { format } from "date-fns";
@@ -44,6 +44,11 @@ export default function ArqueoCajaPage() {
     resolver: zodResolver(CerrarCajaFormSchema),
     defaultValues: { saldoReal: 0, observaciones: "" },
   });
+  
+  const ingresoCajaForm = useForm<IngresoCajaFormData>({
+    resolver: zodResolver(IngresoCajaFormSchema),
+    defaultValues: { monto: undefined, observacion: "" },
+  });
 
   const fetchCajaData = React.useCallback(async () => {
     if (!companyOwnerId) return;
@@ -66,7 +71,6 @@ export default function ArqueoCajaPage() {
           const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
           const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
           
-          // Fetch all invoices for the day, then filter in code to avoid needing a composite index.
           const comprasQuery = query(comprasRef, where("fecha", ">=", todayStart), where("fecha", "<=", todayEnd));
           const ventasQuery = query(ventasRef, where("fecha", ">=", todayStart), where("fecha", "<=", todayEnd));
 
@@ -82,7 +86,7 @@ export default function ArqueoCajaPage() {
             .filter(doc => doc.formaDePago === 'efectivo')
             .reduce((sum, doc) => sum + doc.totalFactura, 0);
 
-          const saldoEsperado = data.baseInicial + totalVentas - totalCompras;
+          const saldoEsperado = data.baseInicial + totalVentas + (data.totalIngresosAdicionales || 0) - totalCompras;
           
           setCajaData({ ...data, totalComprasEfectivo: totalCompras, totalVentasEfectivo: totalVentas, saldoEsperado });
           cerrarCajaForm.setValue('saldoReal', saldoEsperado);
@@ -125,6 +129,8 @@ export default function ArqueoCajaPage() {
         baseInicial: data.baseInicial,
         totalComprasEfectivo: 0,
         totalVentasEfectivo: 0,
+        totalIngresosAdicionales: 0,
+        ingresosAdicionales: [],
         saldoEsperado: data.baseInicial,
         saldoReal: null,
         diferencia: null,
@@ -171,6 +177,35 @@ export default function ArqueoCajaPage() {
     } catch (error) {
         console.error("Error closing cash box:", error);
         toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar la caja." });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+  
+  const handleIngresoCaja = async (data: IngresoCajaFormData) => {
+    if (!companyOwnerId || !user) return;
+    setIsSubmitting(true);
+
+    const nuevoIngreso = {
+        monto: data.monto,
+        observacion: data.observacion || "Ingreso manual",
+        fecha: Timestamp.now(),
+        registradoPor: { uid: user.uid, email: user.email },
+    };
+
+    const cajaRef = doc(db, "companyProfiles", companyOwnerId, "cajaDiaria", getTodayId());
+
+    try {
+        await updateDoc(cajaRef, {
+            ingresosAdicionales: arrayUnion(nuevoIngreso),
+            totalIngresosAdicionales: increment(data.monto)
+        });
+        toast({ title: "Ingreso Registrado", description: `Se agregaron ${formatCurrency(data.monto)} a la caja.` });
+        ingresoCajaForm.reset();
+        await fetchCajaData();
+    } catch (error) {
+        console.error("Error adding cash:", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudo registrar el ingreso." });
     } finally {
         setIsSubmitting(false);
     }
@@ -246,9 +281,10 @@ export default function ArqueoCajaPage() {
         {cajaState === 'cerrada' && cajaData && (
              <CardContent className="text-center py-8">
                 <CardTitle className="mb-4">Caja del Día Cerrada</CardTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-left">
                      <InfoCard title="Saldo Esperado" value={formatCurrency(cajaData.saldoEsperado)} icon={<Scale />}/>
                      <InfoCard title="Saldo Real Reportado" value={formatCurrency(cajaData.saldoReal)} icon={<DollarSign />}/>
+                      <InfoCard title="Ingresos Adicionales" value={formatCurrency(cajaData.totalIngresosAdicionales)} icon={<PlusCircle />}/>
                      <InfoCard title="Diferencia" value={formatCurrency(cajaData.diferencia)} status={cajaData.diferencia === 0 ? 'ok' : 'warn'} icon={<Calculator />}/>
                 </div>
                  {cajaData.observaciones && (
@@ -266,6 +302,7 @@ export default function ArqueoCajaPage() {
                 <InfoCard title="Base Inicial" value={formatCurrency(cajaData.baseInicial)} icon={<LogIn />}/>
                 <InfoCard title="Total Compras (Efectivo)" value={formatCurrency(cajaData.totalComprasEfectivo)} icon={<ArrowRight className="text-red-500" />}/>
                 <InfoCard title="Total Ventas (Efectivo)" value={formatCurrency(cajaData.totalVentasEfectivo)} icon={<ArrowLeft className="text-green-500" />}/>
+                <InfoCard title="Ingresos Adicionales" value={formatCurrency(cajaData.totalIngresosAdicionales)} icon={<PlusCircle className="text-blue-500" />}/>
                 <Card className="bg-primary/5 border-primary/20">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg font-bold text-primary flex items-center gap-2"><Scale/> Saldo Esperado en Caja</CardTitle>
@@ -275,7 +312,7 @@ export default function ArqueoCajaPage() {
                     </CardContent>
                 </Card>
             </div>
-             <div>
+             <div className="space-y-6">
                 <Form {...cerrarCajaForm}>
                     <form onSubmit={cerrarCajaForm.handleSubmit(handleCerrarCaja)} className="space-y-4 p-4 border rounded-lg shadow-inner bg-muted/50">
                         <CardTitle className="text-xl">Cerrar Caja</CardTitle>
@@ -310,6 +347,44 @@ export default function ArqueoCajaPage() {
                         />
                         <Button type="submit" size="lg" disabled={isSubmitting} className="w-full bg-destructive hover:bg-destructive/90">
                             {isSubmitting ? "Cerrando..." : <><LogOut className="mr-2 h-5 w-5" /> Cerrar Caja del Día</>}
+                        </Button>
+                    </form>
+                </Form>
+                {/* Add Cash Form */}
+                <Form {...ingresoCajaForm}>
+                    <form onSubmit={ingresoCajaForm.handleSubmit(handleIngresoCaja)} className="space-y-4 p-4 border rounded-lg shadow-inner bg-muted/50">
+                        <CardTitle className="text-xl">Agregar Dinero a Caja</CardTitle>
+                        <FormField
+                            control={ingresoCajaForm.control}
+                            name="monto"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Monto a Ingresar</FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                            <Input type="number" {...field} className="pl-10 text-lg h-12" value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)} />
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={ingresoCajaForm.control}
+                            name="observacion"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Observación</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Ej: Base adicional, pago de..." {...field} value={field.value || ""} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+                            {isSubmitting ? "Agregando..." : <><PlusCircle className="mr-2 h-5 w-5" /> Agregar a Caja</>}
                         </Button>
                     </form>
                 </Form>
