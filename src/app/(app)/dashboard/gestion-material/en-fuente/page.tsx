@@ -30,7 +30,7 @@ import { es } from "date-fns/locale";
 
 export default function RegistrarRecoleccionPage() {
   const { toast } = useToast();
-  const { user, companyOwnerId, companyProfile, permissions } = useAuth();
+  const { user, companyOwnerId, companyProfile, permissions, collaboratorName } = useAuth();
   const signatureRef = React.useRef<SignatureCanvas>(null);
 
   const [isLoading, setIsLoading] = React.useState(true);
@@ -200,6 +200,7 @@ export default function RegistrarRecoleccionPage() {
             encargadoNombre: selectedFuente.encargadoNombre,
             vehiculoId: selectedVehiculo.id,
             vehiculoPlaca: selectedVehiculo.placa,
+            registradoPorNombre: collaboratorName || user.displayName || "No Identificado",
             fecha: fechaServer,
             items: currentItems,
             totalPeso: totalPeso,
@@ -265,14 +266,11 @@ export default function RegistrarRecoleccionPage() {
                 const pathName = decodeURIComponent(url.pathname);
                 let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
                 
-                let imageFormat = 'PNG'; 
-                if (extension === "JPG" || extension === "JPEG") {
-                  imageFormat = "JPEG";
-                } else if (extension === "WEBP") {
-                  imageFormat = "WEBP";
+                if (extension === "JPG") {
+                  extension = "JPEG";
                 }
     
-                doc.addImage(logoUrl, imageFormat, margin, y, 30, 30, undefined, 'FAST');
+                doc.addImage(logoUrl, extension, margin, y, 30, 30, undefined, 'FAST');
             } catch (e) {
                 console.error("Error adding logo to PDF:", e);
             }
@@ -317,6 +315,11 @@ export default function RegistrarRecoleccionPage() {
         doc.text('Encargado:', margin, y);
         doc.setFont('helvetica', 'normal');
         doc.text(recoleccionData.encargadoNombre, margin + 25, y);
+        y += 7;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Gestor Ambiental:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(recoleccionData.registradoPorNombre || "No especificado", margin + 40, y);
         y += 7;
         doc.setFont('helvetica', 'bold');
         doc.text('Fecha:', margin, y);
@@ -653,7 +656,7 @@ export default function RegistrarRecoleccionPage() {
                   )}
               </div>
 
-              <Separator />
+              <Separator className="my-6" />
 
               {/* Paso 4: Firma y Sello */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -704,5 +707,3 @@ export default function RegistrarRecoleccionPage() {
     </div>
   );
 }
-
-    

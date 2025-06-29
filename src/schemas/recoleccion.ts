@@ -30,6 +30,7 @@ export interface RecoleccionDocument {
   encargadoNombre: string;
   vehiculoId?: string | null;
   vehiculoPlaca?: string | null;
+  registradoPorNombre?: string;
   fecha: Timestamp;
   items: RecoleccionItem[];
   totalPeso: number;

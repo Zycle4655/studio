@@ -133,14 +133,11 @@ export default function HistorialRecoleccionesPage() {
                 const pathName = decodeURIComponent(url.pathname);
                 let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
                 
-                let imageFormat = 'PNG'; 
-                if (extension === "JPG" || extension === "JPEG") {
-                  imageFormat = "JPEG";
-                } else if (extension === "WEBP") {
-                  imageFormat = "WEBP";
+                if (extension === "JPG") {
+                  extension = "JPEG";
                 }
     
-                doc.addImage(logoUrl, imageFormat, margin, y, 30, 30, undefined, 'FAST');
+                doc.addImage(logoUrl, extension, margin, y, 30, 30, undefined, 'FAST');
             } catch (e) {
                 console.error("Error adding logo to PDF:", e);
             }
@@ -185,6 +182,11 @@ export default function HistorialRecoleccionesPage() {
         doc.text('Encargado:', margin, y);
         doc.setFont('helvetica', 'normal');
         doc.text(recoleccionData.encargadoNombre, margin + 25, y);
+        y += 7;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Gestor Ambiental:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(recoleccionData.registradoPorNombre || "No especificado", margin + 40, y);
         y += 7;
         doc.setFont('helvetica', 'bold');
         doc.text('Fecha:', margin, y);
@@ -407,6 +409,9 @@ export default function HistorialRecoleccionesPage() {
                 <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
                     <div><strong>Fecha:</strong> {formatDateWithTime(recoleccionToView.fecha)}</div>
                     <div><strong>Encargado:</strong> {recoleccionToView.encargadoNombre}</div>
+                    {recoleccionToView.registradoPorNombre && (
+                      <div><strong>Gestor Ambiental:</strong> {recoleccionToView.registradoPorNombre}</div>
+                    )}
                     {recoleccionToView.vehiculoPlaca && (
                       <div><strong>Vehículo:</strong> {recoleccionToView.vehiculoPlaca}</div>
                     )}
@@ -453,5 +458,3 @@ export default function HistorialRecoleccionesPage() {
     </div>
   );
 }
-
-    

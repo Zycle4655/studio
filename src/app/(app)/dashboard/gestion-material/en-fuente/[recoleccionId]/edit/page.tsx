@@ -148,20 +148,90 @@ export default function EditRecoleccionPage() {
         format: 'a4'
     });
 
-    const isPurchase = recoleccionData.totalValor > 0;
+    const isPurchase = calculateTotal(editableItems) > 0;
     const pageHeight = doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 15;
     let y = margin;
     
-    doc.text(`Certificado Final - Recolección N°: ${recoleccionData.id?.substring(0,8)}`, pageWidth / 2, y, { align: 'center' });
-    y += 20;
-    
-    doc.text(`Fecha: ${formatDate(recoleccionData.fecha)}`, margin, y);
-    y += 7;
-    doc.text(`Fuente: ${recoleccionData.fuenteNombre}`, margin, y);
-    y+= 15;
+    const companyName = profileData?.companyName || 'Nombre de la Empresa';
+    const companyNit = profileData?.nit || 'NIT no especificado';
+    const companyAddress = profileData?.address || 'Dirección no especificada';
+    const companyPhone = profileData?.phone || 'Teléfono no especificado';
+    const logoUrl = profileData?.logoUrl;
 
+    // --- Header ---
+    if (logoUrl) {
+        try {
+            const url = new URL(logoUrl);
+            const pathName = decodeURIComponent(url.pathname);
+            let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
+            if (extension === "JPG") { extension = "JPEG"; }
+            doc.addImage(logoUrl, extension, margin, y, 30, 30, undefined, 'FAST');
+        } catch (e) {
+            console.error("Error adding logo to PDF:", e);
+        }
+    }
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(companyName, pageWidth - margin, y + 5, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`NIT: ${companyNit}`, pageWidth - margin, y + 10, { align: 'right' });
+    doc.text(companyAddress, pageWidth - margin, y + 15, { align: 'right' });
+    doc.text(`Tel: ${companyPhone}`, pageWidth - margin, y + 20, { align: 'right' });
+
+    y += 45;
+
+    // --- Title ---
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(isPurchase ? "COMPROBANTE DE COMPRA EN FUENTE" : "CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text("Certificado Final", pageWidth / 2, y + 6, { align: 'center' });
+    
+    y += 20;
+
+    // --- Certificate Body ---
+    doc.setFontSize(11);
+    const introText = isPurchase 
+        ? `Por medio de la presente, la empresa ${companyName} certifica que ha comprado los siguientes materiales de:`
+        : `Por medio de la presente, la empresa ${companyName} certifica que ha recibido en donación los siguientes materiales de:`;
+    const splitText = doc.splitTextToSize(introText, pageWidth - margin * 2);
+    doc.text(splitText, margin, y);
+    y += (splitText.length * 5) + 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fuente:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(recoleccionData.fuenteNombre, margin + 25, y);
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Encargado:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(recoleccionData.encargadoNombre, margin + 25, y);
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Gestor Ambiental:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(recoleccionData.registradoPorNombre || "No especificado", margin + 40, y);
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fecha:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
+    if (recoleccionData.vehiculoPlaca) {
+        y += 7;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Vehículo:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(recoleccionData.vehiculoPlaca, margin + 25, y);
+    }
+    y += 15;
+    
+    // --- Materials Table ---
     const tableHeaders = ['Material', 'Peso (kg)', 'Vr. Unitario', 'Subtotal'];
     const tableData = editableItems.map(item => ([
         item.materialName,
@@ -174,11 +244,36 @@ export default function EditRecoleccionPage() {
         startY: y,
         head: [tableHeaders],
         body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [22, 163, 74] },
     });
     
     y = (doc as any).lastAutoTable.finalY + 10;
     
-    doc.text(`Total: ${formatCurrency(calculateTotal(editableItems))}`, pageWidth - margin, y, { align: 'right' });
+    // --- Totals ---
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    const finalTotalPeso = editableItems.reduce((sum, item) => sum + item.peso, 0);
+    if (isPurchase) {
+        doc.text(`Total Compra: ${formatCurrency(calculateTotal(editableItems))}`, pageWidth - margin, y, { align: 'right' });
+        y += 7;
+    }
+    doc.text(`Peso Total: ${finalTotalPeso.toFixed(2)} kg`, pageWidth - margin, y, { align: 'right' });
+    y += 25;
+
+    // --- Signature ---
+    if (y > pageHeight - 50) {
+        doc.addPage();
+        y = margin;
+    }
+    doc.addImage(recoleccionData.firmaDataUrl, 'PNG', (pageWidth / 2) - 40, y, 80, 30, undefined, 'FAST');
+    y += 30;
+    doc.line(margin + 50, y, pageWidth - margin - 50, y);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Firma del Encargado', pageWidth / 2, y + 5, { align: 'center' });
+    doc.text(recoleccionData.encargadoNombre, pageWidth / 2, y + 10, { align: 'center' });
+
 
     return doc;
   };
@@ -228,6 +323,9 @@ export default function EditRecoleccionPage() {
             <div className="space-y-4 mb-6 text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">
                 <p><strong>Fuente:</strong> {recoleccion.fuenteNombre}</p>
                 <p><strong>Fecha:</strong> {formatDate(recoleccion.fecha)}</p>
+                {recoleccion.registradoPorNombre && (
+                    <p><strong>Gestor Ambiental:</strong> {recoleccion.registradoPorNombre}</p>
+                )}
                 <p><strong>Vehículo:</strong> {recoleccion.vehiculoPlaca || 'N/A'}</p>
             </div>
             
@@ -295,6 +393,3 @@ export default function EditRecoleccionPage() {
     </div>
   );
 }
-
-
-    
