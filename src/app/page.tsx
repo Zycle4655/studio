@@ -1,58 +1,63 @@
-
 "use client";
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRightLeft, BarChart3, Route, ShieldCheck, Store, TrendingUp, Users, Warehouse } from 'lucide-react';
-
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowRight, BarChart3, CheckCircle2, DollarSign, Package, ShieldCheck, TrendingUp, Users, Warehouse, FileSpreadsheet, HandCoins, Truck, MapPin, FileText } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function MarketingPage() {
-  const features = [
-    {
-      icon: <Warehouse className="h-10 w-10 text-primary" />,
-      title: "Inventario en Tiempo Real",
-      description: "Control total de tu stock. Cada compra y venta actualiza automáticamente tus niveles de material, eliminando errores manuales."
-    },
-    {
-      icon: <ArrowRightLeft className="h-10 w-10 text-primary" />,
-      title: "Gestión de Compras y Ventas",
-      description: "Genera facturas de compra y venta en segundos. Flujos de trabajo simplificados que ahorran tiempo y organizan tus finanzas."
-    },
-    {
-      icon: <Users className="h-10 w-10 text-primary" />,
-      title: "Portal de Asociados y SUI",
-      description: "Administra la información de tus asociados de forma centralizada, facilitando el cumplimiento normativo para reportes SUI."
-    },
-    {
-      icon: <BarChart3 className="h-10 w-10 text-primary" />,
-      title: "Analíticas y Reportes Visuales",
-      description: "Dashboards intuitivos y reportes exportables que te dan una visión clara de la salud de tu operación para tomar mejores decisiones."
-    }
-  ];
 
-  const futureFeatures = [
+  const plans = [
     {
-      icon: <Route className="h-8 w-8 text-primary" />,
-      title: "Logística Inteligente con IA",
-      description: "Optimización de rutas de recolección y entrega para minimizar costos de combustible y tiempos de operación."
+      name: "Esencial",
+      price: "Ideal para iniciar",
+      description: "Controla tus operaciones básicas y digitaliza tu inventario.",
+      features: [
+        "Gestión de Compras y Ventas",
+        "Catálogo de Materiales",
+        "Inventario en Tiempo Real",
+        "Gestión de Flota de Transporte",
+        "Arqueo de Caja Diario",
+        "Hasta 3 usuarios",
+      ],
+      cta: "Comienza Ahora",
+      variant: "outline"
     },
     {
-      icon: <Store className="h-8 w-8 text-primary" />,
-      title: "Mercado Conectado de Materiales",
-      description: "Una plataforma para conectar tu ECA con grandes transformadores y compradores, asegurando mejores precios y demanda constante."
-    },
-     {
-      icon: <TrendingUp className="h-8 w-8 text-primary" />,
-      title: "Análisis Predictivo de Precios",
-      description: "Modelos de Machine Learning que analizan tendencias del mercado para ayudarte a decidir el mejor momento para comprar o vender."
+      name: "Profesional",
+      price: "El más popular",
+      description: "Para ECAs en crecimiento que buscan herramientas avanzadas y cumplimiento normativo.",
+      features: [
+        "Todo lo del Plan Esencial",
+        "Gestión de Equipo y Permisos",
+        "Control de Asistencia por QR",
+        "Gestión de Préstamos y Abonos",
+        "Exportación de Datos a Excel",
+        "Generador de Reportes SUI",
+        "Certificados de Aprovechamiento",
+        "Hasta 10 usuarios",
+      ],
+      cta: "Elige Profesional",
+      variant: "default"
     },
     {
-      icon: <ShieldCheck className="h-8 w-8 text-primary" />,
-      title: "Trazabilidad con Blockchain",
-      description: "Certificados de sostenibilidad infalsificables que garantizan la trazabilidad de tus materiales, añadiendo valor a tu operación."
-    }
+      name: "Corporativo",
+      price: "A tu medida",
+      description: "La solución definitiva para operaciones a gran escala con necesidades personalizadas.",
+      features: [
+        "Todo lo del Plan Profesional",
+        "Usuarios ilimitados",
+        "Soporte Prioritario",
+        "Acceso anticipado a módulos IA",
+        "Opciones de API e Integración",
+        "Marca Blanca (Opcional)",
+      ],
+      cta: "Contáctanos",
+      variant: "outline"
+    },
   ];
 
   return (
@@ -63,124 +68,204 @@ export default function MarketingPage() {
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl font-bold text-primary font-headline">ZYCLE</span>
           </Link>
-          <div className="hidden md:flex items-center gap-6 text-lg">
+          <nav className="hidden md:flex items-center gap-6 text-base">
             <Link href="#features" className="hover:text-primary transition-colors">Funcionalidades</Link>
-            <Link href="#future" className="hover:text-primary transition-colors">Visión</Link>
-          </div>
+            <Link href="#plans" className="hover:text-primary transition-colors">Planes</Link>
+          </nav>
           <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" className="text-lg">
+            <Button asChild variant="ghost" className="text-base">
               <Link href="/login">Iniciar Sesión</Link>
             </Button>
-            <Button asChild size="lg" className="text-lg hidden sm:flex">
+            <Button asChild size="lg" className="text-base hidden sm:flex">
               <Link href="/register">Regístrate Gratis</Link>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-24 md:py-32 bg-muted/30">
-          <div className="container text-center">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-primary font-headline">
-              Transforma Residuos en Recursos.
+        <section className="py-24 md:py-32 text-center">
+          <div className="container">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-primary font-headline animate-fade-in">
+              La Plataforma Definitiva para la Gestión de Reciclaje
             </h1>
-            <p className="mt-6 mx-auto max-w-3xl text-xl md:text-2xl text-muted-foreground">
-              ZYCLE es la plataforma todo-en-uno que digitaliza y optimiza tu centro de reciclaje (ECA). Controla tu inventario, gestiona transacciones y asegura el cumplimiento, todo en un solo lugar.
+            <p className="mt-6 mx-auto max-w-3xl text-xl text-muted-foreground animate-fade-in [animation-delay:200ms]">
+              ZYCLE centraliza tu inventario, finanzas y equipo en un solo lugar. Transforma tu operación, maximiza tu rentabilidad y lidera la economía circular.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in [animation-delay:400ms]">
               <Button asChild size="lg" className="text-lg w-full sm:w-auto">
-                <Link href="/register">Comienza Ahora - Es Gratis</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg w-full sm:w-auto">
-                <Link href="#features">Descubrir Funcionalidades</Link>
+                <Link href="/register">Comienza Gratis Hoy <ArrowRight className="ml-2"/></Link>
               </Button>
             </div>
-             <div className="mt-16">
+             <div className="mt-16 relative animate-fade-in [animation-delay:600ms]">
+                <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                <div className="absolute top-0 -right-4 w-72 h-72 bg-accent/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob [animation-delay:2s]"></div>
                 <Image 
                     src="https://placehold.co/1200x600.png"
-                    alt="Dashboard de ZYCLE en un computador portátil"
+                    alt="Dashboard de ZYCLE mostrando gráficos de inventario"
                     width={1200}
                     height={600}
                     className="rounded-xl shadow-2xl mx-auto border"
-                    data-ai-hint="recycled materials"
+                    data-ai-hint="dashboard analytics"
+                    priority
                 />
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 md:py-28">
+        <section id="features" className="py-20 md:py-28 bg-muted/30">
           <div className="container">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-5xl font-bold font-headline">La Caja de Herramientas para tu ECA</h2>
-              <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                Todo lo que necesitas para llevar tu operación al siguiente nivel de eficiencia y rentabilidad.
+              <h2 className="text-3xl md:text-5xl font-bold font-headline">Un Ecosistema Integrado para tu ECA</h2>
+              <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
+                Cada módulo está diseñado para trabajar en conjunto, dándote un control sin precedentes y una visión 360° de tu negocio.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {features.map((feature, index) => (
-                <Card key={index} className="text-center p-6 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-transform duration-300">
-                  <CardHeader className="items-center">
-                    {feature.icon}
-                    <CardTitle className="mt-4 text-2xl font-bold">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-muted-foreground text-base">
-                    {feature.description}
+            <Tabs defaultValue="gestion" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+                <TabsTrigger value="gestion" className="py-3 text-base"><Package className="mr-2"/>Gestión</TabsTrigger>
+                <TabsTrigger value="contabilidad" className="py-3 text-base"><HandCoins className="mr-2"/>Contabilidad</TabsTrigger>
+                <TabsTrigger value="equipo" className="py-3 text-base"><Users className="mr-2"/>Equipo</TabsTrigger>
+                <TabsTrigger value="reportes" className="py-3 text-base"><BarChart3 className="mr-2"/>Reportes</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="gestion" className="mt-8">
+                <Card>
+                  <CardContent className="p-6 grid md:grid-cols-2 gap-8">
+                     <Image src="https://placehold.co/600x400.png" alt="Bodega de reciclaje organizada" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="warehouse recycling" />
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-primary">Control Total del Material</h3>
+                      <p className="text-muted-foreground">Desde que el material entra hasta que sale, ten visibilidad completa.</p>
+                      <ul className="space-y-3 text-foreground">
+                        <li className="flex items-start gap-3"><Warehouse className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Inventario en Tiempo Real:</span> Tu stock se actualiza automáticamente con cada compra y venta.</div></li>
+                        <li className="flex items-start gap-3"><MapPin className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Recolección en Fuente:</span> Registra material directamente en la ubicación del cliente con firma digital.</div></li>
+                         <li className="flex items-start gap-3"><Truck className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Gestión de Flota:</span> Mantén un registro de tus vehículos para un mejor control de transporte.</div></li>
+                      </ul>
+                    </div>
                   </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="contabilidad" className="mt-8">
+                 <Card>
+                  <CardContent className="p-6 grid md:grid-cols-2 gap-8">
+                     <Image src="https://placehold.co/600x400.png" alt="Persona usando una calculadora" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="accounting finance" />
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-primary">Finanzas Claras y Simples</h3>
+                      <p className="text-muted-foreground">Digitaliza tu flujo de caja para una contabilidad transparente y sin errores.</p>
+                      <ul className="space-y-3 text-foreground">
+                        <li className="flex items-start gap-3"><DollarSign className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Arqueo de Caja Diario:</span> Controla la base, ingresos, y gastos diarios vinculados a tu operación.</div></li>
+                         <li className="flex items-start gap-3"><FileText className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Facturación Simplificada:</span> Genera facturas de compra y venta en segundos.</div></li>
+                        <li className="flex items-start gap-3"><TrendingUp className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Historial Financiero:</span> Accede a todos los cierres de caja para análisis y auditorías.</div></li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+               <TabsContent value="equipo" className="mt-8">
+                 <Card>
+                  <CardContent className="p-6 grid md:grid-cols-2 gap-8">
+                     <Image src="https://placehold.co/600x400.png" alt="Equipo de trabajo colaborando" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="team collaboration" />
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-primary">Gestiona tu Talento</h3>
+                      <p className="text-muted-foreground">Empodera a tu equipo con herramientas modernas que profesionalizan su trabajo.</p>
+                      <ul className="space-y-3 text-foreground">
+                        <li className="flex items-start gap-3"><Users className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Portal de Colaboradores:</span> Control de permisos, gestión de préstamos y canal de comunicación PQS.</div></li>
+                        <li className="flex items-start gap-3"><CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Control de Asistencia:</span> Moderniza el registro de entradas y salidas con códigos QR únicos por empleado.</div></li>
+                        <li className="flex items-start gap-3"><ShieldCheck className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Roles y Permisos:</span> Define con precisión qué puede ver y hacer cada miembro de tu equipo en la plataforma.</div></li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+               <TabsContent value="reportes" className="mt-8">
+                 <Card>
+                  <CardContent className="p-6 grid md:grid-cols-2 gap-8">
+                     <Image src="https://placehold.co/600x400.png" alt="Gráficos y reportes en una pantalla" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="charts data" />
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-primary">Decisiones Basadas en Datos</h3>
+                      <p className="text-muted-foreground">Transforma la información de tu operación en inteligencia de negocio y cumple con la normativa.</p>
+                      <ul className="space-y-3 text-foreground">
+                        <li className="flex items-start gap-3"><FileSpreadsheet className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Exportación a Excel:</span> Descarga cualquier dato de la plataforma para tus análisis personalizados.</div></li>
+                        <li className="flex items-start gap-3"><ShieldCheck className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Cumplimiento SUI:</span> Genera el reporte de Balance de Masas con la estructura exacta que requiere la superintendencia.</div></li>
+                        <li className="flex items-start gap-3"><BarChart3 className="h-6 w-6 text-primary flex-shrink-0 mt-1"/><div><span className="font-semibold">Certificados de Aprovechamiento:</span> Fideliza a tus clientes con certificados en PDF profesionales y automáticos.</div></li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="plans" className="py-20 md:py-28">
+          <div className="container">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-5xl font-bold font-headline">Un Plan para Cada Etapa de tu Crecimiento</h2>
+              <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+                Comienza gratis y escala a medida que tu operación crece. Simple, transparente y sin sorpresas.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+              {plans.map((plan, index) => (
+                <Card key={index} className={cn("flex flex-col shadow-lg", plan.variant === 'default' && 'border-primary border-2 relative')}>
+                  {plan.variant === 'default' && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold bg-primary text-primary-foreground">
+                        Más Popular
+                      </div>
+                    </div>
+                  )}
+                  <CardHeader className="text-center">
+                    <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                    <CardDescription className="text-lg font-semibold text-primary">{plan.price}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <p className="min-h-[40px] text-muted-foreground text-center mb-6">{plan.description}</p>
+                    <ul className="space-y-3">
+                      {plan.features.map((feature, fIndex) => (
+                        <li key={fIndex} className="flex items-start gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button asChild size="lg" className="w-full text-lg" variant={plan.variant as any}>
+                      <Link href={plan.name === 'Corporativo' ? 'mailto:contacto@zycle.app' : '/register'}>{plan.cta}</Link>
+                    </Button>
+                  </CardFooter>
                 </Card>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Future Vision Section */}
-        <section id="future" className="py-20 md:py-28 bg-muted/30">
-          <div className="container">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary">El Futuro es Circular y Digital</h2>
-              <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-                En ZYCLE, no solo resolvemos los problemas de hoy. Estamos construyendo las herramientas del mañana para una industria del reciclaje más inteligente, conectada y transparente.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {futureFeatures.map((feature, index) => (
-                <div key={index} className="flex flex-col items-center text-center p-4">
-                  <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mb-4">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Final CTA Section */}
-        <section className="py-24 md:py-32">
+        {/* Final CTA */}
+        <section className="py-20 md:py-28 bg-muted/30">
           <div className="container text-center">
-            <h2 className="text-3xl md:text-5xl font-bold font-headline">
-              ¿Listo para potenciar tu operación de reciclaje?
-            </h2>
-            <p className="mt-4 max-w-xl mx-auto text-lg text-muted-foreground">
-              Únete a la nueva era de la gestión de materiales. Es fácil, rápido y gratis para empezar.
-            </p>
-            <div className="mt-8">
-              <Button asChild size="lg" className="text-lg">
-                <Link href="/register">Crear mi cuenta en ZYCLE</Link>
-              </Button>
-            </div>
+             <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary">¿Listo para Digitalizar tu Operación?</h2>
+             <p className="mt-4 max-w-xl mx-auto text-lg text-muted-foreground">
+               Únete a la nueva era de la gestión de materiales. Es fácil, rápido y tu primer mes es completamente gratis.
+             </p>
+             <div className="mt-8">
+               <Button asChild size="lg" className="text-lg">
+                 <Link href="/register">Crear Mi Cuenta en ZYCLE</Link>
+               </Button>
+             </div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-muted/50 border-t">
+      <footer className="border-t">
         <div className="container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
            <div className="flex items-center gap-2">
-             <span className="font-semibold text-primary">ZYCLE</span>
+             <span className="font-semibold text-primary text-lg font-headline">ZYCLE</span>
           </div>
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} ZYCLE. Todos los derechos reservados.
