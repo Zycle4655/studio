@@ -10,10 +10,10 @@
     --foreground: 0 0% 98%; /* White text for contrast */
 
     --card: 220 30% 98%; /* Keep cards white as requested */
-    --card-foreground: 230 25% 20%;
+    --card-foreground: 240 10% 3.9%;
 
     --popover: 220 30% 98%;
-    --popover-foreground: 230 25% 20%;
+    --popover-foreground: 240 10% 3.9%;
 
     --primary: 186 75% 13%; /* User's color #083338 */
     --primary-foreground: 0 0% 98%;
