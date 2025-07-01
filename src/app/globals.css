@@ -5,40 +5,40 @@
 
 @layer base {
   :root {
-    /* Light Mode - New Dark Teal Primary */
-    --background: 181 49% 90%; /* Light Teal, from user color #057b7d */
-    --foreground: 230 25% 20%; /* Dark cool gray for text */
+    /* Theme based on user colors #057b7d and #083338 */
+    --background: 181 92% 25%; /* User's color #057b7d */
+    --foreground: 0 0% 98%; /* White text for contrast */
 
-    --card: 220 30% 98%;
+    --card: 220 30% 98%; /* Keep cards white as requested */
     --card-foreground: 230 25% 20%;
 
     --popover: 220 30% 98%;
     --popover-foreground: 230 25% 20%;
 
     --primary: 186 75% 13%; /* User's color #083338 */
-    --primary-foreground: 0 0% 98%; /* White text for the dark primary */
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 220 60% 75%; /* Soft Blue */
+    --secondary: 220 60% 75%;
     --secondary-foreground: 220 25% 25%;
 
-    --muted: 220 25% 94%;
-    --muted-foreground: 220 20% 55%;
+    --muted: 181 80% 30%; /* Darker teal for muted elements on dark bg */
+    --muted-foreground: 181 30% 80%; /* Lighter teal for muted text */
 
-    --accent: 35 85% 60%; /* New Amber/Gold Accent */
-    --accent-foreground: 35 25% 98%; /* Very light for text on accent */
+    --accent: 35 85% 60%;
+    --accent-foreground: 35 25% 98%;
 
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 20% 90%;
-    --input: 220 20% 95%;
-    --ring: 186 75% 13%; /* Ring matches new primary */
+    --border: 181 90% 30%;
+    --input: 181 90% 32%;
+    --ring: 186 75% 13%;
 
-    --chart-1: 186 75% 13%; /* New Primary */
-    --chart-2: 35 85% 60%;  /* New Accent */
-    --chart-3: 220 60% 75%; /* Soft Blue */
-    --chart-4: 0 70% 60%; /* Destructive Red */
-    --chart-5: 220 20% 55%; /* Muted Foreground */
+    --chart-1: 186 75% 13%;
+    --chart-2: 35 85% 60%;
+    --chart-3: 220 60% 75%;
+    --chart-4: 0 70% 60%;
+    --chart-5: 220 20% 55%;
 
     --radius: 0.5rem;
 
