@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Edit, Trash2, PackageOpen, Code } from "lucide-react";
+import { Plus, Edit, Trash2, PackageOpen, Code, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -13,6 +13,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,10 +89,11 @@ const DEFAULT_MATERIALS = [
 
 export default function MaterialesPage() {
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { user, companyOwnerId, permissions } = useAuth();
   const [materials, setMaterials] = React.useState<MaterialDocument[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingMaterial, setEditingMaterial] = React.useState<MaterialDocument | null>(null);
@@ -100,9 +102,9 @@ export default function MaterialesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   
   const getMaterialsCollectionRef = React.useCallback(() => {
-    if (!user || !db) return null;
-    return collection(db, "companyProfiles", user.uid, "materials");
-  }, [user]);
+    if (!companyOwnerId || !db) return null;
+    return collection(db, "companyProfiles", companyOwnerId, "materials");
+  }, [companyOwnerId]);
 
   const initializeDefaultMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
@@ -145,7 +147,7 @@ export default function MaterialesPage() {
   const fetchMaterials = React.useCallback(async () => {
     const materialsCollectionRef = getMaterialsCollectionRef();
     if (!materialsCollectionRef) {
-      if (user) {
+      if (companyOwnerId) {
           toast({ variant: "destructive", title: "Error", description: "La conexión a la base de datos no está lista." });
       }
       setIsLoading(false);
@@ -182,12 +184,12 @@ export default function MaterialesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, initializeDefaultMaterials, getMaterialsCollectionRef, toast]);
+  }, [companyOwnerId, initializeDefaultMaterials, getMaterialsCollectionRef, toast]);
 
 
   React.useEffect(() => {
     document.title = 'Gestión de Materiales | ZYCLE';
-    if (user) {
+    if (companyOwnerId) {
       fetchMaterials();
     } else {
       setIsLoading(false);
@@ -197,11 +199,11 @@ export default function MaterialesPage() {
     return () => {
         initializationLock = false;
     }
-  }, [user, fetchMaterials]);
+  }, [companyOwnerId, fetchMaterials]);
 
 
   const handleAddMaterial = () => {
-    if (!user || role !== 'admin') {
+    if (!user || !permissions?.equipo) {
         toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para agregar materiales." });
         return;
     }
@@ -210,7 +212,7 @@ export default function MaterialesPage() {
   };
 
   const handleEditMaterial = (material: MaterialDocument) => {
-     if (!user || role !== 'admin') {
+     if (!user || !permissions?.equipo) {
         toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para editar materiales." });
         return;
     }
@@ -219,7 +221,7 @@ export default function MaterialesPage() {
   };
 
   const openDeleteDialog = (material: MaterialDocument) => {
-    if (!user || role !== 'admin') {
+    if (!user || !permissions?.equipo) {
         toast({ variant: "destructive", title: "Acceso Denegado", description: "No tiene permiso para eliminar materiales." });
         return;
     }
@@ -309,6 +311,18 @@ export default function MaterialesPage() {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
   };
+  
+  const filteredMaterials = React.useMemo(() => {
+    if (!searchTerm) {
+      return materials;
+    }
+    const term = searchTerm.toLowerCase();
+    return materials.filter(material =>
+      material.name.toLowerCase().includes(term) ||
+      (material.code && material.code.toLowerCase().includes(term))
+    );
+  }, [materials, searchTerm]);
+
 
   if (!user && !isLoading) {
     return (
@@ -330,13 +344,24 @@ export default function MaterialesPage() {
     <div className="container py-8 px-4 md:px-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <div>
-            <CardTitle className="text-2xl font-headline text-primary">
-              Gestión de Materiales
-            </CardTitle>
-            <CardDescription>
-              Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
-            </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl font-headline text-primary">
+                Gestión de Materiales
+              </CardTitle>
+              <CardDescription>
+                Añada, edite o elimine los tipos de materiales, sus precios y códigos para su empresa.
+              </CardDescription>
+            </div>
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar por nombre o código..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -362,6 +387,12 @@ export default function MaterialesPage() {
                 <h3 className="text-xl font-semibold text-foreground mb-2">No hay materiales registrados</h3>
                 <p className="text-muted-foreground mb-6">Si es un usuario nuevo, la lista de materiales por defecto debería cargarse. Si no, añada un nuevo material utilizando el botón flotante.</p>
             </div>
+          ) : filteredMaterials.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Search className="w-16 h-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron resultados</h3>
+                <p className="text-muted-foreground">Ningún material coincide con "{searchTerm}".</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -373,7 +404,7 @@ export default function MaterialesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {materials.map((material) => (
+                {filteredMaterials.map((material) => (
                   <TableRow key={material.id}>
                     <TableCell className="font-medium">{material.name}</TableCell>
                     <TableCell>
@@ -394,7 +425,7 @@ export default function MaterialesPage() {
                         className="hover:text-primary"
                         onClick={() => handleEditMaterial(material)}
                         aria-label="Editar material"
-                        disabled={isSubmitting || role !== 'admin'}
+                        disabled={isSubmitting || !permissions?.equipo}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -404,7 +435,7 @@ export default function MaterialesPage() {
                         className="hover:text-destructive"
                         onClick={() => openDeleteDialog(material)}
                         aria-label="Eliminar material"
-                        disabled={isSubmitting || role !== 'admin'}
+                        disabled={isSubmitting || !permissions?.equipo}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -416,8 +447,8 @@ export default function MaterialesPage() {
           )}
         </CardContent>
       </Card>
-        
-      {role === 'admin' && (
+
+      {permissions?.equipo && (
         <Button
             className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-xl hover:scale-105 transition-transform"
             size="icon"
@@ -461,3 +492,5 @@ export default function MaterialesPage() {
     </div>
   );
 }
+
+    
