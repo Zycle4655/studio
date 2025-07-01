@@ -6,7 +6,7 @@
 @layer base {
   :root {
     /* Light Mode - New Dark Teal Primary */
-    --background: 220 30% 97%; /* Very light cool gray */
+    --background: 181 49% 90%; /* Light Teal, from user color #057b7d */
     --foreground: 230 25% 20%; /* Dark cool gray for text */
 
     --card: 220 30% 98%;
