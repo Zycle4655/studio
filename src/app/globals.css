@@ -5,93 +5,37 @@
 
 @layer base {
   :root {
-    /* Theme based on user colors #057b7d and #083338 */
-    --background: 181 92% 25%; /* User's color #057b7d */
-    --foreground: 0 0% 98%; /* White text for contrast */
-
-    --card: 220 30% 98%; /* Keep cards white as requested */
+    /* Default Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-
-    --popover: 220 30% 98%;
+    --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-
-    --primary: 186 75% 13%; /* User's color #083338 */
+    --primary: 186 75% 13%; /* #083338 */
     --primary-foreground: 0 0% 98%;
-
-    --secondary: 220 60% 75%;
-    --secondary-foreground: 220 25% 25%;
-
-    --muted: 181 80% 30%; /* Darker teal for muted elements on dark bg */
-    --muted-foreground: 181 30% 80%; /* Lighter teal for muted text */
-
-    --accent: 35 85% 60%;
-    --accent-foreground: 35 25% 98%;
-
-    --destructive: 0 70% 60%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 35 85% 60%; /* Gold/Amber */
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
-    --border: 181 90% 30%;
-    --input: 181 90% 32%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
     --ring: 186 75% 13%;
+    --radius: 0.5rem;
 
+    /* Charts will use the primary color scheme by default */
     --chart-1: 186 75% 13%;
     --chart-2: 35 85% 60%;
     --chart-3: 220 60% 75%;
     --chart-4: 0 70% 60%;
     --chart-5: 220 20% 55%;
 
-    --radius: 0.5rem;
-
-    /* Sidebar specific colors - Dark Teal Theme */
-    --sidebar-background: 186 75% 13%; /* User's color #083338 */
-    --sidebar-foreground: 0 0% 98%;    /* White Text */
-    --sidebar-primary: 186 60% 25%;    /* Slightly Lighter/brighter teal for active */
-    --sidebar-primary-foreground: 0 0% 98%; /* White text */
-    --sidebar-accent: 186 60% 20%;     /* Darker teal for hover */
-    --sidebar-accent-foreground: 0 0% 98%; /* White text */
-    --sidebar-border: 186 75% 10%;     /* Darker, slightly desaturated for border */
-    --sidebar-ring: 186 60% 25%;       /* Matches active state */
-  }
-
-  .dark {
-    /* Dark Mode - Consistent Dark Teal Theme */
-    --background: 230 15% 12%; /* Very Dark Desaturated Blue */
-    --foreground: 220 20% 90%;
-
-    --card: 230 15% 18%;
-    --card-foreground: 220 20% 90%;
-
-    --popover: 230 15% 15%;
-    --popover-foreground: 220 20% 90%;
-
-    /* Primary in dark mode is a lighter version of the user's color */
-    --primary: 186 60% 50%; /* Brighter teal */
-    --primary-foreground: 186 10% 96%;
-
-    --secondary: 220 40% 50%; /* Muted Dark Blue */
-    --secondary-foreground: 220 20% 90%;
-
-    --muted: 230 15% 22%;
-    --muted-foreground: 220 20% 70%;
-
-    --accent: 35 75% 65%; /* Brighter Amber/Gold Accent for dark mode */
-    --accent-foreground: 35 15% 95%;
-
-    --destructive: 0 65% 60%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 230 10% 25%;
-    --input: 230 10% 22%;
-    --ring: 186 60% 55%;
-
-    --chart-1: 186 60% 50%; /* Brighter Teal */
-    --chart-2: 35 75% 65%;  /* Brighter Amber/Gold */
-    --chart-3: 220 40% 50%; /* Muted Dark Blue */
-    --chart-4: 0 65% 60%; /* Destructive Red */
-    --chart-5: 220 20% 70%; /* Muted Foreground */
-
-    /* Sidebar colors in dark mode will use the same scheme as light mode for a consistent brand element */
-    --sidebar-background: 186 75% 13%;
+    /* Sidebar - remains dark for brand consistency */
+    --sidebar-background: 186 75% 13%; /* #083338 */
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 186 60% 25%;
     --sidebar-primary-foreground: 0 0% 98%;
@@ -99,6 +43,36 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 186 75% 10%;
     --sidebar-ring: 186 60% 25%;
+  }
+
+  .dark {
+    /* Custom dark theme for the dashboard */
+    --background: 181 92% 25%; /* #057b7d */
+    --foreground: 0 0% 98%;
+    --card: 0 0% 100%; /* Cards are white on the dark background */
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 186 75% 13%; /* #083338 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 181 80% 30%;
+    --secondary-foreground: 181 30% 80%;
+    --muted: 181 80% 30%;
+    --muted-foreground: 181 30% 80%;
+    --accent: 35 85% 60%; /* Gold/Amber */
+    --accent-foreground: 35 25% 98%;
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 181 90% 30%;
+    --input: 181 90% 32%;
+    --ring: 186 75% 13%;
+
+    /* Chart colors for dark theme can be the same or adjusted if needed */
+    --chart-1: 186 75% 13%;
+    --chart-2: 35 85% 60%;
+    --chart-3: 220 60% 75%;
+    --chart-4: 0 70% 60%;
+    --chart-5: 220 20% 55%;
   }
 }
 

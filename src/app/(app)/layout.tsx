@@ -35,24 +35,26 @@ export default function AppLayout({
 
   if (loading) { 
     return (
-      <div className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between">
-            <Skeleton className="h-8 w-24" /> 
-            <Skeleton className="h-10 w-10 rounded-full" />
-          </div>
-        </header>
-        <main className="flex-1 container py-8 px-4 md:px-6">
-          <div className="mb-8">
-            <Skeleton className="h-10 w-1/2 mb-2" />
-            <Skeleton className="h-6 w-3/4" />
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1,2,3].map(i => (
-              <Skeleton key={i} className="h-40 rounded-lg" />
-            ))}
-          </div>
-        </main>
+      <div className="dark">
+        <div className="flex flex-col min-h-screen">
+          <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-16 items-center justify-between">
+              <Skeleton className="h-8 w-24" /> 
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+          </header>
+          <main className="flex-1 container py-8 px-4 md:px-6">
+            <div className="mb-8">
+              <Skeleton className="h-10 w-1/2 mb-2" />
+              <Skeleton className="h-6 w-3/4" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1,2,3].map(i => (
+                <Skeleton key={i} className="h-40 rounded-lg" />
+              ))}
+            </div>
+          </main>
+        </div>
       </div>
     ); 
   }
@@ -68,12 +70,14 @@ export default function AppLayout({
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader companyName={companyProfile?.companyName || null} companyLogoUrl={companyProfile?.logoUrl || null} />
-        <main className="flex-1">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="dark">
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <DashboardHeader companyName={companyProfile?.companyName || null} companyLogoUrl={companyProfile?.logoUrl || null} />
+          <main className="flex-1">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
   );
 }
