@@ -2,17 +2,14 @@
 "use client";
 
 import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { List, PieChart as PieChartIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import type { MaterialDocument } from "@/schemas/material";
-import type { FacturaCompraDocument } from "@/schemas/compra";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
@@ -22,7 +19,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const { user, companyOwnerId } = useAuth();
+  const { companyOwnerId } = useAuth();
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   
@@ -35,7 +32,6 @@ export default function DashboardPage() {
 
     setIsLoading(true);
     try {
-      // Fetch Materials for inventory calculations
       const materialsRef = collection(db, "companyProfiles", companyOwnerId, "materials");
       const materialsSnapshot = await getDocs(query(materialsRef, orderBy("stock", "desc")));
       const materialsList = materialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaterialDocument));
@@ -48,7 +44,6 @@ export default function DashboardPage() {
 
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      // Handle error gracefully, maybe show a toast or a message
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +57,36 @@ export default function DashboardPage() {
   }, [companyOwnerId, fetchDashboardData]);
 
   const chartData = data?.inventoryDetails.filter(d => (d.stock || 0) > 0).slice(0, 5) || [];
+  const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="rounded-lg border bg-background p-2 shadow-sm">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col">
+              <span className="text-[0.70rem] uppercase text-muted-foreground">
+                Material
+              </span>
+              <span className="font-bold text-muted-foreground">
+                {data.name}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[0.70rem] uppercase text-muted-foreground">
+                Stock
+              </span>
+              <span className="font-bold">
+                {formatWeight(data.stock)}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
 
   if (isLoading) {
@@ -71,9 +96,9 @@ export default function DashboardPage() {
           <Skeleton className="h-10 w-3/5 mb-3" />
           <Skeleton className="h-6 w-4/5" />
         </div>
-        <div className="grid gap-6 md:grid-cols-5">
-            <Skeleton className="h-96 md:col-span-3" />
-            <Skeleton className="h-96 md:col-span-2" />
+        <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-96" />
+            <Skeleton className="h-96" />
         </div>
       </div>
     )
@@ -92,34 +117,46 @@ export default function DashboardPage() {
        <div>
         <h2 className="text-3xl font-bold tracking-tight text-primary font-headline mb-4">Análisis de Inventario Actual</h2>
          {data && data.inventoryDetails.length > 0 && data.totalInventoryWeight > 0 ? (
-            <div className="grid gap-6 md:grid-cols-5">
-              <Card className="md:col-span-3 shadow-lg">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center"><LineChart className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales por Stock</CardTitle>
+                  <CardTitle className="flex items-center"><PieChartIcon className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales por Stock</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value} kg`} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          borderColor: 'hsl(var(--border))',
-                          borderRadius: 'var(--radius)',
-                        }}
-                        cursor={{ fill: "hsl(var(--muted))" }}
-                        formatter={(value: number) => [`${formatWeight(value)}`, "Stock"]}
+                    <PieChart>
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))" }}/>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        innerRadius={80}
+                        outerRadius={120}
+                        fill="#8884d8"
+                        paddingAngle={5}
+                        dataKey="stock"
+                        nameKey="name"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                       <Legend
+                          iconSize={10}
+                          layout="vertical"
+                          verticalAlign="middle"
+                          align="right"
+                          wrapperStyle={{ lineHeight: '24px', paddingLeft: '20px' }}
+                          formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
                       />
-                      <Bar dataKey="stock" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Stock" />
-                    </BarChart>
+                    </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-              <Card className="md:col-span-2 shadow-lg">
+              <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle>Detalle del Inventario</CardTitle>
+                  <CardTitle className="flex items-center"><List className="mr-2 h-5 w-5 text-primary"/>Detalle - Top 5 Materiales</CardTitle>
                 </CardHeader>
                 <CardContent className="max-h-[350px] overflow-y-auto">
                   <Table>
@@ -130,7 +167,7 @@ export default function DashboardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.inventoryDetails.map((item) => (
+                      {chartData.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.name}</TableCell>
                           <TableCell className="text-right font-semibold">{formatWeight(item.stock || 0)}</TableCell>
@@ -143,8 +180,13 @@ export default function DashboardPage() {
             </div>
           ) : (
             <Card className="shadow-lg text-center py-12">
+                <CardHeader>
+                  <CardTitle>Sin Datos de Inventario</CardTitle>
+                  <CardDescription>
+                      No hay stock en el inventario para mostrar análisis.
+                  </CardDescription>
+                </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">No hay stock en el inventario para mostrar análisis.</p>
                     <p className="text-sm text-muted-foreground mt-2">Registre su inventario inicial o su primera compra para ver los gráficos.</p>
                 </CardContent>
             </Card>
