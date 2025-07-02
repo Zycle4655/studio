@@ -150,7 +150,7 @@ export default function EditRecoleccionPage() {
     return format(date, "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es }); 
   };
   
-  const generatePdf = (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null, permissions: Permissions | null) => {
+  const generatePdf = async (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null, permissions: Permissions | null): Promise<jsPDF> => {
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -172,11 +172,16 @@ export default function EditRecoleccionPage() {
     // --- Header ---
     if (logoUrl) {
         try {
-            const url = new URL(logoUrl);
-            const pathName = decodeURIComponent(url.pathname);
-            let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
-            if (extension === "JPG") { extension = "JPEG"; }
-            doc.addImage(logoUrl, extension, margin, y, 30, 30, undefined, 'FAST');
+            const response = await fetch(logoUrl);
+            const blob = await response.blob();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+            const format = dataUrl.substring(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
+            doc.addImage(dataUrl, format.toUpperCase(), margin, y, 30, 30, undefined, 'FAST');
         } catch (e) {
             console.error("Error adding logo to PDF:", e);
         }
@@ -292,7 +297,7 @@ export default function EditRecoleccionPage() {
     return doc;
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!recoleccion) return;
     // Create a temporary doc with the edited items for PDF generation
     const tempDocForPdf = {
@@ -300,7 +305,7 @@ export default function EditRecoleccionPage() {
       items: editableItems,
       totalValor: currentTotal,
     };
-    const pdf = generatePdf(tempDocForPdf, companyProfile, permissions);
+    const pdf = await generatePdf(tempDocForPdf, companyProfile, permissions);
     pdf.save(`certificado_final_${recoleccion.id?.substring(0,8)}.pdf`);
   };
 
