@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check, FileDown, Share2, Printer, PlusCircleIcon, Truck, DollarSign } from "lucide-react";
+import { Plus, Trash2, Camera, Signature, MapPin, Package, CheckCircle, AlertTriangle, ChevronsUpDown, Check, FileDown, Share2, Printer, PlusCircleIcon, Truck, DollarSign, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -557,7 +557,19 @@ export default function RegistrarRecoleccionPage() {
                 </div>
               </div>
               
-              <Separator />
+               {collaboratorName && (
+                <div className="mt-6">
+                    <label className="font-medium text-sm text-foreground/90 flex items-center gap-2">
+                        <UserCheck size={16} className="text-primary"/>
+                        Gestor Ambiental
+                    </label>
+                    <div className="mt-2 text-base p-3 border rounded-md bg-muted/50 text-foreground">
+                        {collaboratorName}
+                    </div>
+                </div>
+              )}
+
+              <Separator className="my-6" />
               
               {/* Paso 3: Agregar Materiales */}
               <div className="space-y-4">
