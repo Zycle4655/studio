@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -104,8 +105,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="p-3 flex items-center justify-center">
         <Link href="/dashboard" className="flex items-center gap-2">
-            <Recycle className="h-8 w-8 text-sidebar-foreground" />
-            <span className="text-xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden font-headline">
+            <Recycle className="h-10 w-10 text-sidebar-foreground" />
+            <span className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden font-headline">
                 Zycle
             </span>
         </Link>
