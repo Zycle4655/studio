@@ -64,7 +64,7 @@ export default function DashboardPage() {
   }, [companyOwnerId]);
 
   React.useEffect(() => {
-    document.title = 'Dashboard | ZYCLE';
+    document.title = 'Dashboard | Zycle';
     if (companyOwnerId) {
       fetchDashboardData();
     }
@@ -122,14 +122,14 @@ export default function DashboardPage() {
   return (
     <div className="container py-8 px-4 md:px-6 animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight text-primary font-headline">Dashboard</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline">Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
           Un resumen en tiempo real de la operación de su empresa.
         </p>
       </div>
 
        <div>
-        <h2 className="text-3xl font-bold tracking-tight text-primary font-headline mb-4">Análisis de Inventario Actual</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground font-headline mb-4">Análisis de Inventario Actual</h2>
          {data && data.inventoryDetails.length > 0 && data.totalInventoryWeight > 0 ? (
             <div className="grid gap-6 md:grid-cols-2">
               <Card className="shadow-lg">
