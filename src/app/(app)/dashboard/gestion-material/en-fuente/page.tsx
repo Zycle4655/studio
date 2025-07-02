@@ -257,23 +257,36 @@ export default function RegistrarRecoleccionPage() {
 
         // --- HEADER ---
         if (profileData?.logoUrl) {
-            try {
-                const response = await fetch(profileData.logoUrl);
-                const blob = await response.blob();
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-                const imgProps = doc.getImageProperties(dataUrl);
+          try {
+            await new Promise<void>((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "Anonymous";
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    return reject(new Error('Failed to get canvas context'));
+                }
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL('image/png');
+
                 const imgWidth = 40;
-                const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+                const imgHeight = (img.naturalHeight * imgWidth) / img.naturalWidth;
                 doc.addImage(dataUrl, 'PNG', (pageWidth - imgWidth) / 2, y, imgWidth, imgHeight, undefined, 'FAST');
                 y += imgHeight + 5;
-            } catch (e) {
-                console.error("Error adding logo to PDF:", e);
-            }
+                resolve();
+              };
+              img.onerror = (err) => {
+                console.error("Error loading logo for PDF:", err);
+                reject(err);
+              };
+              img.src = profileData.logoUrl!;
+            });
+          } catch (e) {
+            console.error("Could not add logo to PDF, continuing without it.", e);
+          }
         }
         
         doc.setFont('helvetica', 'bold');
@@ -672,7 +685,7 @@ export default function RegistrarRecoleccionPage() {
                  <h3 className="text-2xl font-bold">¡Recolección Guardada!</h3>
                  <p className="text-muted-foreground">Se ha creado el registro para la recolección en <br/> <span className="font-semibold text-foreground">{lastRecoleccion?.fuenteNombre}</span>.</p>
                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                     <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/>Descargar PDF</Button>
+                     <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/>Descargar planilla</Button>
                      {isShareSupported && (
                          <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Compartir Recibo</Button>
                      )}
