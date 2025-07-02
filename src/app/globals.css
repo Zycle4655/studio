@@ -47,24 +47,24 @@
 
   .dark {
     /* Custom dark theme for the dashboard */
-    --background: 240 10% 3.9%;
+    --background: 181 92% 25%; /* Custom Teal: #057b7d */
     --foreground: 0 0% 98%;
-    --card: 240 3.7% 15.9%;
+    --card: 181 92% 15%; /* Darker Teal */
     --card-foreground: 0 0% 98%;
-    --popover: 240 3.7% 15.9%;
+    --popover: 181 92% 15%; /* Darker Teal */
     --popover-foreground: 0 0% 98%;
     --primary: 186 74% 13%; /* Dark Teal: #083338 */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 181 92% 15%; /* Same as card */
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 181 92% 15%; /* Same as card */
+    --muted-foreground: 200 10% 75%; /* Adjusted for better contrast on teal */
     --accent: 186 74% 20%; /* Lighter shade of primary for hover */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 181 92% 20%; /* Lighter Teal for borders */
+    --input: 181 92% 20%; /* Lighter Teal for inputs */
     --ring: 186 74% 13%;
 
     /* Chart colors for dark theme */
