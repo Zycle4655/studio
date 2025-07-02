@@ -102,7 +102,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarHeader className="p-3">
+      <SidebarHeader className="p-3 flex items-center justify-center">
         <Link href="/dashboard" className="flex items-center gap-2">
             <Recycle className="h-8 w-8 text-sidebar-foreground" />
             <span className="text-xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
