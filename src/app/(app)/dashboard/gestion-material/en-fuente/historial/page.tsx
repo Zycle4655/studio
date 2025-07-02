@@ -121,7 +121,7 @@ export default function HistorialRecoleccionesPage() {
     if (profileData?.logoUrl) {
       try {
         await new Promise<void>((resolve, reject) => {
-          const img = new Image();
+          const img = document.createElement('img');
           img.crossOrigin = "Anonymous";
           img.onload = () => {
             const canvas = document.createElement('canvas');
