@@ -296,7 +296,7 @@ export default function DashboardPage() {
                                     <Separator className="my-2"/>
                                     <div className="flex justify-between items-center mt-2">
                                         <span className="text-base font-bold">Saldo Esperado</span>
-                                        <span className="text-xl font-bold text-primary">{formatCurrency(data.cajaDiaria.saldoEsperado)}</span>
+                                        <span className="text-xl font-bold text-green-500">{formatCurrency(data.cajaDiaria.saldoEsperado)}</span>
                                     </div>
                                 </div>
                             ) : ( // Caja Cerrada
