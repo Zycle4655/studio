@@ -76,13 +76,20 @@ export default function DashboardPage() {
             const startOfDay = Timestamp.fromDate(new Date(todayId + "T00:00:00"));
             const endOfDay = Timestamp.fromDate(new Date(todayId + "T23:59:59"));
 
-            const qCompras = query(comprasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay), where("formaDePago", "==", "efectivo"));
-            const qVentas = query(ventasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay), where("formaDePago", "==", "efectivo"));
+            const qCompras = query(comprasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay));
+            const qVentas = query(ventasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay));
             
             const [comprasSnap, ventasSnap] = await Promise.all([getDocs(qCompras), getDocs(qVentas)]);
             
-            const totalCompras = comprasSnap.docs.reduce((sum, d) => sum + (d.data().netoPagado || 0), 0);
-            const totalVentas = ventasSnap.docs.reduce((sum, d) => sum + (d.data().totalFactura || 0), 0);
+            const totalCompras = comprasSnap.docs
+                .map(d => d.data() as FacturaCompraDocument)
+                .filter(d => d.formaDePago === 'efectivo')
+                .reduce((sum, d) => sum + (d.netoPagado || 0), 0);
+
+            const totalVentas = ventasSnap.docs
+                .map(d => d.data() as FacturaVentaDocument)
+                .filter(d => d.formaDePago === 'efectivo')
+                .reduce((sum, d) => sum + (d.totalFactura || 0), 0);
             
             const saldoEsperado = (data.baseInicial || 0) + totalVentas + (data.totalIngresosAdicionales || 0) - totalCompras - (data.totalGastos || 0);
 
