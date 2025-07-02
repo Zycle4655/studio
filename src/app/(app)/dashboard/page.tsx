@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { List, PieChart as PieChartIcon, FileText, Eye, Landmark, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit, doc, where, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, doc, getDoc, where, Timestamp } from "firebase/firestore";
 import type { MaterialDocument } from "@/schemas/material";
 import type { FacturaCompraDocument } from "@/schemas/compra";
 import type { FacturaVentaDocument } from "@/schemas/venta";
