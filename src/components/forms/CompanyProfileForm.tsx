@@ -151,7 +151,7 @@ export default function CompanyProfileForm({
                 name="suiId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground/80">ID SUI (ECA) (Opcional)</FormLabel>
+                    <FormLabel className="text-foreground/80">ID (ECA) (Opcional)</FormLabel>
                     <div className="relative">
                       <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <FormControl>

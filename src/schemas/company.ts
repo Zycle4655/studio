@@ -27,6 +27,3 @@ export interface CompanyProfileDocument {
   createdAt: Timestamp; // Asegúrate que Timestamp sea el tipo correcto de Firestore
   updatedAt: Timestamp; // Asegúrate que Timestamp sea el tipo correcto de Firestore
 }
-
-
-

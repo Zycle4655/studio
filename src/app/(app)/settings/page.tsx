@@ -123,7 +123,7 @@ export default function SettingsPage() {
                 <div className="flex items-start space-x-3">
                   <Fingerprint className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                   <div>
-                      <span className="font-medium text-foreground/80 block">ID SUI (ECA):</span>
+                      <span className="font-medium text-foreground/80 block">ID (ECA):</span>
                       <span className="text-foreground">{companyProfile.suiId}</span>
                   </div>
                 </div>
