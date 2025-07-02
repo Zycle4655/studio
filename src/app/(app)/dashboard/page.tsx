@@ -70,22 +70,20 @@ export default function DashboardPage() {
         if (cajaSnap.exists()) {
             const data = cajaSnap.data() as CajaDiariaDocument;
             
-            const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
-            const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
-            
             const startOfDay = Timestamp.fromDate(new Date(todayId + "T00:00:00"));
             const endOfDay = Timestamp.fromDate(new Date(todayId + "T23:59:59"));
 
+            const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
             const qCompras = query(comprasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay));
-            const qVentas = query(ventasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay));
-            
-            const [comprasSnap, ventasSnap] = await Promise.all([getDocs(qCompras), getDocs(qVentas)]);
-            
+            const comprasSnap = await getDocs(qCompras);
             const totalCompras = comprasSnap.docs
                 .map(d => d.data() as FacturaCompraDocument)
                 .filter(d => d.formaDePago === 'efectivo')
                 .reduce((sum, d) => sum + (d.netoPagado || 0), 0);
 
+            const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
+            const qVentas = query(ventasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay));
+            const ventasSnap = await getDocs(qVentas);
             const totalVentas = ventasSnap.docs
                 .map(d => d.data() as FacturaVentaDocument)
                 .filter(d => d.formaDePago === 'efectivo')
@@ -184,13 +182,107 @@ export default function DashboardPage() {
 
        <div>
          {data && (
-            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+            <div className="space-y-6">
+              {/* Fila Superior con 2 Gráficos */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {data.inventoryDetails.length > 0 && data.totalInventoryWeight > 0 ? (
+                  <>
+                    <Card className="shadow-lg">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-white"><PieChartIcon className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales por Stock</CardTitle>
+                      </CardHeader>
+                      <CardContent className="h-[350px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))" }}/>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              innerRadius={80}
+                              outerRadius={120}
+                              fill="#8884d8"
+                              paddingAngle={5}
+                              dataKey="stock"
+                              nameKey="name"
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Legend
+                                iconSize={10}
+                                layout="vertical"
+                                verticalAlign="middle"
+                                align="right"
+                                wrapperStyle={{ lineHeight: '24px', paddingLeft: '20px' }}
+                                formatter={(value) => <span className="text-card-foreground text-sm">{value}</span>}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-lg">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-white"><FileText className="mr-2 h-5 w-5 text-primary"/>Últimas 5 Facturas de Compra</CardTitle>
+                      </CardHeader>
+                      <CardContent className="max-h-[350px] overflow-y-auto">
+                        {data.lastInvoices.length > 0 ? (
+                          <Table>
+                              <TableHeader>
+                              <TableRow>
+                                  <TableHead>N°</TableHead>
+                                  <TableHead>Proveedor</TableHead>
+                                  <TableHead className="text-right">Total</TableHead>
+                                  <TableHead className="text-center">Ver</TableHead>
+                              </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                              {data.lastInvoices.map((invoice) => (
+                                  <TableRow key={invoice.id}>
+                                      <TableCell className="font-medium">{invoice.numeroFactura}</TableCell>
+                                      <TableCell>{invoice.proveedorNombre || 'General'}</TableCell>
+                                      <TableCell className="text-right font-semibold">{formatCurrency(invoice.totalFactura)}</TableCell>
+                                      <TableCell className="text-center">
+                                          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                                              <Link href={`/dashboard/gestion-material/facturas-compra/${invoice.id}/edit`}>
+                                                  <Eye className="h-4 w-4" />
+                                              </Link>
+                                          </Button>
+                                      </TableCell>
+                                  </TableRow>
+                              ))}
+                              </TableBody>
+                          </Table>
+                          ) : (
+                          <div className="flex items-center justify-center h-full text-sm text-muted-foreground py-10">
+                              <p>No se encontraron facturas de compra recientes.</p>
+                          </div>
+                          )}
+                      </CardContent>
+                    </Card>
+                  </>
+                ) : (
+                  <Card className="shadow-lg text-center py-12 md:col-span-2">
+                      <CardHeader>
+                        <CardTitle className="text-white">Sin Datos de Inventario</CardTitle>
+                        <CardDescription>
+                            No hay stock en el inventario para mostrar análisis.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <p className="text-sm text-muted-foreground mt-2">Registre su inventario inicial o su primera compra para ver los gráficos.</p>
+                      </CardContent>
+                  </Card>
+                )}
+              </div>
               
-              {/* Card de Caja Diaria */}
+              {/* Fila Inferior para Caja */}
               {permissions?.contabilidad && (
                 <Card className="shadow-lg">
                     <CardHeader>
-                        <CardTitle className="flex items-center">
+                        <CardTitle className="flex items-center text-white">
                             <Landmark className="mr-2 h-5 w-5 text-primary"/>Resumen de Caja del Día
                         </CardTitle>
                     </CardHeader>
@@ -227,99 +319,6 @@ export default function DashboardPage() {
                                 </Button>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
-              )}
-
-
-              {data.inventoryDetails.length > 0 && data.totalInventoryWeight > 0 ? (
-                <>
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center"><PieChartIcon className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales por Stock</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[350px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))" }}/>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            innerRadius={80}
-                            outerRadius={120}
-                            fill="#8884d8"
-                            paddingAngle={5}
-                            dataKey="stock"
-                            nameKey="name"
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Legend
-                              iconSize={10}
-                              layout="vertical"
-                              verticalAlign="middle"
-                              align="right"
-                              wrapperStyle={{ lineHeight: '24px', paddingLeft: '20px' }}
-                              formatter={(value) => <span className="text-card-foreground text-sm">{value}</span>}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center"><FileText className="mr-2 h-5 w-5 text-primary"/>Últimas 5 Facturas de Compra</CardTitle>
-                    </CardHeader>
-                    <CardContent className="max-h-[350px] overflow-y-auto">
-                      {data.lastInvoices.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                            <TableRow>
-                                <TableHead>N°</TableHead>
-                                <TableHead>Proveedor</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
-                                <TableHead className="text-center">Ver</TableHead>
-                            </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                            {data.lastInvoices.map((invoice) => (
-                                <TableRow key={invoice.id}>
-                                    <TableCell className="font-medium">{invoice.numeroFactura}</TableCell>
-                                    <TableCell>{invoice.proveedorNombre || 'General'}</TableCell>
-                                    <TableCell className="text-right font-semibold">{formatCurrency(invoice.totalFactura)}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                                            <Link href={`/dashboard/gestion-material/facturas-compra/${invoice.id}/edit`}>
-                                                <Eye className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            </TableBody>
-                        </Table>
-                        ) : (
-                        <div className="flex items-center justify-center h-full text-sm text-muted-foreground py-10">
-                            <p>No se encontraron facturas de compra recientes.</p>
-                        </div>
-                        )}
-                    </CardContent>
-                  </Card>
-                </>
-              ) : (
-                <Card className="shadow-lg text-center py-12 lg:col-span-2">
-                    <CardHeader>
-                      <CardTitle>Sin Datos de Inventario</CardTitle>
-                      <CardDescription>
-                          No hay stock en el inventario para mostrar análisis.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground mt-2">Registre su inventario inicial o su primera compra para ver los gráficos.</p>
                     </CardContent>
                 </Card>
               )}
