@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 
 type CajaState = 'loading' | 'no_abierta' | 'abierta' | 'cerrada';
-type CajaData = CajaDiariaDocument;
+type CajaData = CajaDiariaDocument & { totalComprasNequi?: number, totalVentasNequi?: number };
 
 export default function ArqueoCajaPage() {
   const { user, companyOwnerId, permissions } = useAuth();
@@ -70,7 +70,7 @@ export default function ArqueoCajaPage() {
     try {
       const docSnap = await getDoc(cajaRef);
       if (docSnap.exists()) {
-        const data = docSnap.data() as CajaData;
+        const data = docSnap.data() as CajaDiariaDocument;
         
         const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
         const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
@@ -80,19 +80,35 @@ export default function ArqueoCajaPage() {
         
         const [comprasSnap, ventasSnap] = await Promise.all([getDocs(qCompras), getDocs(qVentas)]);
         
-        const totalCompras = comprasSnap.docs
-            .map(d => d.data() as FacturaCompraDocument)
+        const allCompras = comprasSnap.docs.map(d => d.data() as FacturaCompraDocument)
+        const allVentas = ventasSnap.docs.map(d => d.data() as FacturaVentaDocument)
+
+        const totalComprasEfectivo = allCompras
             .filter(d => d.formaDePago === 'efectivo')
             .reduce((sum, d) => sum + (d.netoPagado || 0), 0);
 
-        const totalVentas = ventasSnap.docs
-            .map(d => d.data() as FacturaVentaDocument)
+        const totalVentasEfectivo = allVentas
             .filter(d => d.formaDePago === 'efectivo')
             .reduce((sum, d) => sum + (d.totalFactura || 0), 0);
             
-        const saldoEsperado = (data.baseInicial || 0) + (totalVentas || 0) + (data.totalIngresosAdicionales || 0) - (totalCompras || 0) - (data.totalGastos || 0);
+        const totalComprasNequi = allCompras
+            .filter(d => d.formaDePago === 'nequi')
+            .reduce((sum, d) => sum + (d.netoPagado || 0), 0);
 
-        const updatedData = { ...data, totalComprasEfectivo: totalCompras, totalVentasEfectivo: totalVentas, saldoEsperado };
+        const totalVentasNequi = allVentas
+            .filter(d => d.formaDePago === 'nequi')
+            .reduce((sum, d) => sum + (d.totalFactura || 0), 0);
+
+        const saldoEsperado = (data.baseInicial || 0) + totalVentasEfectivo + (data.totalIngresosAdicionales || 0) - totalComprasEfectivo - (data.totalGastos || 0);
+
+        const updatedData: CajaData = { 
+            ...data, 
+            totalComprasEfectivo, 
+            totalVentasEfectivo,
+            totalComprasNequi,
+            totalVentasNequi,
+            saldoEsperado 
+        };
         setCajaData(updatedData);
         
         if (data.estado === 'Abierta') {
@@ -356,6 +372,20 @@ export default function ArqueoCajaPage() {
                         <InfoCard title="Gastos (Peajes)" value={formatCurrency(getExpenseTotalsByCategory(cajaData.gastos).peajes)} icon={<Ticket className="text-purple-500"/>}/>
                         <InfoCard title="Gastos (Generales)" value={formatCurrency(getExpenseTotalsByCategory(cajaData.gastos).general)} icon={<Receipt className="text-gray-500"/>}/>
                     </div>
+
+                    {(cajaData.totalVentasNequi ?? 0) > 0 || (cajaData.totalComprasNequi ?? 0) > 0 ? (
+                        <>
+                            <Separator/>
+                            <div>
+                                <h3 className="text-sm font-semibold text-muted-foreground mb-2">Resumen Digital (Nequi)</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InfoCard title="Ventas (Nequi)" value={formatCurrency(cajaData.totalVentasNequi)} icon={<ArrowLeft className="text-purple-500" />}/>
+                                    <InfoCard title="Compras (Nequi)" value={formatCurrency(cajaData.totalComprasNequi)} icon={<ArrowRight className="text-purple-500" />}/>
+                                </div>
+                            </div>
+                        </>
+                    ) : null}
+
                     <Separator/>
                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                         <InfoCard title="Saldo Esperado" value={formatCurrency(cajaData.saldoEsperado)} icon={<Scale />} isLarge />
@@ -406,6 +436,19 @@ export default function ArqueoCajaPage() {
                     </Card>
                 </CardContent>
              </Card>
+
+            {(cajaData.totalVentasNequi ?? 0) > 0 || (cajaData.totalComprasNequi ?? 0) > 0 ? (
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle>Movimientos Digitales (Nequi)</CardTitle>
+                        <CardDescription>Resumen de transacciones que no afectan el efectivo en caja.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <InfoCard title="Ventas (Nequi)" value={formatCurrency(cajaData.totalVentasNequi)} icon={<ArrowLeft className="text-purple-500" />}/>
+                        <InfoCard title="Compras (Nequi)" value={formatCurrency(cajaData.totalComprasNequi)} icon={<ArrowRight className="text-purple-500" />}/>
+                    </CardContent>
+                </Card>
+            ) : null}
 
             <Card className="shadow-lg">
                 <CardHeader><CardTitle>Registrar Movimientos</CardTitle><CardDescription>Añada ingresos o gastos a la caja actual.</CardDescription></CardHeader>

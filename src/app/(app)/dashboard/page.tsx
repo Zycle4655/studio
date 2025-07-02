@@ -27,6 +27,8 @@ interface DashboardData {
   cajaDiaria: (CajaDiariaDocument & {
     totalVentasEfectivo?: number;
     totalComprasEfectivo?: number;
+    totalVentasNequi?: number;
+    totalComprasNequi?: number;
   }) | null;
 }
 
@@ -76,25 +78,37 @@ export default function DashboardPage() {
             const comprasRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
             const qCompras = query(comprasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay));
             const comprasSnap = await getDocs(qCompras);
-            const totalCompras = comprasSnap.docs
-                .map(d => d.data() as FacturaCompraDocument)
+            const allComprasDocs = comprasSnap.docs.map(d => d.data() as FacturaCompraDocument)
+            
+            const totalComprasEfectivo = allComprasDocs
                 .filter(d => d.formaDePago === 'efectivo')
+                .reduce((sum, d) => sum + (d.netoPagado || 0), 0);
+
+            const totalComprasNequi = allComprasDocs
+                .filter(d => d.formaDePago === 'nequi')
                 .reduce((sum, d) => sum + (d.netoPagado || 0), 0);
 
             const ventasRef = collection(db, "companyProfiles", companyOwnerId, "saleInvoices");
             const qVentas = query(ventasRef, where("fecha", ">=", startOfDay), where("fecha", "<=", endOfDay));
             const ventasSnap = await getDocs(qVentas);
-            const totalVentas = ventasSnap.docs
-                .map(d => d.data() as FacturaVentaDocument)
+            const allVentasDocs = ventasSnap.docs.map(d => d.data() as FacturaVentaDocument)
+
+            const totalVentasEfectivo = allVentasDocs
                 .filter(d => d.formaDePago === 'efectivo')
                 .reduce((sum, d) => sum + (d.totalFactura || 0), 0);
             
-            const saldoEsperado = (data.baseInicial || 0) + totalVentas + (data.totalIngresosAdicionales || 0) - totalCompras - (data.totalGastos || 0);
+             const totalVentasNequi = allVentasDocs
+                .filter(d => d.formaDePago === 'nequi')
+                .reduce((sum, d) => sum + (d.totalFactura || 0), 0);
+            
+            const saldoEsperado = (data.baseInicial || 0) + totalVentasEfectivo + (data.totalIngresosAdicionales || 0) - totalComprasEfectivo - (data.totalGastos || 0);
 
             cajaDiariaData = { 
                 ...data, 
-                totalComprasEfectivo: totalCompras, 
-                totalVentasEfectivo: totalVentas, 
+                totalVentasEfectivo: totalVentasEfectivo,
+                totalComprasEfectivo: totalComprasEfectivo,
+                totalVentasNequi: totalVentasNequi,
+                totalComprasNequi: totalComprasNequi,
                 saldoEsperado: saldoEsperado 
             };
         }
@@ -183,7 +197,6 @@ export default function DashboardPage() {
        <div>
          {data && (
             <div className="space-y-6">
-              {/* Fila Superior con 2 Gráficos */}
               <div className="grid gap-6 md:grid-cols-2">
                 {data.inventoryDetails.length > 0 && data.totalInventoryWeight > 0 ? (
                   <>
@@ -278,7 +291,6 @@ export default function DashboardPage() {
                 )}
               </div>
               
-              {/* Fila Inferior para Caja */}
               {permissions?.contabilidad && (
                 <Card className="shadow-lg">
                     <CardHeader>
@@ -295,9 +307,25 @@ export default function DashboardPage() {
                                     <div className="flex justify-between items-baseline"><span className="text-sm text-red-500">Compras Efectivo</span><span className="font-semibold text-red-500">- {formatCurrency(data.cajaDiaria.totalComprasEfectivo ?? 0)}</span></div>
                                     <Separator className="my-2"/>
                                     <div className="flex justify-between items-center mt-2">
-                                        <span className="text-base font-bold">Saldo Esperado</span>
+                                        <span className="text-base font-bold">Saldo Esperado en Caja</span>
                                         <span className="text-xl font-bold text-green-500">{formatCurrency(data.cajaDiaria.saldoEsperado)}</span>
                                     </div>
+                                    
+                                    {(data.cajaDiaria.totalVentasNequi ?? 0) > 0 || (data.cajaDiaria.totalComprasNequi ?? 0) > 0 ? (
+                                        <>
+                                            <Separator className="my-2" />
+                                            <div className="text-sm text-muted-foreground pt-2">Movimientos Nequi</div>
+                                            <div className="flex justify-between items-baseline text-sm">
+                                                <span>Ventas (Nequi)</span>
+                                                <span className="font-semibold text-purple-500">+ {formatCurrency(data.cajaDiaria.totalVentasNequi ?? 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-baseline text-sm">
+                                                <span>Compras (Nequi)</span>
+                                                <span className="font-semibold text-purple-500">- {formatCurrency(data.cajaDiaria.totalComprasNequi ?? 0)}</span>
+                                            </div>
+                                        </>
+                                    ) : null}
+
                                 </div>
                             ) : ( // Caja Cerrada
                                 <div className="space-y-3">
