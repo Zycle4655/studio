@@ -135,11 +135,11 @@ export default function CompanyProfileForm({
                 name="nit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground/80">ID / NIT</FormLabel>
+                    <FormLabel className="text-foreground/80">NIT</FormLabel>
                     <div className="relative">
                       <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <FormControl>
-                        <Input placeholder="ID o NIT de la empresa" {...field} className="pl-10" />
+                        <Input placeholder="NIT de la empresa" {...field} className="pl-10" />
                       </FormControl>
                     </div>
                     <FormMessage />
@@ -151,7 +151,7 @@ export default function CompanyProfileForm({
                 name="suiId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground/80">ID SUI (Opcional)</FormLabel>
+                    <FormLabel className="text-foreground/80">ID SUI (ECA) (Opcional)</FormLabel>
                     <div className="relative">
                       <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <FormControl>
