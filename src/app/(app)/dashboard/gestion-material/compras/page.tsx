@@ -460,7 +460,6 @@ export default function CompraMaterialPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:text-primary"
                           onClick={() => handleOpenAddItemForm(item, index)}
                           aria-label="Editar ítem"
                         >

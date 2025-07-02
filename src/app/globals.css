@@ -18,7 +18,7 @@
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 35 85% 60%; /* Gold/Amber */
+    --accent: 207 88% 77%; /* Light Blue */
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -29,7 +29,7 @@
 
     /* Charts will use the primary color scheme by default */
     --chart-1: 186 75% 13%;
-    --chart-2: 35 85% 60%;
+    --chart-2: 207 88% 77%; /* Light Blue */
     --chart-3: 220 60% 75%;
     --chart-4: 0 70% 60%;
     --chart-5: 220 20% 55%;
@@ -59,8 +59,8 @@
     --secondary-foreground: 181 30% 80%;
     --muted: 181 80% 30%;
     --muted-foreground: 181 30% 80%;
-    --accent: 35 85% 60%; /* Gold/Amber */
-    --accent-foreground: 35 25% 98%;
+    --accent: 207 88% 77%; /* Light Blue */
+    --accent-foreground: 240 5.9% 10%; /* Dark text for light blue accent */
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 181 90% 30%;
@@ -69,7 +69,7 @@
 
     /* Chart colors for dark theme can be the same or adjusted if needed */
     --chart-1: 186 75% 13%;
-    --chart-2: 35 85% 60%;
+    --chart-2: 207 88% 77%; /* Light Blue */
     --chart-3: 220 60% 75%;
     --chart-4: 0 70% 60%;
     --chart-5: 220 20% 55%;

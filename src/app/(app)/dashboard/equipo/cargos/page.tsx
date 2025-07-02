@@ -301,7 +301,6 @@ export default function CargosPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="hover:text-primary"
                         onClick={() => handleEditCargo(cargo)}
                         aria-label="Editar cargo"
                         disabled={isSubmitting}

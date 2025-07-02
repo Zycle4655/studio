@@ -422,7 +422,6 @@ export default function EquipoPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="hover:text-green-600"
                             onClick={() => handleShowQr(collaborator)}
                             aria-label="Ver código QR"
                             disabled={isSubmitting}
@@ -432,7 +431,6 @@ export default function EquipoPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="hover:text-primary"
                             onClick={() => handleEditCollaborator(collaborator)}
                             aria-label="Editar colaborador"
                             disabled={isSubmitting || !permissions?.equipo}

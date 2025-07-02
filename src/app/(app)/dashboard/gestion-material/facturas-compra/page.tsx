@@ -401,7 +401,6 @@ export default function FacturasCompraPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:text-green-600"
                           onClick={() => handleOpenPrintModal(invoice)}
                           aria-label="Imprimir factura"
                         >
@@ -410,7 +409,6 @@ export default function FacturasCompraPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:text-amber-600"
                           onClick={() => handleEditInvoice(invoice.id)}
                           aria-label="Editar factura"
                         >
@@ -537,7 +535,7 @@ export default function FacturasCompraPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro de eliminar esta factura?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará la factura N° {invoiceToDelete?.numeroFactura} y se revertirán los cambios en el inventario y préstamos asociados.
+              Esta acción no se puede deshacer. Se eliminará la factura N° {invoiceToDelete?.numeroFactura} y sus movimientos han sido eliminados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -556,4 +554,3 @@ export default function FacturasCompraPage() {
     </div>
   );
 }
-

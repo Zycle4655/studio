@@ -378,10 +378,10 @@ export default function HistorialRecoleccionesPage() {
                       <TableCell className="text-right font-semibold text-primary">{formatWeight(rec.totalPeso)}</TableCell>
                        <TableCell className="text-right font-semibold text-green-600">{rec.totalValor > 0 ? formatCurrency(rec.totalValor) : "Donación"}</TableCell>
                       <TableCell className="text-center">
-                        <Button variant="ghost" size="icon" className="hover:text-primary" onClick={() => handleOpenModal(rec)} aria-label="Ver recibo">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenModal(rec)} aria-label="Ver recibo">
                           <Eye className="h-4 w-4" />
                         </Button>
-                         <Button variant="ghost" size="icon" className="hover:text-amber-600" onClick={() => handleEdit(rec.id!)} aria-label="Editar recolección">
+                         <Button variant="ghost" size="icon" onClick={() => handleEdit(rec.id!)} aria-label="Editar recolección">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </TableCell>

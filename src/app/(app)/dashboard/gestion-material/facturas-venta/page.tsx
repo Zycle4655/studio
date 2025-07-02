@@ -377,7 +377,6 @@ export default function FacturasVentaPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:text-green-600"
                           onClick={() => handleOpenPrintModal(invoice)}
                           aria-label="Imprimir factura"
                         >
@@ -386,7 +385,6 @@ export default function FacturasVentaPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="hover:text-amber-600"
                           onClick={() => handleEditInvoice(invoice.id)}
                           aria-label="Editar factura"
                         >
@@ -530,4 +528,3 @@ export default function FacturasVentaPage() {
     </div>
   );
 }
-

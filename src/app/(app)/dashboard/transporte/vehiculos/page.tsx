@@ -317,7 +317,6 @@ export default function VehiculosPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="hover:text-primary"
                             onClick={() => handleEditVehiculo(vehiculo)}
                             aria-label="Editar vehículo"
                             disabled={isSubmitting}

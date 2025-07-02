@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -421,7 +422,6 @@ export default function MaterialesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="hover:text-primary"
                         onClick={() => handleEditMaterial(material)}
                         aria-label="Editar material"
                         disabled={isSubmitting || !permissions?.equipo}

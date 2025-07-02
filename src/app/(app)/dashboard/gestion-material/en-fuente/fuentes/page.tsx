@@ -310,7 +310,6 @@ export default function GestionFuentesPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="hover:text-primary"
                             onClick={() => handleEditFuente(fuente)}
                             aria-label="Editar fuente"
                             disabled={isSubmitting || !permissions?.gestionMaterial}
