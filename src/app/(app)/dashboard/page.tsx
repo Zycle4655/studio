@@ -148,7 +148,7 @@ export default function DashboardPage() {
                           verticalAlign="middle"
                           align="right"
                           wrapperStyle={{ lineHeight: '24px', paddingLeft: '20px' }}
-                          formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
+                          formatter={(value) => <span className="text-card-foreground text-sm">{value}</span>}
                       />
                     </PieChart>
                   </ResponsiveContainer>
