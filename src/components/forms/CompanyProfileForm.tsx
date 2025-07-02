@@ -132,11 +132,11 @@ export default function CompanyProfileForm({
               name="nit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground/80">NIT</FormLabel>
+                  <FormLabel className="text-foreground/80">ID / NIT</FormLabel>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                      <Input placeholder="Número de Identificación Tributaria" {...field} className="pl-10" />
+                      <Input placeholder="ID o NIT de la empresa" {...field} className="pl-10" />
                     </FormControl>
                   </div>
                   <FormMessage />
