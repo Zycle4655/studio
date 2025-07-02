@@ -4,6 +4,8 @@ import * as React from 'react';
 import {
   Sidebar,
   SidebarContent,
+  SidebarHeader,
+  SidebarSeparator,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -100,7 +102,16 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarContent>
+      <SidebarHeader className="p-3">
+        <Link href="/dashboard" className="flex items-center gap-2">
+            <Recycle className="h-8 w-8 text-sidebar-foreground" />
+            <span className="text-xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+                ZYCLE
+            </span>
+        </Link>
+      </SidebarHeader>
+      <SidebarSeparator />
+      <SidebarContent className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
