@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -407,7 +408,7 @@ export default function EditRecoleccionPage() {
             </Button>
              <Button type="button" variant="secondary" onClick={handleDownloadPdf} disabled={isSaving || !recoleccion}>
                 <Printer className="mr-2 h-4 w-4"/>
-                Descargar Certificado
+                Descargar planilla
             </Button>
             <Button type="button" onClick={handleUpdateRecoleccion} disabled={isSaving || isLoadingPage}>
                 {isSaving ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</>}
