@@ -3,19 +3,23 @@
 
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { List, PieChart as PieChartIcon } from "lucide-react";
+import { List, PieChart as PieChartIcon, FileText, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import type { MaterialDocument } from "@/schemas/material";
+import type { FacturaCompraDocument } from "@/schemas/compra";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 
 interface DashboardData {
   inventoryDetails: MaterialDocument[];
   totalInventoryWeight: number;
+  lastInvoices: FacturaCompraDocument[];
 }
 
 export default function DashboardPage() {
@@ -25,6 +29,10 @@ export default function DashboardPage() {
   
   const formatWeight = (value: number) => {
     return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg';
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   };
 
   const fetchDashboardData = React.useCallback(async () => {
@@ -37,9 +45,15 @@ export default function DashboardPage() {
       const materialsList = materialsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaterialDocument));
       const totalInventoryWeight = materialsList.reduce((sum, mat) => sum + (mat.stock || 0), 0);
       
+      const invoicesRef = collection(db, "companyProfiles", companyOwnerId, "purchaseInvoices");
+      const invoicesQuery = query(invoicesRef, orderBy("fecha", "desc"), limit(5));
+      const invoicesSnapshot = await getDocs(invoicesQuery);
+      const lastInvoices = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FacturaCompraDocument));
+
       setData({
         inventoryDetails: materialsList,
         totalInventoryWeight: totalInventoryWeight,
+        lastInvoices: lastInvoices,
       });
 
     } catch (error) {
@@ -156,25 +170,41 @@ export default function DashboardPage() {
               </Card>
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center"><List className="mr-2 h-5 w-5 text-primary"/>Detalle - Top 5 Materiales</CardTitle>
+                  <CardTitle className="flex items-center"><FileText className="mr-2 h-5 w-5 text-primary"/>Últimas 5 Facturas de Compra</CardTitle>
                 </CardHeader>
                 <CardContent className="max-h-[350px] overflow-y-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Material</TableHead>
-                        <TableHead className="text-right">Stock (kg)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {chartData.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell className="text-right font-semibold">{formatWeight(item.stock || 0)}</TableCell>
+                   {data && data.lastInvoices.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>N°</TableHead>
+                            <TableHead>Proveedor</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="text-center">Ver</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                        </TableHeader>
+                        <TableBody>
+                        {data.lastInvoices.map((invoice) => (
+                            <TableRow key={invoice.id}>
+                                <TableCell className="font-medium">{invoice.numeroFactura}</TableCell>
+                                <TableCell>{invoice.proveedorNombre || 'General'}</TableCell>
+                                <TableCell className="text-right font-semibold">{formatCurrency(invoice.totalFactura)}</TableCell>
+                                <TableCell className="text-center">
+                                    <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                                        <Link href={`/dashboard/gestion-material/facturas-compra/${invoice.id}/edit`}>
+                                            <Eye className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                    ) : (
+                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground py-10">
+                        <p>No se encontraron facturas de compra recientes.</p>
+                    </div>
+                    )}
                 </CardContent>
               </Card>
             </div>
