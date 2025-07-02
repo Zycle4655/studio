@@ -66,7 +66,7 @@ export default function MarketingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="container flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-primary font-headline">ZYCLE</span>
+            <span className="text-2xl font-bold text-primary font-headline">Zycle</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-base">
             <Link href="#features" className="hover:text-primary transition-colors">Funcionalidades</Link>
@@ -91,7 +91,7 @@ export default function MarketingPage() {
               La Plataforma Definitiva para la Gestión de Reciclaje
             </h1>
             <p className="mt-6 mx-auto max-w-3xl text-xl text-muted-foreground animate-fade-in [animation-delay:200ms]">
-              ZYCLE centraliza tu inventario, finanzas y equipo en un solo lugar. Transforma tu operación, maximiza tu rentabilidad y lidera la economía circular.
+              Zycle centraliza tu inventario, finanzas y equipo en un solo lugar. Transforma tu operación, maximiza tu rentabilidad y lidera la economía circular.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in [animation-delay:400ms]">
               <Button asChild size="lg" className="text-lg w-full sm:w-auto">
@@ -254,7 +254,7 @@ export default function MarketingPage() {
              </p>
              <div className="mt-8">
                <Button asChild size="lg" className="text-lg">
-                 <Link href="/register">Crear Mi Cuenta en ZYCLE</Link>
+                 <Link href="/register">Crear Mi Cuenta en Zycle</Link>
                </Button>
              </div>
           </div>
@@ -265,10 +265,10 @@ export default function MarketingPage() {
       <footer className="border-t">
         <div className="container py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
            <div className="flex items-center gap-2">
-             <span className="font-semibold text-primary text-lg font-headline">ZYCLE</span>
+             <span className="font-semibold text-primary text-lg font-headline">Zycle</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} ZYCLE. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} Zycle. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="#" className="hover:text-primary">Términos de Servicio</Link>

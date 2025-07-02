@@ -9,7 +9,7 @@ export default function AuthLayout({
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
       <div className="mb-8 text-center">
         <Link href="/" className="inline-flex items-center gap-3">
-           <h1 className="text-5xl font-bold text-primary tracking-wider font-headline">ZYCLE</h1>
+           <h1 className="text-5xl font-bold text-primary tracking-wider font-headline">Zycle</h1>
         </Link>
       </div>
       {children}
