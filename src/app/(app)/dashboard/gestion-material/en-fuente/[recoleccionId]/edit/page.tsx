@@ -150,29 +150,26 @@ export default function EditRecoleccionPage() {
     return format(date, "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es }); 
   };
   
-  const generatePdf = async (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null, permissions: Permissions | null): Promise<jsPDF> => {
+  const generatePdf = async (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null): Promise<jsPDF> => {
     const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
     });
 
-    const showPrices = permissions?.equipo && calculateTotal(editableItems) > 0;
     const pageHeight = doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 15;
     let y = margin;
-    
-    const companyName = profileData?.companyName || 'Nombre de la Empresa';
-    const companyNit = profileData?.nit || 'NIT no especificado';
-    const companyAddress = profileData?.address || 'Dirección no especificada';
-    const companyPhone = profileData?.phone || 'Teléfono no especificado';
-    const logoUrl = profileData?.logoUrl;
 
-    // --- Header ---
-    if (logoUrl) {
+    // Font setup
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+
+    // --- HEADER ---
+    if (profileData?.logoUrl) {
         try {
-            const response = await fetch(logoUrl);
+            const response = await fetch(profileData.logoUrl);
             const blob = await response.blob();
             const dataUrl = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
@@ -180,132 +177,105 @@ export default function EditRecoleccionPage() {
                 reader.onerror = reject;
                 reader.readAsDataURL(blob);
             });
-            const format = dataUrl.substring(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
-            doc.addImage(dataUrl, format.toUpperCase(), margin, y, 30, 30, undefined, 'FAST');
+            const imgProps = doc.getImageProperties(dataUrl);
+            const imgWidth = 40;
+            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+            doc.addImage(dataUrl, 'PNG', (pageWidth - imgWidth) / 2, y, imgWidth, imgHeight, undefined, 'FAST');
+            y += imgHeight + 5;
         } catch (e) {
             console.error("Error adding logo to PDF:", e);
         }
     }
     
-    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(companyName, pageWidth - margin, y + 5, { align: 'right' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(`NIT: ${companyNit}`, pageWidth - margin, y + 10, { align: 'right' });
-    doc.text(companyAddress, pageWidth - margin, y + 15, { align: 'right' });
-    doc.text(`Tel: ${companyPhone}`, pageWidth - margin, y + 20, { align: 'right' });
-
-    y += 45;
-
-    // --- Title ---
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(showPrices ? "COMPROBANTE DE COMPRA EN FUENTE" : "CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text("Certificado Final", pageWidth / 2, y + 6, { align: 'center' });
-    
-    y += 20;
-
-    // --- Certificate Body ---
-    doc.setFontSize(11);
-    const introText = showPrices
-        ? `Por medio de la presente, la empresa ${companyName} certifica que ha comprado los siguientes materiales de:`
-        : `Por medio de la presente, la empresa ${companyName} certifica que ha recibido en donación los siguientes materiales de:`;
-    const splitText = doc.splitTextToSize(introText, pageWidth - margin * 2);
-    doc.text(splitText, margin, y);
-    y += (splitText.length * 5) + 8;
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Fuente:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(recoleccionData.fuenteNombre, margin + 25, y);
+    doc.text(profileData?.companyName || 'Nombre de la Empresa', pageWidth / 2, y, { align: 'center' });
     y += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Encargado:', margin, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(recoleccionData.encargadoNombre, margin + 25, y);
+    if (profileData?.nit) { doc.text(`NIT: ${profileData.nit}`, pageWidth / 2, y, { align: 'center' }); y += 5; }
+    if (profileData?.phone) { doc.text(`Tel: ${profileData.phone}`, pageWidth / 2, y, { align: 'center' }); y += 5; }
+    if (profileData?.email) { doc.text(profileData.email, pageWidth / 2, y, { align: 'center' }); y += 5; }
+    y += 10;
+
+    // --- INFO BLOCK ---
+    doc.setFont('helvetica', 'bold');
+    doc.text('FECHA:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDate(recoleccionData.fecha), margin + 45, y);
     y += 7;
+
     doc.setFont('helvetica', 'bold');
-    doc.text('Gestor Ambiental:', margin, y);
+    doc.text('FUENTE:', margin, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(recoleccionData.registradoPorNombre || "No especificado", margin + 40, y);
+    doc.text(recoleccionData.fuenteNombre, margin + 45, y);
     y += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Fecha:', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
+
     if (recoleccionData.vehiculoPlaca) {
-        y += 7;
         doc.setFont('helvetica', 'bold');
-        doc.text('Vehículo:', margin, y);
+        doc.text('PLACA DEL VEHÍCULO:', margin, y);
         doc.setFont('helvetica', 'normal');
-        doc.text(recoleccionData.vehiculoPlaca, margin + 25, y);
+        doc.text(recoleccionData.vehiculoPlaca, margin + 45, y);
+        y += 7;
     }
-    y += 15;
-    
-    // --- Materials Table ---
-    const tableHeaders = ['Material', 'Peso (kg)'];
-    if (showPrices) {
-        tableHeaders.push('Vr. Unitario', 'Subtotal');
-    }
+    y += 10;
 
-    const tableData = editableItems.map(item => {
-        const row = [item.materialName, item.peso.toFixed(2)];
-        if(showPrices) {
-            row.push(formatCurrency(item.precioUnitario), formatCurrency(item.subtotal));
-        }
-        return row;
-    });
+    // --- TITLE ---
+    doc.setFont('helvetica', 'bold');
+    doc.text("DETALLES DE LA RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
+    y += 10;
 
+    // --- MATERIALS TABLE ---
     (doc as any).autoTable({
         startY: y,
-        head: [tableHeaders],
-        body: tableData,
+        head: [['Material', 'Peso (kg)']],
+        body: editableItems.map(item => [item.materialName, item.peso.toFixed(2)]),
         theme: 'striped',
-        headStyles: { fillColor: [22, 163, 74] },
+        styles: { font: 'helvetica', fontSize: 12 },
+        headStyles: { fillColor: [22, 163, 74], fontStyle: 'bold' },
+        didDrawPage: (data: any) => { y = data.cursor.y; }
     });
-    
-    y = (doc as any).lastAutoTable.finalY + 10;
-    
-    // --- Totals ---
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    const finalTotalPeso = editableItems.reduce((sum, item) => sum + item.peso, 0);
-    if (showPrices) {
-        doc.text(`Total Compra: ${formatCurrency(calculateTotal(editableItems))}`, pageWidth - margin, y, { align: 'right' });
-        y += 7;
-    }
-    doc.text(`Peso Total: ${finalTotalPeso.toFixed(2)} kg`, pageWidth - margin, y, { align: 'right' });
-    y += 25;
+    y = (doc as any).lastAutoTable.finalY + 15;
 
-    // --- Signature ---
-    if (y > pageHeight - 50) {
-        doc.addPage();
-        y = margin;
+    // --- GESTOR AMBIENTAL ---
+    if (recoleccionData.registradoPorNombre) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('GESTOR AMBIENTAL:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(recoleccionData.registradoPorNombre, margin + 50, y);
+        y += 15;
     }
-    doc.addImage(recoleccionData.firmaDataUrl, 'PNG', (pageWidth / 2) - 40, y, 80, 30, undefined, 'FAST');
-    y += 30;
-    doc.line(margin + 50, y, pageWidth - margin - 50, y);
-    doc.setFontSize(10);
+
+    // --- FOOTER / SIGNATURE ---
+    if (y > pageHeight - 60) { doc.addPage(); y = margin + 20; }
+    
+    try {
+        const signatureImgProps = doc.getImageProperties(recoleccionData.firmaDataUrl);
+        const signatureWidth = 80;
+        const signatureHeight = (signatureImgProps.height * signatureWidth) / signatureImgProps.width;
+        doc.addImage(recoleccionData.firmaDataUrl, 'PNG', margin, y, signatureWidth, signatureHeight, undefined, 'FAST');
+        y += signatureHeight;
+    } catch (e) {
+        console.error("Error adding signature to PDF:", e);
+        doc.setFont('helvetica', 'italic').text('[Error al cargar la firma]', margin, y + 15);
+        y += 20;
+    }
+
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, margin + 80, y);
+    y += 7;
     doc.setFont('helvetica', 'normal');
-    doc.text('Firma del Encargado', pageWidth / 2, y + 5, { align: 'center' });
-    doc.text(recoleccionData.encargadoNombre, pageWidth / 2, y + 10, { align: 'center' });
-
+    doc.text(recoleccionData.encargadoNombre, margin, y);
 
     return doc;
   };
 
   const handleDownloadPdf = async () => {
     if (!recoleccion) return;
-    // Create a temporary doc with the edited items for PDF generation
     const tempDocForPdf = {
       ...recoleccion,
       items: editableItems,
       totalValor: currentTotal,
     };
-    const pdf = await generatePdf(tempDocForPdf, companyProfile, permissions);
+    const pdf = await generatePdf(tempDocForPdf, companyProfile);
     pdf.save(`certificado_final_${recoleccion.id?.substring(0,8)}.pdf`);
   };
 

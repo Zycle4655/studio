@@ -101,168 +101,134 @@ export default function HistorialRecoleccionesPage() {
     rec.fuenteNombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const generatePdf = (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null) => {
-        const doc = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
+  const generatePdf = async (recoleccionData: RecoleccionDocument, profileData: CompanyProfileDocument | null) => {
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
 
-        const formatDate = (timestamp: any) => {
-            if (!timestamp) return "N/A";
-            const jsDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return format(jsDate, "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es });
-        };
-        
-        const companyName = profileData?.companyName || 'Nombre de la Empresa';
-        const companyNit = profileData?.nit || 'NIT no especificado';
-        const companyAddress = profileData?.address || 'Dirección no especificada';
-        const companyPhone = profileData?.phone || 'Teléfono no especificado';
-        const logoUrl = profileData?.logoUrl;
-        const isPurchase = recoleccionData.totalValor > 0;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    let y = margin;
 
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 15;
-        let y = margin;
+    // Font setup
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
 
-        // --- Header ---
-        if (logoUrl) {
-            try {
-                const url = new URL(logoUrl);
-                const pathName = decodeURIComponent(url.pathname);
-                let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
-                
-                if (extension === "JPG") {
-                  extension = "JPEG";
-                }
+    // --- HEADER ---
+    if (profileData?.logoUrl) {
+        try {
+            const response = await fetch(profileData.logoUrl);
+            const blob = await response.blob();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+            const imgProps = doc.getImageProperties(dataUrl);
+            const imgWidth = 40;
+            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+            doc.addImage(dataUrl, 'PNG', (pageWidth - imgWidth) / 2, y, imgWidth, imgHeight, undefined, 'FAST');
+            y += imgHeight + 5;
+        } catch (e) {
+            console.error("Error adding logo to PDF:", e);
+        }
+    }
     
-                doc.addImage(logoUrl, extension, margin, y, 30, 30, undefined, 'FAST');
-            } catch (e) {
-                console.error("Error adding logo to PDF:", e);
-            }
-        }
-        
-        doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(profileData?.companyName || 'Nombre de la Empresa', pageWidth / 2, y, { align: 'center' });
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    if (profileData?.nit) { doc.text(`NIT: ${profileData.nit}`, pageWidth / 2, y, { align: 'center' }); y += 5; }
+    if (profileData?.phone) { doc.text(`Tel: ${profileData.phone}`, pageWidth / 2, y, { align: 'center' }); y += 5; }
+    if (profileData?.email) { doc.text(profileData.email, pageWidth / 2, y, { align: 'center' }); y += 5; }
+    y += 10;
+
+    // --- INFO BLOCK ---
+    doc.setFont('helvetica', 'bold');
+    doc.text('FECHA:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDateWithTime(recoleccionData.fecha), margin + 45, y);
+    y += 7;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('FUENTE:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(recoleccionData.fuenteNombre, margin + 45, y);
+    y += 7;
+
+    if (recoleccionData.vehiculoPlaca) {
         doc.setFont('helvetica', 'bold');
-        doc.text(companyName, pageWidth - margin, y + 5, { align: 'right' });
+        doc.text('PLACA DEL VEHÍCULO:', margin, y);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.text(`NIT: ${companyNit}`, pageWidth - margin, y + 10, { align: 'right' });
-        doc.text(companyAddress, pageWidth - margin, y + 15, { align: 'right' });
-        doc.text(`Tel: ${companyPhone}`, pageWidth - margin, y + 20, { align: 'right' });
-
-        y += 45;
-
-        // --- Title ---
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(isPurchase ? "COMPROBANTE DE COMPRA EN FUENTE" : "CERTIFICADO DE RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text("Material Aprovechable", pageWidth / 2, y + 6, { align: 'center' });
-        
-        y += 20;
-
-        // --- Certificate Body ---
-        doc.setFontSize(11);
-        const introText = isPurchase 
-            ? `Por medio de la presente, la empresa ${companyName} certifica que ha comprado los siguientes materiales de:`
-            : `Por medio de la presente, la empresa ${companyName} certifica que ha recibido en donación los siguientes materiales de:`;
-        const splitText = doc.splitTextToSize(introText, pageWidth - margin * 2);
-        doc.text(splitText, margin, y);
-        y += (splitText.length * 5) + 8;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Fuente:', margin, y);
-        doc.setFont('helvetica', 'normal');
-        doc.text(recoleccionData.fuenteNombre, margin + 25, y);
+        doc.text(recoleccionData.vehiculoPlaca, margin + 45, y);
         y += 7;
+    }
+    y += 10;
+
+    // --- TITLE ---
+    doc.setFont('helvetica', 'bold');
+    doc.text("DETALLES DE LA RECOLECCIÓN", pageWidth / 2, y, { align: 'center' });
+    y += 10;
+    
+    // --- MATERIALS TABLE ---
+    (doc as any).autoTable({
+        startY: y,
+        head: [['Material', 'Peso (kg)']],
+        body: recoleccionData.items.map(item => [item.materialName, item.peso.toFixed(2)]),
+        theme: 'striped',
+        styles: { font: 'helvetica', fontSize: 12 },
+        headStyles: { fillColor: [22, 163, 74], fontStyle: 'bold' },
+        didDrawPage: (data: any) => { y = data.cursor.y; }
+    });
+    y = (doc as any).lastAutoTable.finalY + 15;
+
+    // --- GESTOR AMBIENTAL ---
+    if (recoleccionData.registradoPorNombre) {
         doc.setFont('helvetica', 'bold');
-        doc.text('Encargado:', margin, y);
+        doc.text('GESTOR AMBIENTAL:', margin, y);
         doc.setFont('helvetica', 'normal');
-        doc.text(recoleccionData.encargadoNombre, margin + 25, y);
-        y += 7;
-        doc.setFont('helvetica', 'bold');
-        doc.text('Gestor Ambiental:', margin, y);
-        doc.setFont('helvetica', 'normal');
-        doc.text(recoleccionData.registradoPorNombre || "No especificado", margin + 40, y);
-        y += 7;
-        doc.setFont('helvetica', 'bold');
-        doc.text('Fecha:', margin, y);
-        doc.setFont('helvetica', 'normal');
-        doc.text(formatDate(recoleccionData.fecha), margin + 25, y);
-        if (recoleccionData.vehiculoPlaca) {
-            y += 7;
-            doc.setFont('helvetica', 'bold');
-            doc.text('Vehículo:', margin, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(recoleccionData.vehiculoPlaca, margin + 25, y);
-        }
+        doc.text(recoleccionData.registradoPorNombre, margin + 50, y);
         y += 15;
+    }
 
-        // --- Materials Table ---
-        const tableHeaders = ['Material', 'Peso (kg)'];
-        if (isPurchase) {
-            tableHeaders.push('Vr. Unitario', 'Subtotal');
-        }
-        
-        const tableData = recoleccionData.items.map(item => {
-            const row = [item.materialName, item.peso.toFixed(2)];
-            if(isPurchase) {
-                row.push(formatCurrency(item.precioUnitario), formatCurrency(item.subtotal));
-            }
-            return row;
-        });
+    // --- FOOTER / SIGNATURE ---
+    if (y > pageHeight - 60) { doc.addPage(); y = margin + 20; }
+    
+    try {
+        const signatureImgProps = doc.getImageProperties(recoleccionData.firmaDataUrl);
+        const signatureWidth = 80;
+        const signatureHeight = (signatureImgProps.height * signatureWidth) / signatureImgProps.width;
+        doc.addImage(recoleccionData.firmaDataUrl, 'PNG', margin, y, signatureWidth, signatureHeight, undefined, 'FAST');
+        y += signatureHeight;
+    } catch (e) {
+        console.error("Error adding signature to PDF:", e);
+        doc.setFont('helvetica', 'italic').text('[Error al cargar la firma]', margin, y + 15);
+        y += 20;
+    }
 
-        (doc as any).autoTable({
-            startY: y,
-            head: [tableHeaders],
-            body: tableData,
-            theme: 'striped',
-            headStyles: { fillColor: [22, 163, 74] }, // Primary color
-        });
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, margin + 80, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.text(recoleccionData.encargadoNombre, margin, y);
 
-        y = (doc as any).lastAutoTable.finalY + 10;
-        
-        // --- Totals ---
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        if (isPurchase) {
-            doc.text(`Total Compra: ${formatCurrency(recoleccionData.totalValor)}`, pageWidth - margin, y, { align: 'right' });
-            y += 7;
-        }
-        doc.text(`Peso Total: ${recoleccionData.totalPeso.toFixed(2)} kg`, pageWidth - margin, y, { align: 'right' });
-        y += 25;
-
-
-        // --- Signature ---
-        if (y > pageHeight - 50) {
-            doc.addPage();
-            y = margin;
-        }
-        
-        doc.addImage(recoleccionData.firmaDataUrl, 'PNG', (pageWidth / 2) - 40, y, 80, 30, undefined, 'FAST');
-        y += 30;
-        doc.line(margin + 50, y, pageWidth - margin - 50, y);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Firma del Encargado', pageWidth / 2, y + 5, { align: 'center' });
-        doc.text(recoleccionData.encargadoNombre, pageWidth / 2, y + 10, { align: 'center' });
-
-        return doc;
+    return doc;
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!recoleccionToView) return;
-    const pdf = generatePdf(recoleccionToView, companyProfile);
+    const pdf = await generatePdf(recoleccionToView, companyProfile);
     pdf.save(`recibo_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}_${recoleccionToView.id?.substring(0,5)}.pdf`);
   };
 
   const handleShare = async () => {
     if (!recoleccionToView || !navigator.share) return;
     try {
-        const pdf = generatePdf(recoleccionToView, companyProfile);
+        const pdf = await generatePdf(recoleccionToView, companyProfile);
         const pdfBlob = pdf.output('blob');
         const pdfFile = new File([pdfBlob], `recibo_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}.pdf`, { type: 'application/pdf' });
         
