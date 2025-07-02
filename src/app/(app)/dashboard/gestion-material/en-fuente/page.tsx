@@ -314,7 +314,7 @@ export default function RegistrarRecoleccionPage() {
 
         if (recoleccionData.vehiculoPlaca) {
             doc.setFont('helvetica', 'bold');
-            doc.text('PLACA DEL VEHÍCULO:', margin, y);
+            doc.text('VEHÍCULO:', margin, y);
             doc.setFont('helvetica', 'normal');
             doc.text(recoleccionData.vehiculoPlaca, margin + 45, y);
             y += 7;
@@ -331,9 +331,22 @@ export default function RegistrarRecoleccionPage() {
             startY: y,
             head: [['Material', 'Peso (kg)']],
             body: recoleccionData.items.map(item => [item.materialName, item.peso.toFixed(2)]),
-            theme: 'striped',
-            styles: { font: 'helvetica', fontSize: 12 },
-            headStyles: { fillColor: [22, 163, 74], fontStyle: 'bold' },
+            theme: 'grid',
+            styles: {
+                font: 'helvetica',
+                fontSize: 12,
+                cellPadding: 2,
+                lineWidth: 0.1,
+                lineColor: [0, 0, 0]
+            },
+            headStyles: {
+                fillColor: [240, 240, 240], // Light grey
+                fontStyle: 'bold',
+                textColor: [0, 0, 0],
+            },
+            bodyStyles: {
+                fillColor: [255, 255, 255], // White
+            },
             didDrawPage: (data: any) => { y = data.cursor.y; }
         });
         y = (doc as any).lastAutoTable.finalY + 15;
@@ -365,8 +378,11 @@ export default function RegistrarRecoleccionPage() {
         doc.setLineWidth(0.5);
         doc.line(margin, y, margin + 80, y);
         y += 7;
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('helvetica', 'normal').setFontSize(12);
         doc.text(recoleccionData.encargadoNombre, margin, y);
+        y += 5;
+        doc.setFont('helvetica', 'bold').setFontSize(10);
+        doc.text('ENCARGADO', margin, y);
         
         return doc;
     };
@@ -424,7 +440,7 @@ export default function RegistrarRecoleccionPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline text-primary flex items-center">
             <MapPin className="mr-3 h-7 w-7" />
-            {view === 'form' ? 'Registrar Recolección en Fuente' : 'Recolección Guardada'}
+            {view === 'form' ? 'Registrar Recolección en Fuente' : 'Planilla de Recolección Guardada'}
           </CardTitle>
           <CardDescription>
             {view === 'form' 
@@ -683,10 +699,10 @@ export default function RegistrarRecoleccionPage() {
           ) : (
             <div className="text-center space-y-6 py-8">
                  <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                 <h3 className="text-2xl font-bold">¡Recolección Guardada!</h3>
+                 <h3 className="text-2xl font-bold">¡Planilla de Recolección Guardada!</h3>
                  <p className="text-muted-foreground">Se ha creado el registro para la recolección en <br/> <span className="font-semibold text-foreground">{lastRecoleccion?.fuenteNombre}</span>.</p>
                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                     <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/>Descargar planilla</Button>
+                     <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/>Descargar Planilla</Button>
                      {isShareSupported && (
                          <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Compartir Planilla</Button>
                      )}

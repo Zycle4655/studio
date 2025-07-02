@@ -176,7 +176,7 @@ export default function HistorialRecoleccionesPage() {
 
     if (recoleccionData.vehiculoPlaca) {
         doc.setFont('helvetica', 'bold');
-        doc.text('PLACA DEL VEHÍCULO:', margin, y);
+        doc.text('VEHÍCULO:', margin, y);
         doc.setFont('helvetica', 'normal');
         doc.text(recoleccionData.vehiculoPlaca, margin + 45, y);
         y += 7;
@@ -193,9 +193,22 @@ export default function HistorialRecoleccionesPage() {
         startY: y,
         head: [['Material', 'Peso (kg)']],
         body: recoleccionData.items.map(item => [item.materialName, item.peso.toFixed(2)]),
-        theme: 'striped',
-        styles: { font: 'helvetica', fontSize: 12 },
-        headStyles: { fillColor: [22, 163, 74], fontStyle: 'bold' },
+        theme: 'grid',
+        styles: {
+            font: 'helvetica',
+            fontSize: 12,
+            cellPadding: 2,
+            lineWidth: 0.1,
+            lineColor: [0, 0, 0]
+        },
+        headStyles: {
+            fillColor: [240, 240, 240], // Light grey
+            fontStyle: 'bold',
+            textColor: [0, 0, 0],
+        },
+        bodyStyles: {
+            fillColor: [255, 255, 255], // White
+        },
         didDrawPage: (data: any) => { y = data.cursor.y; }
     });
     y = (doc as any).lastAutoTable.finalY + 15;
@@ -227,8 +240,12 @@ export default function HistorialRecoleccionesPage() {
     doc.setLineWidth(0.5);
     doc.line(margin, y, margin + 80, y);
     y += 7;
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('helvetica', 'normal').setFontSize(12);
     doc.text(recoleccionData.encargadoNombre, margin, y);
+    y += 5;
+    doc.setFont('helvetica', 'bold').setFontSize(10);
+    doc.text('ENCARGADO', margin, y);
+
 
     return doc;
   };
@@ -425,9 +442,9 @@ export default function HistorialRecoleccionesPage() {
                     )}
                 </div>
                 <DialogFooter className="mt-4 flex-wrap justify-center gap-2">
-                    <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/>Descargar PDF</Button>
+                    <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/>Descargar Planilla</Button>
                      {isShareSupported && (
-                         <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
+                         <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Compartir Planilla</Button>
                      )}
                     <DialogClose asChild><Button type="button" variant="secondary">Cerrar</Button></DialogClose>
                 </DialogFooter>
