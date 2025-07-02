@@ -23,7 +23,7 @@ export default function DashboardHeader({ companyName, companyLogoUrl }: Dashboa
           ) : (
             <Link href="/dashboard" className="flex items-center min-w-0"> 
               <span
-                className="text-xl font-semibold text-primary truncate block max-w-[150px] xs:max-w-[180px] sm:max-w-[220px] md:max-w-xs"
+                className="text-xl font-semibold text-foreground truncate block max-w-[150px] xs:max-w-[180px] sm:max-w-[220px] md:max-w-xs"
                 title={companyName || undefined}
               >
                 {companyName || " "}
