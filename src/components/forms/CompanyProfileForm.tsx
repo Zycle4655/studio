@@ -50,14 +50,12 @@ export default function CompanyProfileForm({
       phone: propsDefaultValues?.phone || "",
       address: propsDefaultValues?.address || "",
       email: propsDefaultValues?.email || "",
-      logoUrl: propsDefaultValues?.logoUrl || null, // Este se usará para el valor inicial
+      logoUrl: propsDefaultValues?.logoUrl || null,
     },
   });
 
   React.useEffect(() => {
-    // Sincronizar el preview si defaultValues.logoUrl cambia (ej. después de guardar y volver a editar)
     setLogoPreview(propsDefaultValues?.logoUrl || null);
-    // Resetear el formulario con los valores actualizados, especialmente logoUrl
     form.reset({
         companyName: propsDefaultValues?.companyName || "",
         nit: propsDefaultValues?.nit || "",
@@ -77,7 +75,6 @@ export default function CompanyProfileForm({
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
         setLogoPreview(dataUrl);
-        // Usamos la data URL para la validación, ya que es un formato de URL válido.
         form.setValue("logoUrl", dataUrl, { shouldValidate: true });
       };
       reader.readAsDataURL(file);
@@ -88,19 +85,17 @@ export default function CompanyProfileForm({
     }
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation(); // Evita que el click en el botón de eliminar active el click en el div padre.
     setSelectedFile(null);
     setLogoPreview(null);
-    form.setValue('logoUrl', null); // Indicar que se quiere eliminar el logo existente
+    form.setValue('logoUrl', null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Limpiar el input de archivo
+      fileInputRef.current.value = "";
     }
   };
 
   const handleFormSubmit = async (data: CompanyProfileFormData) => {
-    // Si se seleccionó un nuevo archivo, logoFile no será null.
-    // Si se eliminó el logo, data.logoUrl será null.
-    // Si no se tocó el logo, data.logoUrl será la URL existente (si la había).
     await onSubmit(data, selectedFile);
   };
   
@@ -199,51 +194,61 @@ export default function CompanyProfileForm({
               />
             )}
 
-            <FormItem>
-              <FormLabel className="text-foreground/80">Logo de la Empresa</FormLabel>
-              <div className="flex items-center gap-4">
-                {logoPreview ? (
-                  <div className="relative">
-                    <Image
-                      src={logoPreview}
-                      alt="Vista previa del logo"
-                      width={80}
-                      height={80}
-                      className="rounded-md border object-contain bg-muted"
-                      data-ai-hint="logo company"
-                    />
-                     <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/80"
-                        onClick={handleRemoveLogo}
-                        aria-label="Eliminar logo"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                  </div>
-                ) : (
-                  <div className="w-20 h-20 flex items-center justify-center rounded-md border border-dashed bg-muted text-muted-foreground">
-                    <ImageIcon className="w-8 h-8" />
-                  </div>
+            <FormField
+                control={form.control}
+                name="logoUrl"
+                render={() => (
+                    <FormItem>
+                        <FormLabel className="text-foreground/80">Logo de la Empresa</FormLabel>
+                        <FormControl>
+                             <div
+                                className="w-full flex justify-center items-center p-4 border-2 border-dashed rounded-md cursor-pointer text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <Input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/png, image/jpeg, image/gif, image/webp"
+                                    className="hidden"
+                                    onChange={handleFileChange}
+                                />
+                                {logoPreview ? (
+                                    <div className="relative group">
+                                        <Image
+                                            src={logoPreview}
+                                            alt="Vista previa del logo"
+                                            width={128}
+                                            height={128}
+                                            className="rounded-md object-contain h-32 w-32 bg-white"
+                                            data-ai-hint="logo company"
+                                        />
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <p className="text-white text-sm">Cambiar Logo</p>
+                                        </div>
+                                         <Button 
+                                            type="button" 
+                                            variant="destructive" 
+                                            size="icon" 
+                                            className="absolute -top-2 -right-2 h-7 w-7 rounded-full"
+                                            onClick={handleRemoveLogo}
+                                            aria-label="Eliminar logo"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <UploadCloud className="h-8 w-8" />
+                                        <p className="font-semibold">Haz clic para subir tu logo</p>
+                                        <p className="text-xs">PNG, JPG, GIF (Max. 1MB)</p>
+                                    </div>
+                                )}
+                            </div>
+                        </FormControl>
+                         <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
+                    </FormItem>
                 )}
-                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                  <UploadCloud className="mr-2 h-4 w-4" />
-                  {logoPreview ? "Cambiar Logo" : "Subir Logo"}
-                </Button>
-              </div>
-              <FormControl>
-                <Input
-                  type="file"
-                  accept="image/png, image/jpeg, image/gif, image/webp"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
-              </FormControl>
-              <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
-            </FormItem>
+            />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Guardando..." : submitButtonText}
