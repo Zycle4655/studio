@@ -120,7 +120,7 @@ export default function HistorialRecoleccionesPage() {
     // --- HEADER ---
     if (profileData?.logoUrl) {
       try {
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           const img = document.createElement('img');
           img.crossOrigin = "Anonymous";
           img.onload = () => {
@@ -129,7 +129,8 @@ export default function HistorialRecoleccionesPage() {
             canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-                return reject(new Error('Failed to get canvas context'));
+                console.warn('Failed to get canvas context for logo.');
+                return resolve();
             }
             ctx.drawImage(img, 0, 0);
             const dataUrl = canvas.toDataURL('image/png');
@@ -141,13 +142,13 @@ export default function HistorialRecoleccionesPage() {
             resolve();
           };
           img.onerror = (err) => {
-            console.error("Error loading logo for PDF:", err);
-            reject(err);
+            console.warn("Could not load logo for PDF, continuing without it. This is likely a CORS issue.", err);
+            resolve(); // Gracefully continue without the logo
           };
           img.src = profileData.logoUrl!;
         });
       } catch (e) {
-        console.error("Could not add logo to PDF, continuing without it.", e);
+        console.error("An unexpected error occurred while trying to add logo to PDF.", e);
       }
     }
     

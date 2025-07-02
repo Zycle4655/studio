@@ -160,12 +160,35 @@ export default function CertificadosFuentePage() {
     // --- Header ---
     if (companyProfile.logoUrl) {
       try {
-        const url = new URL(companyProfile.logoUrl);
-        const pathName = decodeURIComponent(url.pathname);
-        let extension = pathName.substring(pathName.lastIndexOf('.') + 1).toUpperCase();
-        if (extension === "JPG") extension = "JPEG";
-        doc.addImage(companyProfile.logoUrl, extension, margin, y, 30, 30, undefined, 'FAST');
-      } catch (e) { console.error("Error adding logo to PDF:", e); }
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "Anonymous";
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.warn('Failed to get canvas context for logo.');
+                return resolve();
+            }
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL('image/png');
+
+            const imgWidth = 30;
+            const imgHeight = (img.naturalHeight * imgWidth) / img.naturalWidth;
+            doc.addImage(dataUrl, 'PNG', margin, y, imgWidth, imgHeight, undefined, 'FAST');
+            resolve();
+          };
+          img.onerror = (err) => {
+            console.warn("Could not load logo for PDF, continuing without it. This is likely a CORS issue.", err);
+            resolve(); // Gracefully continue without the logo
+          };
+          img.src = companyProfile.logoUrl!;
+        });
+      } catch (e) {
+        console.error("An unexpected error occurred while trying to add logo to PDF.", e);
+      }
     }
     
     doc.setFontSize(10).setFont('helvetica', 'bold').text(companyProfile.companyName, pageWidth - margin, y + 5, { align: 'right' });
