@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -103,7 +104,7 @@ export default function MarketingPage() {
                 <div className="absolute top-0 -right-4 w-72 h-72 bg-accent/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob [animation-delay:2s]"></div>
                 <Image 
                     src="https://placehold.co/1200x600.png"
-                    alt="Dashboard de ZYCLE mostrando gráficos de inventario"
+                    alt="Dashboard de Zycle mostrando gráficos de inventario"
                     width={1200}
                     height={600}
                     className="rounded-xl shadow-2xl mx-auto border"

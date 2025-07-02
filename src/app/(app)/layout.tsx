@@ -19,7 +19,7 @@ export default function AppLayout({
   const pathname = usePathname();
   const { user, companyProfile, loading } = useAuth();
   
-  const isDarkLayout = pathname === '/dashboard';
+  const isDashboardPage = pathname === '/dashboard';
 
   useEffect(() => {
     if (loading) {
@@ -38,7 +38,7 @@ export default function AppLayout({
 
   if (loading) { 
     return (
-      <div className={cn(isDarkLayout && "dark")}>
+      <div className={cn(isDashboardPage && "dark")}>
         <div className="flex flex-col min-h-screen">
           <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center justify-between">
@@ -73,7 +73,7 @@ export default function AppLayout({
   }
 
   return (
-    <div className={cn(isDarkLayout && "dark")}>
+    <div className={cn(isDashboardPage && "dark")}>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

@@ -12,7 +12,7 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 186 75% 13%; /* #083338 */
+    --primary: 139 51% 41%; /* Forest Green: #34A04A */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -24,51 +24,51 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 186 75% 13%;
+    --ring: 139 51% 41%;
     --radius: 0.5rem;
 
     /* Charts will use the primary color scheme by default */
-    --chart-1: 186 75% 13%;
+    --chart-1: 139 51% 41%;
     --chart-2: 207 88% 77%; /* Light Blue */
     --chart-3: 220 60% 75%;
     --chart-4: 0 70% 60%;
     --chart-5: 220 20% 55%;
 
     /* Sidebar - remains dark for brand consistency */
-    --sidebar-background: 186 75% 13%; /* #083338 */
+    --sidebar-background: 139 51% 41%; /* Forest Green: #34A04A */
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 186 60% 25%;
+    --sidebar-primary: 139 60% 50%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 186 60% 20%;
+    --sidebar-accent: 139 60% 30%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 186 75% 10%;
-    --sidebar-ring: 186 60% 25%;
+    --sidebar-border: 139 51% 35%;
+    --sidebar-ring: 139 60% 50%;
   }
 
   .dark {
     /* Custom dark theme for the dashboard */
-    --background: 181 92% 25%; /* #057b7d */
-    --foreground: 0 0% 98%;
+    --background: 125 15% 96%; /* Light Green: #E8F5E9 */
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%; /* Cards are white on the dark background */
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 186 75% 13%; /* #083338 */
+    --primary: 139 51% 41%; /* Forest Green: #34A04A */
     --primary-foreground: 0 0% 98%;
-    --secondary: 181 80% 30%;
-    --secondary-foreground: 181 30% 80%;
-    --muted: 181 80% 30%;
-    --muted-foreground: 181 30% 80%;
+    --secondary: 139 20% 90%;
+    --secondary-foreground: 139 51% 30%;
+    --muted: 139 20% 90%;
+    --muted-foreground: 139 30% 40%;
     --accent: 207 88% 77%; /* Light Blue */
     --accent-foreground: 240 5.9% 10%; /* Dark text for light blue accent */
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 181 90% 30%;
-    --input: 181 90% 32%;
-    --ring: 186 75% 13%;
+    --border: 139 20% 85%;
+    --input: 0 0% 100%;
+    --ring: 139 51% 41%;
 
     /* Chart colors for dark theme can be the same or adjusted if needed */
-    --chart-1: 186 75% 13%;
+    --chart-1: 139 51% 41%;
     --chart-2: 207 88% 77%; /* Light Blue */
     --chart-3: 220 60% 75%;
     --chart-4: 0 70% 60%;
