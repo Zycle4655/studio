@@ -215,7 +215,7 @@ export default function RegistrarRecoleccionPage() {
 
         toast({
             title: "Recolección Guardada",
-            description: "El registro ha sido guardado. Ahora puede descargar o compartir el recibo.",
+            description: "El registro ha sido guardado. Ahora puede descargar o compartir la planilla.",
         });
         
         const finalDocForPdf = { ...recoleccionDoc, fecha: new Date() };
@@ -259,7 +259,7 @@ export default function RegistrarRecoleccionPage() {
         if (profileData?.logoUrl) {
           try {
             await new Promise<void>((resolve) => {
-              const img = new Image();
+              const img = document.createElement('img');
               img.crossOrigin = "Anonymous";
               img.onload = () => {
                 const canvas = document.createElement('canvas');
@@ -375,7 +375,7 @@ export default function RegistrarRecoleccionPage() {
   const handleDownloadPdf = async () => {
     if (!lastRecoleccion) return;
     const pdf = await generatePdf(lastRecoleccion, companyProfile);
-    pdf.save(`recibo_${lastRecoleccion.fuenteNombre.replace(/ /g, '_')}_${lastRecoleccion.id?.substring(0,5)}.pdf`);
+    pdf.save(`planilla_${lastRecoleccion.fuenteNombre.replace(/ /g, '_')}_${lastRecoleccion.id?.substring(0,5)}.pdf`);
   };
 
   const handleShare = async () => {
@@ -383,11 +383,11 @@ export default function RegistrarRecoleccionPage() {
     try {
         const pdf = await generatePdf(lastRecoleccion, companyProfile);
         const pdfBlob = pdf.output('blob');
-        const pdfFile = new File([pdfBlob], `recibo_${lastRecoleccion.fuenteNombre.replace(/ /g, '_')}.pdf`, { type: 'application/pdf' });
+        const pdfFile = new File([pdfBlob], `planilla_${lastRecoleccion.fuenteNombre.replace(/ /g, '_')}.pdf`, { type: 'application/pdf' });
         
         await navigator.share({
-            title: `Recibo de Recolección - ${companyProfile?.companyName || ''}`,
-            text: `Adjunto el recibo de la recolección en ${lastRecoleccion.fuenteNombre}.`,
+            title: `Planilla de Recolección - ${companyProfile?.companyName || ''}`,
+            text: `Adjunto la planilla de la recolección en ${lastRecoleccion.fuenteNombre}.`,
             files: [pdfFile],
         });
     } catch (error) {
@@ -428,8 +428,8 @@ export default function RegistrarRecoleccionPage() {
           </CardTitle>
           <CardDescription>
             {view === 'form' 
-                ? 'Complete los datos de la recolección para generar un recibo digital.'
-                : 'El registro se ha guardado exitosamente. Descargue o comparta el recibo.'
+                ? 'Complete los datos de la recolección para generar una planilla digital.'
+                : 'El registro se ha guardado exitosamente. Descargue o comparta la planilla.'
             }
           </CardDescription>
         </CardHeader>
@@ -688,7 +688,7 @@ export default function RegistrarRecoleccionPage() {
                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                      <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/>Descargar planilla</Button>
                      {isShareSupported && (
-                         <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Compartir Recibo</Button>
+                         <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Compartir Planilla</Button>
                      )}
                  </div>
             </div>

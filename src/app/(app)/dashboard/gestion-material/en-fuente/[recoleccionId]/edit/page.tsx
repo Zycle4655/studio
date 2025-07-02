@@ -289,7 +289,7 @@ export default function EditRecoleccionPage() {
       totalValor: currentTotal,
     };
     const pdf = await generatePdf(tempDocForPdf, companyProfile);
-    pdf.save(`certificado_final_${recoleccion.id?.substring(0,8)}.pdf`);
+    pdf.save(`planilla_final_${recoleccion.id?.substring(0,8)}.pdf`);
   };
 
 

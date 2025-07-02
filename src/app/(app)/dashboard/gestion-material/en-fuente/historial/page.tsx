@@ -236,7 +236,7 @@ export default function HistorialRecoleccionesPage() {
   const handleDownloadPdf = async () => {
     if (!recoleccionToView) return;
     const pdf = await generatePdf(recoleccionToView, companyProfile);
-    pdf.save(`recibo_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}_${recoleccionToView.id?.substring(0,5)}.pdf`);
+    pdf.save(`planilla_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}_${recoleccionToView.id?.substring(0,5)}.pdf`);
   };
 
   const handleShare = async () => {
@@ -244,11 +244,11 @@ export default function HistorialRecoleccionesPage() {
     try {
         const pdf = await generatePdf(recoleccionToView, companyProfile);
         const pdfBlob = pdf.output('blob');
-        const pdfFile = new File([pdfBlob], `recibo_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}.pdf`, { type: 'application/pdf' });
+        const pdfFile = new File([pdfBlob], `planilla_${recoleccionToView.fuenteNombre.replace(/ /g, '_')}.pdf`, { type: 'application/pdf' });
         
         await navigator.share({
-            title: `Recibo de Recolección - ${companyProfile?.companyName || ''}`,
-            text: `Adjunto el recibo de la recolección en ${recoleccionToView.fuenteNombre}.`,
+            title: `Planilla de Recolección - ${companyProfile?.companyName || ''}`,
+            text: `Adjunto la planilla de la recolección en ${recoleccionToView.fuenteNombre}.`,
             files: [pdfFile],
         });
     } catch (error) {
@@ -358,7 +358,7 @@ export default function HistorialRecoleccionesPage() {
                       <TableCell className="text-right font-semibold text-primary">{formatWeight(rec.totalPeso)}</TableCell>
                        <TableCell className="text-right font-semibold text-green-600">{rec.totalValor > 0 ? formatCurrency(rec.totalValor) : "Donación"}</TableCell>
                       <TableCell className="text-center">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenModal(rec)} aria-label="Ver recibo">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenModal(rec)} aria-label="Ver planilla">
                           <Eye className="h-4 w-4" />
                         </Button>
                          <Button variant="ghost" size="icon" onClick={() => handleEdit(rec.id!)} aria-label="Editar recolección">
@@ -380,7 +380,7 @@ export default function HistorialRecoleccionesPage() {
                 <DialogHeader>
                     <DialogTitle className="flex items-center">
                         <FileDown className="mr-2 h-6 w-6 text-primary"/>
-                        Recibo de Recolección
+                        Planilla de Recolección
                     </DialogTitle>
                     <DialogDescription>
                         Detalles del registro para: {recoleccionToView.fuenteNombre}
