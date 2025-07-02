@@ -103,12 +103,11 @@ export default function MarketingPage() {
                 <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
                 <div className="absolute top-0 -right-4 w-72 h-72 bg-accent/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob [animation-delay:2s]"></div>
                 <Image 
-                    src="https://placehold.co/1200x600.png"
-                    alt="Dashboard de Zycle mostrando gráficos de inventario"
+                    src="/hero-dashboard.png"
+                    alt="Vista previa del dashboard de Zycle"
                     width={1200}
                     height={600}
                     className="rounded-xl shadow-2xl mx-auto border"
-                    data-ai-hint="dashboard analytics"
                     priority
                 />
             </div>
@@ -135,7 +134,7 @@ export default function MarketingPage() {
               <TabsContent value="gestion" className="mt-8">
                 <Card>
                   <CardContent className="p-6 grid md:grid-cols-2 gap-8">
-                     <Image src="https://placehold.co/600x400.png" alt="Bodega de reciclaje organizada" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="warehouse recycling" />
+                     <Image src="/gestion-material.png" alt="Bodega de reciclaje organizada con materiales clasificados" width={600} height={400} className="rounded-lg object-cover" />
                     <div className="space-y-4">
                       <h3 className="text-2xl font-bold text-primary">Control Total del Material</h3>
                       <p className="text-muted-foreground">Desde que el material entra hasta que sale, ten visibilidad completa.</p>
@@ -152,7 +151,7 @@ export default function MarketingPage() {
               <TabsContent value="contabilidad" className="mt-8">
                  <Card>
                   <CardContent className="p-6 grid md:grid-cols-2 gap-8">
-                     <Image src="https://placehold.co/600x400.png" alt="Persona usando una calculadora" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="accounting finance" />
+                     <Image src="/contabilidad-finanzas.png" alt="Persona usando una calculadora y revisando documentos financieros" width={600} height={400} className="rounded-lg object-cover" />
                     <div className="space-y-4">
                       <h3 className="text-2xl font-bold text-primary">Finanzas Claras y Simples</h3>
                       <p className="text-muted-foreground">Digitaliza tu flujo de caja para una contabilidad transparente y sin errores.</p>
@@ -168,7 +167,7 @@ export default function MarketingPage() {
                <TabsContent value="equipo" className="mt-8">
                  <Card>
                   <CardContent className="p-6 grid md:grid-cols-2 gap-8">
-                     <Image src="https://placehold.co/600x400.png" alt="Equipo de trabajo colaborando" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="team collaboration" />
+                     <Image src="/gestion-equipo.png" alt="Equipo de trabajo colaborando en una oficina" width={600} height={400} className="rounded-lg object-cover" />
                     <div className="space-y-4">
                       <h3 className="text-2xl font-bold text-primary">Gestiona tu Talento</h3>
                       <p className="text-muted-foreground">Empodera a tu equipo con herramientas modernas que profesionalizan su trabajo.</p>
@@ -184,7 +183,7 @@ export default function MarketingPage() {
                <TabsContent value="reportes" className="mt-8">
                  <Card>
                   <CardContent className="p-6 grid md:grid-cols-2 gap-8">
-                     <Image src="https://placehold.co/600x400.png" alt="Gráficos y reportes en una pantalla" width={600} height={400} className="rounded-lg object-cover" data-ai-hint="charts data" />
+                     <Image src="/reportes-analiticas.png" alt="Gráficos y reportes de datos en una pantalla de computador" width={600} height={400} className="rounded-lg object-cover" />
                     <div className="space-y-4">
                       <h3 className="text-2xl font-bold text-primary">Decisiones Basadas en Datos</h3>
                       <p className="text-muted-foreground">Transforma la información de tu operación en inteligencia de negocio y cumple con la normativa.</p>
