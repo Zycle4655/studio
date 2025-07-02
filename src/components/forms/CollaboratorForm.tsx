@@ -113,9 +113,11 @@ export default function CollaboratorForm({
     },
   });
 
+  const { reset } = form;
+
   React.useEffect(() => {
     if (isOpen) {
-        form.reset({
+        reset({
             nombre: defaultValues?.nombre || "",
             email: defaultValues?.email || "",
             rol: defaultValues?.rol || "",
@@ -142,7 +144,7 @@ export default function CollaboratorForm({
             contactoEmergenciaTelefono: defaultValues?.contactoEmergenciaTelefono || null,
         });
     }
-  }, [defaultValues, isOpen, form]);
+  }, [defaultValues, isOpen, reset]);
 
   const handleRoleChange = (roleKey: string) => {
     form.setValue("rol", roleKey);
