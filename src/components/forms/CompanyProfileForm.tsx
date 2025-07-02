@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyProfileSchema, type CompanyProfileFormData } from "@/schemas/company";
-import { Building, Hash, Phone, MapPin, Save, Mail, Image as ImageIcon, UploadCloud, X } from "lucide-react";
+import { Building, Hash, Phone, MapPin, Save, Mail, Image as ImageIcon, UploadCloud, X, Fingerprint } from "lucide-react";
 import Image from 'next/image';
 
 interface CompanyProfileFormProps {
@@ -47,6 +47,7 @@ export default function CompanyProfileForm({
     defaultValues: {
       companyName: propsDefaultValues?.companyName || "",
       nit: propsDefaultValues?.nit || "",
+      suiId: propsDefaultValues?.suiId || null,
       phone: propsDefaultValues?.phone || "",
       address: propsDefaultValues?.address || "",
       email: propsDefaultValues?.email || "",
@@ -59,6 +60,7 @@ export default function CompanyProfileForm({
     form.reset({
         companyName: propsDefaultValues?.companyName || "",
         nit: propsDefaultValues?.nit || "",
+        suiId: propsDefaultValues?.suiId || null,
         phone: propsDefaultValues?.phone || "",
         address: propsDefaultValues?.address || "",
         email: propsDefaultValues?.email || "",
@@ -127,22 +129,40 @@ export default function CompanyProfileForm({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="nit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-foreground/80">ID / NIT</FormLabel>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <FormControl>
-                      <Input placeholder="ID o NIT de la empresa" {...field} className="pl-10" />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="nit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground/80">ID / NIT</FormLabel>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <FormControl>
+                        <Input placeholder="ID o NIT de la empresa" {...field} className="pl-10" />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="suiId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground/80">ID SUI (Opcional)</FormLabel>
+                    <div className="relative">
+                      <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <FormControl>
+                        <Input placeholder="ID asignado por la SUI" {...field} value={field.value ?? ""} className="pl-10" />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="phone"

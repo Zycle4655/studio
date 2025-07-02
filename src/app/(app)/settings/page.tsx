@@ -10,7 +10,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import type { CompanyProfileDocument } from '@/schemas/company';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, Hash, Phone, MapPin, Edit, Mail, Image as ImageIcon } from 'lucide-react';
+import { Building, Hash, Phone, MapPin, Edit, Mail, Image as ImageIcon, Fingerprint } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import NextImage from 'next/image'; // Usar NextImage para optimización
 
@@ -119,6 +119,15 @@ export default function SettingsPage() {
                     <span className="text-foreground">{companyProfile.nit}</span>
                 </div>
               </div>
+              {companyProfile.suiId && (
+                <div className="flex items-start space-x-3">
+                  <Fingerprint className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
+                  <div>
+                      <span className="font-medium text-foreground/80 block">ID SUI:</span>
+                      <span className="text-foreground">{companyProfile.suiId}</span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start space-x-3">
                 <Phone className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                 <div>
