@@ -200,9 +200,9 @@ export default function DashboardPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 {data.inventoryDetails.length > 0 && data.totalInventoryWeight > 0 ? (
                   <>
-                    <Card className="shadow-lg">
+                    <Card className="shadow-lg bg-white text-gray-900">
                       <CardHeader>
-                        <CardTitle className="flex items-center text-white"><PieChartIcon className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales por Stock</CardTitle>
+                        <CardTitle className="flex items-center"><PieChartIcon className="mr-2 h-5 w-5 text-primary"/>Top 5 Materiales por Stock</CardTitle>
                       </CardHeader>
                       <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                                 verticalAlign="middle"
                                 align="right"
                                 wrapperStyle={{ lineHeight: '24px', paddingLeft: '20px' }}
-                                formatter={(value) => <span className="text-card-foreground text-sm">{value}</span>}
+                                formatter={(value) => <span className="text-sm">{value}</span>}
                             />
                           </PieChart>
                         </ResponsiveContainer>
@@ -307,7 +307,7 @@ export default function DashboardPage() {
                                     <div className="flex justify-between items-baseline"><span className="text-sm text-red-500">Compras Efectivo</span><span className="font-semibold text-red-500">- {formatCurrency(data.cajaDiaria.totalComprasEfectivo ?? 0)}</span></div>
                                     <Separator className="my-2"/>
                                     <div className="flex justify-between items-center mt-2">
-                                        <span className="text-base font-bold">Saldo Esperado en Caja</span>
+                                        <span className="text-base font-bold text-green-500">Saldo Esperado en Caja</span>
                                         <span className="text-xl font-bold text-green-500">{formatCurrency(data.cajaDiaria.saldoEsperado)}</span>
                                     </div>
                                     
