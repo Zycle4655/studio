@@ -292,9 +292,9 @@ export default function DashboardPage() {
               </div>
               
               {permissions?.contabilidad && (
-                <Card className="shadow-lg">
+                <Card className="shadow-lg bg-white text-gray-900">
                     <CardHeader>
-                        <CardTitle className="flex items-center text-white">
+                        <CardTitle className="flex items-center">
                             <Landmark className="mr-2 h-5 w-5 text-primary"/>Resumen de Caja del Día
                         </CardTitle>
                     </CardHeader>
