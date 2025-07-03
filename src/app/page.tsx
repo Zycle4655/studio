@@ -110,7 +110,7 @@ export default function MarketingPage() {
                     loop
                     muted
                     playsInline
-                    className="rounded-xl shadow-2xl mx-auto border"
+                    className="rounded-xl shadow-2xl drop-shadow-lg mx-auto border"
                     data-ai-hint="recycling process industrial"
                 >
                     Tu navegador no soporta el tag de video.
