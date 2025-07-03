@@ -105,9 +105,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="p-3 flex items-center justify-center">
         <Link href="/dashboard" className="flex items-center gap-2">
-            <Recycle className="h-10 w-10 text-sidebar-foreground" />
             <span className="text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden font-headline">
                 Zycle
+            </span>
+            <span className="hidden text-2xl font-bold text-sidebar-foreground group-data-[collapsible=icon]:block font-headline">
+                Z
             </span>
         </Link>
       </SidebarHeader>
