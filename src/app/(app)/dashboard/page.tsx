@@ -194,9 +194,9 @@ export default function DashboardPage() {
         </p>
       </div>
 
-       <div>
+       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
          {data && (
-            <div className="space-y-6">
+            <>
               <div className="grid gap-6 md:grid-cols-2">
                 {data.inventoryDetails.length > 0 && data.totalInventoryWeight > 0 ? (
                   <>
@@ -236,9 +236,9 @@ export default function DashboardPage() {
                         </ResponsiveContainer>
                       </CardContent>
                     </Card>
-                    <Card className="shadow-lg">
+                    <Card className="shadow-lg bg-white text-gray-900">
                       <CardHeader>
-                        <CardTitle className="flex items-center text-white"><FileText className="mr-2 h-5 w-5 text-primary"/>Últimas 5 Facturas de Compra</CardTitle>
+                        <CardTitle className="flex items-center"><FileText className="mr-2 h-5 w-5 text-primary"/>Últimas 5 Facturas de Compra</CardTitle>
                       </CardHeader>
                       <CardContent className="max-h-[350px] overflow-y-auto">
                         {data.lastInvoices.length > 0 ? (
@@ -307,7 +307,7 @@ export default function DashboardPage() {
                                     <div className="flex justify-between items-baseline"><span className="text-sm text-red-500">Compras Efectivo</span><span className="font-semibold text-red-500">- {formatCurrency(data.cajaDiaria.totalComprasEfectivo ?? 0)}</span></div>
                                     <Separator className="my-2"/>
                                     <div className="flex justify-between items-center mt-2">
-                                        <span className="text-base font-bold text-green-500">Saldo Esperado en Caja</span>
+                                        <span className="text-base font-bold text-green-500">Saldo Esperado</span>
                                         <span className="text-xl font-bold text-green-500">{formatCurrency(data.cajaDiaria.saldoEsperado)}</span>
                                     </div>
                                     
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
               )}
-            </div>
+            </>
           )}
       </div>
 
