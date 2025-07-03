@@ -99,7 +99,7 @@ export default function MarketingPage() {
                 <Link href="/register">Comienza Gratis Hoy <ArrowRight className="ml-2"/></Link>
               </Button>
             </div>
-             <div className="mt-16 relative animate-fade-in [animation-delay:600ms]">
+             <div className="mt-16 relative max-w-5xl mx-auto animate-fade-in [animation-delay:600ms]">
                 <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
                 <div className="absolute top-0 -right-4 w-72 h-72 bg-accent/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob [animation-delay:2s]"></div>
                 <video
