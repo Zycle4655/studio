@@ -102,14 +102,19 @@ export default function MarketingPage() {
              <div className="mt-16 relative animate-fade-in [animation-delay:600ms]">
                 <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
                 <div className="absolute top-0 -right-4 w-72 h-72 bg-accent/10 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob [animation-delay:2s]"></div>
-                <Image 
-                    src="/hero-dashboard.png"
-                    alt="Vista previa del dashboard de Zycle"
-                    width={1200}
-                    height={600}
+                <video
+                    src="/hero-video.mp4"
+                    width="1200"
+                    height="600"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
                     className="rounded-xl shadow-2xl mx-auto border"
-                    priority
-                />
+                    data-ai-hint="recycling process industrial"
+                >
+                    Tu navegador no soporta el tag de video.
+                </video>
             </div>
           </div>
         </section>
