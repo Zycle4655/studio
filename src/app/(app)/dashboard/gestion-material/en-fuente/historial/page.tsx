@@ -202,7 +202,7 @@ export default function HistorialRecoleccionesPage() {
             lineColor: [0, 0, 0]
         },
         headStyles: {
-            fillColor: [240, 240, 240], // Light grey
+            fillColor: [255, 255, 255], // White
             fontStyle: 'bold',
             textColor: [0, 0, 0],
         },
@@ -211,7 +211,17 @@ export default function HistorialRecoleccionesPage() {
         },
         didDrawPage: (data: any) => { y = data.cursor.y; }
     });
-    y = (doc as any).lastAutoTable.finalY + 15;
+    y = (doc as any).lastAutoTable.finalY + 10;
+    
+    // --- OBSERVACIONES ---
+    if (recoleccionData.observaciones) {
+        doc.setFont('helvetica', 'bold').text('OBSERVACIONES:', margin, y);
+        y += 7;
+        doc.setFont('helvetica', 'normal');
+        const splitObservaciones = doc.splitTextToSize(recoleccionData.observaciones, pageWidth - (margin * 2));
+        doc.text(splitObservaciones, margin, y);
+        y += (splitObservaciones.length * 5) + 5;
+    }
 
     // --- GESTOR AMBIENTAL ---
     if (recoleccionData.registradoPorNombre) {
@@ -426,6 +436,13 @@ export default function HistorialRecoleccionesPage() {
                       <p className="font-bold text-lg text-green-600">Total Compra: {formatCurrency(recoleccionToView.totalValor)}</p>
                     )}
                     <p className="font-bold text-lg text-primary">Peso Total: {formatWeight(recoleccionToView.totalPeso)}</p>
+
+                    {recoleccionToView.observaciones && (
+                        <>
+                            <h4 className="font-semibold pt-2 border-t">Observaciones</h4>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{recoleccionToView.observaciones}</p>
+                        </>
+                    )}
 
                     <h4 className="font-semibold pt-2 border-t">Firma</h4>
                     <div className="border rounded-md p-2 bg-muted flex justify-center">

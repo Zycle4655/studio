@@ -27,6 +27,7 @@ import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function RegistrarRecoleccionPage() {
   const { toast } = useToast();
@@ -54,6 +55,7 @@ export default function RegistrarRecoleccionPage() {
 
   const [firmaDataUrl, setFirmaDataUrl] = React.useState<string>("");
   const [selloFile, setSelloFile] = React.useState<File | null>(null);
+  const [observaciones, setObservaciones] = React.useState<string>("");
 
   // View control
   const [view, setView] = React.useState<'form' | 'success'>('form');
@@ -152,6 +154,7 @@ export default function RegistrarRecoleccionPage() {
       setCurrentItems([]);
       setFirmaDataUrl("");
       setSelloFile(null);
+      setObservaciones("");
       signatureRef.current?.clear();
       const fileInput = document.getElementById('sello-input') as HTMLInputElement;
       if (fileInput) fileInput.value = "";
@@ -207,6 +210,7 @@ export default function RegistrarRecoleccionPage() {
             totalValor: totalValor,
             firmaDataUrl: firmaDataUrl,
             selloImageUrl: selloImageUrl,
+            observaciones: observaciones || null,
             createdAt: fechaServer,
             updatedAt: fechaServer,
         };
@@ -340,7 +344,7 @@ export default function RegistrarRecoleccionPage() {
                 lineColor: [0, 0, 0]
             },
             headStyles: {
-                fillColor: [240, 240, 240], // Light grey
+                fillColor: [255, 255, 255], // White
                 fontStyle: 'bold',
                 textColor: [0, 0, 0],
             },
@@ -349,7 +353,17 @@ export default function RegistrarRecoleccionPage() {
             },
             didDrawPage: (data: any) => { y = data.cursor.y; }
         });
-        y = (doc as any).lastAutoTable.finalY + 15;
+        y = (doc as any).lastAutoTable.finalY + 10;
+        
+        // --- OBSERVACIONES ---
+        if (recoleccionData.observaciones) {
+            doc.setFont('helvetica', 'bold').text('OBSERVACIONES:', margin, y);
+            y += 7;
+            doc.setFont('helvetica', 'normal');
+            const splitObservaciones = doc.splitTextToSize(recoleccionData.observaciones, pageWidth - (margin * 2));
+            doc.text(splitObservaciones, margin, y);
+            y += (splitObservaciones.length * 5) + 5;
+        }
 
         // --- GESTOR AMBIENTAL ---
         if (recoleccionData.registradoPorNombre) {
@@ -673,14 +687,27 @@ export default function RegistrarRecoleccionPage() {
 
               <Separator className="my-6" />
 
-              {/* Paso 4: Firma y Sello */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Paso 4: Observaciones */}
+              <div className="space-y-2">
+                  <label htmlFor="observaciones-input" className="font-medium">4. Observaciones (Opcional)</label>
+                  <Textarea
+                      id="observaciones-input"
+                      placeholder="Añada cualquier nota relevante sobre la recolección..."
+                      value={observaciones}
+                      onChange={(e) => setObservaciones(e.target.value)}
+                      disabled={isSubmitting}
+                      rows={3}
+                  />
+              </div>
+
+              {/* Paso 5: Firma y Sello */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                   <div className="space-y-2">
-                      <label className="font-medium flex items-center gap-2">4. Firma del Encargado <span className="text-destructive">*</span></label>
+                      <label className="font-medium flex items-center gap-2">5. Firma del Encargado <span className="text-destructive">*</span></label>
                       <SignaturePad signatureRef={signatureRef} onSignatureEnd={setFirmaDataUrl} />
                   </div>
                   <div className="space-y-2">
-                      <label className="font-medium">5. Foto del Sello (Opcional)</label>
+                      <label className="font-medium">6. Foto del Sello (Opcional)</label>
                       <Input id="sello-input" type="file" accept="image/*" capture="environment" onChange={(e) => setSelloFile(e.target.files ? e.target.files[0] : null)} disabled={isSubmitting} />
                       {selloFile && <p className="text-xs text-green-600 flex items-center gap-1 mt-2"><CheckCircle size={14}/> {selloFile.name} listo para subir.</p>}
                       {!selloFile && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2"><AlertTriangle size={14}/> Sin foto de sello seleccionada.</p>}
@@ -689,7 +716,7 @@ export default function RegistrarRecoleccionPage() {
               
               <Separator />
               
-              {/* Paso 5: Guardar */}
+              {/* Paso 6: Guardar */}
               <div className="flex justify-end">
                   <Button onClick={handleSaveRecoleccion} size="lg" disabled={isSubmitting || isLoading || !selectedFuenteId || !selectedVehiculoId || currentItems.length === 0 || !firmaDataUrl}>
                       {isSubmitting ? "Guardando..." : "Guardar Recolección"}

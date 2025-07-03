@@ -18,6 +18,7 @@ export const RecoleccionFormSchema = z.object({
   items: z.array(RecoleccionItemSchema).min(1, "Debe agregar al menos un material."),
   firmaDataUrl: z.string().min(1, "Se requiere la firma del encargado."),
   selloFile: z.instanceof(File).optional().nullable(),
+  observaciones: z.string().max(500, "Las observaciones no pueden exceder 500 caracteres.").optional().nullable(),
 });
 export type RecoleccionFormData = z.infer<typeof RecoleccionFormSchema>;
 
@@ -37,6 +38,7 @@ export interface RecoleccionDocument {
   totalValor: number;
   firmaDataUrl: string; // The base64 data URL of the signature
   selloImageUrl?: string | null; // URL to the image in Firebase Storage
+  observaciones?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Save, XCircle, FileEdit, Printer, Trash2 } from "lucide-react";
 import { format } from "date-fns";
@@ -34,6 +35,7 @@ export default function EditRecoleccionPage() {
   const [editableItems, setEditableItems] = React.useState<RecoleccionItem[]>([]);
   const [currentTotal, setCurrentTotal] = React.useState(0);
   const [currentTotalPeso, setCurrentTotalPeso] = React.useState(0);
+  const [observaciones, setObservaciones] = React.useState<string>("");
 
   const [companyProfile, setCompanyProfile] = React.useState<CompanyProfileDocument | null>(null);
   const [isLoadingPage, setIsLoadingPage] = React.useState(true);
@@ -59,6 +61,7 @@ export default function EditRecoleccionPage() {
           setEditableItems(JSON.parse(JSON.stringify(data.items))); 
           setCurrentTotal(data.totalValor);
           setCurrentTotalPeso(data.totalPeso);
+          setObservaciones(data.observaciones || "");
         } else {
           toast({ variant: "destructive", title: "Error", description: "Recolección no encontrada." });
           router.replace("/dashboard/gestion-material/en-fuente/historial");
@@ -118,6 +121,7 @@ export default function EditRecoleccionPage() {
         items: editableItems,
         totalValor: finalTotalValor,
         totalPeso: finalTotalPeso,
+        observaciones: observaciones || null,
         updatedAt: serverTimestamp(),
       };
       
@@ -250,7 +254,7 @@ export default function EditRecoleccionPage() {
             lineColor: [0, 0, 0]
         },
         headStyles: {
-            fillColor: [240, 240, 240], // Light grey
+            fillColor: [255, 255, 255], // White
             fontStyle: 'bold',
             textColor: [0, 0, 0],
         },
@@ -259,7 +263,17 @@ export default function EditRecoleccionPage() {
         },
         didDrawPage: (data: any) => { y = data.cursor.y; }
     });
-    y = (doc as any).lastAutoTable.finalY + 15;
+    y = (doc as any).lastAutoTable.finalY + 10;
+    
+    // --- OBSERVACIONES ---
+    if (recoleccionData.observaciones) {
+        doc.setFont('helvetica', 'bold').text('OBSERVACIONES:', margin, y);
+        y += 7;
+        doc.setFont('helvetica', 'normal');
+        const splitObservaciones = doc.splitTextToSize(recoleccionData.observaciones, pageWidth - (margin * 2));
+        doc.text(splitObservaciones, margin, y);
+        y += (splitObservaciones.length * 5) + 5;
+    }
 
     // --- GESTOR AMBIENTAL ---
     if (recoleccionData.registradoPorNombre) {
@@ -303,6 +317,7 @@ export default function EditRecoleccionPage() {
       ...recoleccion,
       items: editableItems,
       totalValor: currentTotal,
+      observaciones: observaciones,
     };
     const pdf = await generatePdf(tempDocForPdf, companyProfile);
     pdf.save(`planilla_final_${recoleccion.id?.substring(0,8)}.pdf`);
@@ -331,10 +346,10 @@ export default function EditRecoleccionPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline text-primary flex items-center">
             <FileEdit className="mr-3 h-7 w-7" />
-            Editar Recolección en Fuente
+            Editar Planilla de Recolección
           </CardTitle>
           <CardDescription>
-            Ajuste los pesos y precios de los materiales recolectados. Los cambios se guardarán permanentemente.
+            Ajuste los pesos, precios y observaciones de los materiales recolectados. Los cambios se guardarán permanentemente.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -397,6 +412,19 @@ export default function EditRecoleccionPage() {
                 </TableBody>
             </Table>
             </div>
+            
+            <div className="mt-6 space-y-2">
+                <label htmlFor="observaciones-input" className="font-medium">Observaciones (Opcional)</label>
+                <Textarea
+                    id="observaciones-input"
+                    placeholder="Añada cualquier nota relevante sobre la recolección..."
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    disabled={isSaving}
+                    rows={3}
+                />
+            </div>
+            
              <div className="mt-4 text-right space-y-1">
                 <p className="font-semibold">Peso Total: {formatWeight(currentTotalPeso)} kg</p>
                 {permissions?.equipo && (
